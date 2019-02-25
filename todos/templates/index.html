@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Todos POC</title>
+</head>
+<body>
+</body>
+<script>
+  ID = function(){
+    function chr4(){
+      return Math.random().toString(16).slice(-4);
+    }
+    return chr4() + chr4() +
+      '-' + chr4() +
+      '-' + chr4() +
+      '-' + chr4() +
+      '-' + chr4() + chr4() + chr4();
+  }
+
+  setup = function() {
+    window.components = [];
+    window.components['html'] = document.getElementsByTagName('html')[0];
+    window.components['head'] = document.getElementsByTagName('head')[0];
+    window.components['body'] = document.getElementsByTagName('body')[0];
+  }
+
+  registerComponent = function(component, DOMelem) {
+    window.components[component._id] = DOMelem;
+  };
+
+  getElementByUuid = function(uuid) {
+    return window.components[uuid];
+  };
+
+  createDOMelement = function(component) {
+    var elem;
+    if (component.tag == 'text')
+      elem = document.createTextNode(component.content);
+    else {
+      elem = document.createElement(component.tag);
+      Object.keys(component.attr).forEach(function(k) {
+        elem.setAttribute(k, component.attr[k]);
+      });
+      Object.keys(component.events).forEach(function(k) {
+        elem.addEventListener(k, window[component.events[k]]);
+      });
+    }
+
+    component.subscriptions.forEach(function(sub) {
+      ws_send({
+        type: 'subscribe',
+        params: {
+          name: sub[0],
+          template: sub[1],
+          _id: component._id
+        }
+      }, function(r, e) { if (e) { console.log(e); }});
+    });
+
+    if (typeof(component.content) != 'string' && component.content.length) {
+      component.content.forEach(function(child) {
+        c = createDOMelement(child);
+        elem.appendChild(c);
+      });
+    };
+
+    registerComponent(component, elem)
+
+    return elem;
+  };
+
+  var ws = new WebSocket(
+    'ws://' + window.location.host + '/ws/ddp/'
+  );
+
+  handleDDP = function(data) {
+    switch (data.type) {
+      case 'insert': constructDOM(data.params); break;
+      case 'remove': removeDOM(data.params); break;
+      case 'change': changeDOM(data.params); break;
+      default: break;
+    };
+  };
+
+  constructDOM = function(data) {
+    if (typeof(data) != 'Array') {
+      data = [data];
+    }
+
+    data.forEach(function(component) {
+      var elem = createDOMelement(component);
+      getElementByUuid(component.parent).appendChild(elem);
+    });
+  };
+
+  removeDOM = function(params) {
+    parentNode = getElementByUuid(params.parent);
+    node = getElementByUuid(params._id);
+    parentNode.removeChild(node);
+  };
+
+  changeDOM = function(params) {
+    prev_node = getElementByUuid(params._id);
+    cur_node = createDOMelement(params);
+    prev_node.innerHTML = cur_node.innerHTML;
+  };
+
+  ws.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    var result, error;
+    switch (data.type) {
+      case 'Connected': init(); break;
+      case 'DDP': handleDDP(data.params); break;
+      default:
+        if (data.type == 'Error')
+          error = data;
+        else if (data.type == 'Result')
+          result = data;
+
+        ws.callbacks[data._id](result, error);
+        delete ws.callbacks[data._id]
+    };
+  };
+
+  ws.onclose = function(e) {
+  };
+
+  ws.callbacks = [];
+  ws_send = function(data, cb) {
+    var _id = ID();
+    data._id = _id;
+    ws.callbacks[_id] = cb;
+    ws.send(JSON.stringify(data));
+  };
+
+  var current_url = '{{ url }}';
+  var query_string = '{{ query_string }}';
+
+  route = function(url, q) {
+    ws_send({
+      type: 'geturl',
+      params: {
+        url: url,
+        query: q
+      }
+    }, function(r, e) {
+      if (e)
+        console.log(e);
+      else
+        constructDOM(r.params);
+        history.pushState(null, null, '/' + url + '?' + q)
+    });
+  };
+
+  onwsready = function(cb) {
+    if (typeof(window.onwsready_cb) == 'undefined') {
+      window.onwsready_cb = []
+    }
+    window.onwsready_cb.push(cb);
+  };
+
+  init = function() {
+    setup();
+    window.onwsready_cb.forEach(function(cb) {
+      cb();
+    });
+  };
+
+  onwsready(function() {
+    route(current_url, query_string);
+  });
+
+
+</script>
+</html>
