@@ -87,3 +87,33 @@ class Text(Component):
     def __init__(self, content=[],
                  parent='body', _id=uuid.uuid1().hex):
         super().__init__('text', content, parent=parent, _id=_id)
+
+
+class Form(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=uuid.uuid1().hex):
+        super().__init__('form', content, attr, events, parent, _id)
+
+
+class Input(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=uuid.uuid1().hex):
+        super().__init__('input', content, attr, events, parent, _id)
+
+
+class Button(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=uuid.uuid1().hex):
+        super().__init__('button', content, attr, events, parent, _id)
+
+
+class Nav(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=uuid.uuid1().hex):
+        super().__init__('nav', content, attr, events, parent, _id)
+
+
+class H1(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=uuid.uuid1().hex):
+        super().__init__('h1', content, attr, events, parent, _id)

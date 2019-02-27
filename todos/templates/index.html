@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>Todos POC</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
 </head>
 <body>
 </body>
@@ -43,7 +44,11 @@
         elem.setAttribute(k, component.attr[k]);
       });
       Object.keys(component.events).forEach(function(k) {
-        elem.addEventListener(k, window[component.events[k]]);
+        console.log('adding event ' + k);
+        console.log(component.events[k]);
+        elem.addEventListener(k, function(e) {
+          eval(component.events[k]);
+        });
       });
     }
 
@@ -147,9 +152,13 @@
     }, function(r, e) {
       if (e)
         console.log(e);
-      else
+      else {
         constructDOM(r.params);
-        history.pushState(null, null, '/' + url + '?' + q)
+        state = '/' + url;
+        if (q && q.length)
+          state += '?' + q;
+        history.pushState(null, null, state)
+      }
     });
   };
 
@@ -171,6 +180,22 @@
     route(current_url, query_string);
   });
 
+  call = function(name, params) {
+    ws_send({
+      type: 'method',
+      params: {
+        name: name,
+        params: params
+      }
+    }, function(r, e) {
+      if (e)
+        console.log(e);
+    });
+  };
+
+  $ = function(q) {
+    return document.querySelector(q);
+  };
 
 </script>
 </html>

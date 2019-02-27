@@ -6,6 +6,7 @@ from channels.auth import get_user
 from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
+from todos.methods import Methods
 from todos.models import Clients, Subscriptions
 
 
@@ -77,8 +78,31 @@ class Consumer(JsonWebsocketConsumer, object):
         }
         self.send(json.dumps(data))
 
-    def recv_getcomponent(self, data):
-        pass
+    def recv_method(self, data):
+        to_send = {'_id': data['_id']}
+        params = data['params']
+        method = getattr(Methods, params['name'], None)
+        if method is None:
+            to_send.update({
+                'type': 'Error',
+                'params': {
+                    'name': 'Not found',
+                    'message': f'Method {params["name"]} not found'
+                }
+            })
+            self.send(json.dumps(to_send))
+        else:
+            ret = method(params['params'])
+            if ret:
+                to_send.update({
+                    'type': 'Result',
+                    'params': ret
+                })
+            else:
+                to_send.update({
+                    'type': 'Error',
+                    'params': ret
+                })
 
     def insert_component(self, data, change=False):
         self.send(json.dumps({
