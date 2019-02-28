@@ -1,7 +1,7 @@
 from django.conf.urls import url
+from .pages import Layout
 
-from . import consumers
-
-websocket_urlpatterns = [
-    url(r'^ws/ddp/$', consumers.Consumer),
+urlpatterns = [
+    url(r'todos', Layout),
+    url(r'', Layout),
 ]

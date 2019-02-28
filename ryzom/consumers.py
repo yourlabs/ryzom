@@ -6,9 +6,11 @@ from channels.auth import get_user
 from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
-from todos.methods import Methods
-from todos.ddp_routing import ddp_urlpatterns
-from todos.models import Clients, Subscriptions
+from django.conf import settings
+from ryzom.models import Clients, Subscriptions
+
+ddp_urlpatterns = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
+server_methods = importlib.import_module(settings.SERVER_METHODS).Methods
 
 
 class Consumer(JsonWebsocketConsumer, object):
@@ -79,7 +81,7 @@ class Consumer(JsonWebsocketConsumer, object):
                     if (cview.onurl(to_url)):
                         self.send(json.dumps({
                             '_id': data['_id'],
-                            'type': 'Result',
+                            'type': 'Success',
                             'params': []
                         }))
                 else:
@@ -89,7 +91,7 @@ class Consumer(JsonWebsocketConsumer, object):
                     self.view.oncreate(to_url)
                     data = {
                         '_id': data['_id'],
-                        'type': 'Result',
+                        'type': 'Success',
                         'params': self.view.render()
                     }
                     self.send(json.dumps(data))
@@ -98,7 +100,7 @@ class Consumer(JsonWebsocketConsumer, object):
     def recv_method(self, data):
         to_send = {'_id': data['_id']}
         params = data['params']
-        method = getattr(Methods, params['name'], None)
+        method = getattr(server_methods, params['name'], None)
         if method is None:
             to_send.update({
                 'type': 'Error',
@@ -112,7 +114,7 @@ class Consumer(JsonWebsocketConsumer, object):
             ret = method(params['params'])
             if ret:
                 to_send.update({
-                    'type': 'Result',
+                    'type': 'Success',
                     'params': ret
                 })
             else:
@@ -181,7 +183,7 @@ class Consumer(JsonWebsocketConsumer, object):
                     template_class=params['template'][1],
                     client=client)
             to_send.update({
-                'type': 'Result',
+                'type': 'Success',
                 'params': {
                     'name': params['name'],
                     'sub_id': sub.id
@@ -199,4 +201,3 @@ class Consumer(JsonWebsocketConsumer, object):
                 'name': params['name']
             }
         }))
-

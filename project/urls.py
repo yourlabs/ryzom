@@ -16,5 +16,5 @@ Including another URLconf
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url('^', include('todos.urls')),
+    url('^', include('ryzom.urls')),
 ]

@@ -87,6 +87,10 @@
   };
 
   constructDOM = function(data) {
+    if (!Array.isArray(data)) {
+      data = [data]
+    }
+
     data.forEach(function(component) {
       var elem = createDOMelement(component);
       getElementByUuid(component.parent).appendChild(elem);
@@ -115,7 +119,7 @@
       default:
         if (data.type == 'Error')
           error = data;
-        else if (data.type == 'Result')
+        else if (data.type == 'Success')
           result = data;
 
         ws.callbacks[data._id](result, error);
@@ -166,8 +170,12 @@
   };
 
   window.onpopstate = function(event) {
-    route(event.state.path, '', true);
-    event.preventDefault()
+    if (event.state) {
+      route(event.state.path, '', true);
+      event.preventDefault()
+    } else {
+      history.back()
+    }
   };
 
   onwsready = function(cb) {

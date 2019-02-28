@@ -1,5 +1,7 @@
-from .view import View
-from .components.base import Base, Tasklist, Taskform, Welcome
+from ryzom.views import View
+from todos.components.base import Base
+from todos.components.home import Welcome
+from todos.components.tasks import Tasklist, Taskform
 
 
 class Layout(View):
@@ -10,9 +12,9 @@ class Layout(View):
     def onurl(self, url):
         self.url = url
         if url == 'todos':
-            self.setcontent('main-container', [Tasklist(), Taskform()])
+            self.reactive('main-container', [Tasklist(), Taskform()])
         else:
-            self.setcontent('main-container', [Welcome()])
+            self.reactive('main-container', [Welcome()])
         return True
 
     def render(self):
