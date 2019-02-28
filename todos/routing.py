@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from .pages import Layout
+from todos.views import Layout
 
 urlpatterns = [
     url(r'todos', Layout),
