@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
 from todos.methods import Methods
+from todos.ddp_routing import ddp_urlpatterns
 from todos.models import Clients, Subscriptions
 
 
@@ -70,13 +71,29 @@ class Consumer(JsonWebsocketConsumer, object):
             }))
 
     def recv_geturl(self, data):
-        base = importlib.import_module('.base', 'todos.components')
-        data = {
-            '_id': data['_id'],
-            'type': 'Result',
-            'params': base.Base().to_obj()
-        }
-        self.send(json.dumps(data))
+        to_url = data['params']['url']
+        for url in ddp_urlpatterns:
+            if url.pattern.match(to_url):
+                cview = getattr(self, 'view', None)
+                if cview and isinstance(cview, url.callback):
+                    if (cview.onurl(to_url)):
+                        self.send(json.dumps({
+                            '_id': data['_id'],
+                            'type': 'Result',
+                            'params': []
+                        }))
+                else:
+                    if cview:
+                        cview.ondestroy()
+                    self.view = url.callback(self.channel_name)
+                    self.view.oncreate(to_url)
+                    data = {
+                        '_id': data['_id'],
+                        'type': 'Result',
+                        'params': self.view.render()
+                    }
+                    self.send(json.dumps(data))
+                break
 
     def recv_method(self, data):
         to_send = {'_id': data['_id']}
@@ -182,3 +199,4 @@ class Consumer(JsonWebsocketConsumer, object):
                 'name': params['name']
             }
         }))
+

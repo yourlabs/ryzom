@@ -9,20 +9,23 @@ class Component():
                  attr=None,
                  events=None,
                  parent='body',
-                 _id=uuid.uuid1().hex):
-        self._id = _id
+                 _id=None):
+        self._id = _id or uuid.uuid1().hex
         self.parent = parent
         self.tag = 'HTML' if parent is None else tag
         self.attr = {} if attr is None else attr
         self.events = {} if events is None else events
         self.content = [] if content is None else content
 
+        self.preparecontent()
+
+    def preparecontent(self):
         # handle text node as content
-        if isinstance(content, list):
+        if isinstance(self.content, list):
             for c in self.content:
                 c.parent = self._id
-        elif isinstance(content, str) and tag is not 'text':
-            self.content = [Text(content)]
+        elif isinstance(self.content, str) and self.tag is not 'text':
+            self.content = [Text(self.content)]
 
     def addchild(self, component):
         component.parent = self._id

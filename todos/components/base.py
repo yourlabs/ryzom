@@ -1,5 +1,6 @@
 from project.component import Div, Ul, Li, Span, Input, Button
 from project.component import Nav, H1
+from project.reactivediv import ReactiveDiv
 from todos.models import Tasks
 
 
@@ -64,16 +65,27 @@ class Taskform(Div):
         super().__init__(content, attr, _id='task_form')
 
 
-class Base(Div):
+class Welcome(Div):
     def __init__(self):
+        content = [
+            H1('WELCOME !'),
+            Button('todos', events={
+                'click': 'route("todos")'
+            })]
+        super().__init__(content)
+
+
+class Base(Div):
+    def __init__(self, view):
         attr = {
             'class': 'container'
         }
         content = [
             Nav([H1('Todos')], {'class': 'navbar navbar-light bg-light'}),
-            Div([
+            ReactiveDiv('main-container', view, [
                 Tasklist(),
                 Taskform()
-            ])
+            ]) if view.url == 'todos'
+            else ReactiveDiv('main-container', view, [Welcome()])
         ]
         super().__init__(content, attr,  _id='tasklist_container')

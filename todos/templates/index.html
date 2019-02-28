@@ -44,8 +44,6 @@
         elem.setAttribute(k, component.attr[k]);
       });
       Object.keys(component.events).forEach(function(k) {
-        console.log('adding event ' + k);
-        console.log(component.events[k]);
         elem.addEventListener(k, function(e) {
           eval(component.events[k]);
         });
@@ -89,10 +87,6 @@
   };
 
   constructDOM = function(data) {
-    if (typeof(data) != 'Array') {
-      data = [data];
-    }
-
     data.forEach(function(component) {
       var elem = createDOMelement(component);
       getElementByUuid(component.parent).appendChild(elem);
@@ -108,7 +102,8 @@
   changeDOM = function(params) {
     prev_node = getElementByUuid(params._id);
     cur_node = createDOMelement(params);
-    prev_node.innerHTML = cur_node.innerHTML;
+    parent = getElementByUuid(params.parent);
+    parent.replaceChild(cur_node, prev_node);
   };
 
   ws.onmessage = function(e) {
@@ -139,10 +134,12 @@
     ws.send(JSON.stringify(data));
   };
 
+  var initialized = false;
   var current_url = '{{ url }}';
   var query_string = '{{ query_string }}';
 
-  route = function(url, q) {
+
+  route = function(url, q, backward=false) {
     ws_send({
       type: 'geturl',
       params: {
@@ -154,12 +151,23 @@
         console.log(e);
       else {
         constructDOM(r.params);
-        state = '/' + url;
-        if (q && q.length)
-          state += '?' + q;
-        history.pushState(null, null, state)
+        if (initialized && !backward) {
+          path = url;
+          if (q && q.length)
+            path += '?' + q;
+          state = window.location.protocol + '//' +
+                  window.location.hostname + ':' +
+                  window.location.port + '/' +
+                  path;
+          history.pushState({path: path}, null, state)
+        }
       }
     });
+  };
+
+  window.onpopstate = function(event) {
+    route(event.state.path, '', true);
+    event.preventDefault()
   };
 
   onwsready = function(cb) {
@@ -174,6 +182,7 @@
     window.onwsready_cb.forEach(function(cb) {
       cb();
     });
+    initialized = true;
   };
 
   onwsready(function() {
