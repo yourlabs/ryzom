@@ -2,10 +2,9 @@ import importlib
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_delete, post_save
-from django.dispatch import receiver
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.aggregates import ArrayAgg
+from ryzom.ddp import send_insert
 
 
 class Clients(models.Model):
@@ -18,54 +17,45 @@ class Clients(models.Model):
            )
 
 
-class Subscriptions(models.Model):
-    name = models.CharField(max_length=255)
-    parent = models.CharField(max_length=255)
+class Publications(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    model_module = models.CharField(max_length=255)
+    model_class = models.CharField(max_length=255)
     template_module = models.CharField(max_length=255)
     template_class = models.CharField(max_length=255)
+    query = JSONField(blank=True, null=True)
+
+
+class Subscriptions(models.Model):
+    parent = models.CharField(max_length=255)
     client = models.ForeignKey(Clients, models.CASCADE)
+    publication = models.ForeignKey(Publications, models.CASCADE)
+    queryset = ArrayField(models.IntegerField(), default=list)
 
+    def init(self):
+        pub = self.publication
+        model_mod = importlib.import_module(pub.model_module)
+        model_cls = getattr(model_mod, pub.model_class)
+        tmpl_mod = importlib.import_module(pub.template_module)
+        tmpl_cls = getattr(tmpl_mod, pub.template_class)
+        qs = self.exec_query(model_cls).aggregate(ids=ArrayAgg('id'))
+        self.queryset = qs['ids']
+        for _id in self.queryset:
+            send_insert(self, model_cls, tmpl_cls, _id)
 
-@receiver(post_save)
-def ddp_insert_change(sender, **kwargs):
-    created = kwargs.pop('created')
-    instance = kwargs.pop('instance')
-    data = {
-        'type': 'handle.ddp',
-        'params': {
-            'type': 'inserted' if created else 'changed',
-        }
-    }
-    subs = Subscriptions.objects.filter(name=sender.__name__)
-    for sub in subs:
-        mfile, mpath = sub.template_module[::-1].split('.', 1)
-        tmpl_module = importlib.import_module(f'.{mfile[::-1]}', mpath[::-1])
-        tmpl_class = getattr(tmpl_module, sub.template_class)
-        tmpl_instance = tmpl_class(instance)
-        tmpl_instance.parent = sub.parent
-        data['params']['instance'] = tmpl_instance.to_obj()
-        client = sub.client
-        channel = get_channel_layer()
-        async_to_sync(channel.send)(client.channel, data)
-
-
-@receiver(post_delete)
-def ddp_delete(sender, **kwargs):
-    instance = kwargs.pop('instance')
-    data = {
-        'type': 'handle.ddp',
-        'params': {
-            'type': 'removed',
-        }
-    }
-    subs = Subscriptions.objects.filter(name=sender.__name__)
-    for sub in subs:
-        mfile, mpath = sub.template_module[::-1].split('.', 1)
-        tmpl_module = importlib.import_module(f'.{mfile[::-1]}', mpath[::-1])
-        tmpl_class = getattr(tmpl_module, sub.template_class)
-        tmpl_instance = tmpl_class(instance)
-        data['params']['parent'] = sub.parent
-        data['params']['_id'] = tmpl_instance._id
-        client = sub.client
-        channel = get_channel_layer()
-        async_to_sync(channel.send)(client.channel, data)
+    def exec_query(self, model):
+        '''
+        limit, orderby, offset, fields(values), filter
+        '''
+        pub = self.publication
+        qs = model.objects.filter(**pub.query.get('filter', {}))
+        if 'order_by' in pub.query:
+            qs = qs.order_by(*pub.query.order_by)
+        if 'limit' in pub.query or 'offset' in pub.query:
+            limit = pub.query.get('limit')
+            offset = pub.query.get('offset', 0)
+            if limit:
+                qs = qs[offset:offset + limit]
+            else:
+                qs = qs[offset:]
+        return qs

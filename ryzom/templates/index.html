@@ -54,8 +54,7 @@
       ws_send({
         type: 'subscribe',
         params: {
-          name: sub[0],
-          template: sub[1],
+          name: sub,
           _id: component._id
         }
       }, function(r, e) { if (e) { console.log(e); }});

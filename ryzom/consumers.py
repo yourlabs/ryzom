@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
-from ryzom.models import Clients, Subscriptions
+from ryzom.models import Clients, Subscriptions, Publications
 
 ddp_urlpatterns = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
 server_methods = importlib.import_module(settings.SERVER_METHODS).Methods
@@ -109,7 +109,6 @@ class Consumer(JsonWebsocketConsumer, object):
                     'message': f'Method {params["name"]} not found'
                 }
             })
-            self.send(json.dumps(to_send))
         else:
             ret = method(params['params'])
             if ret:
@@ -122,6 +121,7 @@ class Consumer(JsonWebsocketConsumer, object):
                     'type': 'Error',
                     'params': ret
                 })
+        self.send(json.dumps(to_send))
 
     def insert_component(self, data, change=False):
         self.send(json.dumps({
@@ -156,7 +156,7 @@ class Consumer(JsonWebsocketConsumer, object):
         params = data['params']
         to_send = {'_id': data['_id']}
         client = Clients.objects.get(channel=self.channel_name)
-        for key in ['name', '_id', 'template']:
+        for key in ['name', '_id']:
             if key not in params:
                 to_send.update({
                     'type': 'Error',
@@ -176,12 +176,13 @@ class Consumer(JsonWebsocketConsumer, object):
                 }
             })
         else:
-            sub = Subscriptions.objects.create(
-                    name=params['name'],
+            pub = Publications.objects.get(name=params['name'])
+            sub = Subscriptions(
+                    publication=pub,
                     parent=params['_id'],
-                    template_module=params['template'][0],
-                    template_class=params['template'][1],
                     client=client)
+            sub.init()
+            sub.save()
             to_send.update({
                 'type': 'Success',
                 'params': {

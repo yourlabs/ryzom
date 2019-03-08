@@ -12,6 +12,7 @@ class Component():
                  _id=None):
         self._id = _id or uuid.uuid1().hex
         self.parent = parent
+        self.position = 0
         self.tag = 'HTML' if parent is None else tag
         self.attr = {} if attr is None else attr
         self.events = {} if events is None else events
@@ -22,12 +23,14 @@ class Component():
     def preparecontent(self):
         # handle text node as content
         if isinstance(self.content, list):
-            for c in self.content:
+            for i, c in enumerate(self.content):
                 c.parent = self._id
+                c.position = i
         elif isinstance(self.content, str) and self.tag is not 'text':
             self.content = [Text(self.content)]
 
     def addchild(self, component):
+        component.position = len(self.content)
         component.parent = self._id
         self.content.append(component)
 
@@ -50,6 +53,7 @@ class Component():
                 for c in self.content
             ] if self.tag != 'text' else self.content,
             'parent': self.parent,
+            'position': self.position,
             'events': self.events,
             'attr': self.attr,
             'subscriptions': getattr(self, 'subscriptions', [])

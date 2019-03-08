@@ -1,5 +1,4 @@
 from ryzom.components import Div, Ul, Li, Span, Input, Button
-from todos.models import Tasks
 
 
 class Task(Li):
@@ -16,14 +15,8 @@ class Task(Li):
 
 class Tasklist(Ul):
     def __init__(self):
-        # Array of ('ModelName', ('template.module.file', 'TemplateClass'))
-        self.subscriptions = [('Tasks', ('todos.components.tasks', 'Task'))]
-
-        content = [
-            Task(t)
-            for t in Tasks.objects.filter()
-        ]
-        super().__init__(content, {'class': 'list-group'}, _id='tasklist')
+        self.subscriptions = ['tasks']
+        super().__init__(attr={'class': 'list-group'}, _id='tasklist')
 
 
 class Taskform(Div):
