@@ -11,5 +11,9 @@ class Tasks(models.Model, Publishable):
 Tasks.publish(
         name='tasks',
         template='todos.components.tasks.Task',
-        query={'limit': 5}
+        query=[
+            {'order_by': 'about'},
+            {'offset': ('$count', -5)},
+            {'limit': 5},
+        ]
 )

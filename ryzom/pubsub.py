@@ -3,15 +3,6 @@ from ryzom.models import Publications
 to_publish = []
 
 
-class Subscription():
-    def __init__(self, name, params):
-        pub = Publications.objects.get(name=name)
-        if pub:
-            self.name = name
-            self.params = params
-            self.publication = pub
-
-
 class Publishable():
     _published = False
     _prepubs = {}
@@ -31,14 +22,20 @@ class Publishable():
         tmpl_mod = tmpl_mod[::-1]
         tmpl_cls = tmpl_cls[::-1]
         kwargs = {
-            'name': name,
             'model_module': cls.__module__,
             'model_class': cls.__name__,
             'template_module': tmpl_mod,
             'template_class': tmpl_cls,
             'query': query
         }
-        Publications.objects.update_or_create(**kwargs)
+        pub_exists = Publications.objects.filter(name=name).exists()
+        if pub_exists:
+            pub = Publications.objects.get(name=name)
+            for k, v in kwargs.items():
+                setattr(pub, k, v)
+            pub.save()
+        else:
+            Publications.objects.create(name=name, **kwargs)
 
     @classmethod
     def publish_all(cls):

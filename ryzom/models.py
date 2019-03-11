@@ -44,18 +44,29 @@ class Subscriptions(models.Model):
             send_insert(self, model_cls, tmpl_cls, _id)
 
     def exec_query(self, model):
-        '''
-        limit, orderby, offset, fields(values), filter
-        '''
+        # such an ugly code!
+        # I really have to makes this clearer...and more robust!
+        # but it works for now
         pub = self.publication
-        qs = model.objects.filter(**pub.query.get('filter', {}))
-        if 'order_by' in pub.query:
-            qs = qs.order_by(*pub.query.order_by)
-        if 'limit' in pub.query or 'offset' in pub.query:
-            limit = pub.query.get('limit')
-            offset = pub.query.get('offset', 0)
-            if limit:
-                qs = qs[offset:offset + limit]
-            else:
-                qs = qs[offset:]
+        qs = model.objects.all()
+        for q in pub.query:
+            for k, v in q.items():
+                if isinstance(v, list):
+                    if v[0] == '$count':
+                        v[0] = qs.count()
+                        v = max(v[0] + v[1], 0)
+                    elif v[0] == '$user':
+                        v[0] = self.client.user.id
+                elif isinstance(v, dict):
+                    for _k, _v in v.values():
+                        if _v == '$user':
+                            v[_k] = self.client.user.id
+                if k == 'filter':
+                    qs = qs.filter(**v)
+                elif k == 'order_by':
+                    qs = qs.order_by(v)
+                elif k == 'limit':
+                    qs = qs[:v]
+                elif k == 'offset':
+                    qs = qs[v:]
         return qs

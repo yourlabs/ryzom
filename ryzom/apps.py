@@ -7,5 +7,7 @@ class RyzomConfig(AppConfig):
     def ready(self):
         import ryzom.signals
         from ryzom.pubsub import to_publish
+        Clients = self.get_model('Clients')
+        Clients.objects.all().delete()
         for publication in to_publish:
             publication.publish_all()

@@ -62,8 +62,9 @@
 
     if (typeof(component.content) != 'string' && component.content.length) {
       component.content.forEach(function(child) {
-        c = createDOMelement(child);
-        elem.appendChild(c);
+        var c = createDOMelement(child);
+        var prev = elem.childNodes[c.position]
+        elem.insertBefore(c, prev);
       });
     };
 
@@ -92,21 +93,25 @@
 
     data.forEach(function(component) {
       var elem = createDOMelement(component);
-      getElementByUuid(component.parent).appendChild(elem);
+      var parent = getElementByUuid(component.parent)
+      var prev = parent.childNodes[component.position]
+      parent.insertBefore(elem, prev);
     });
   };
 
   removeDOM = function(params) {
-    parentNode = getElementByUuid(params.parent);
-    node = getElementByUuid(params._id);
+    var parentNode = getElementByUuid(params.parent);
+    var node = getElementByUuid(params._id);
     parentNode.removeChild(node);
   };
 
   changeDOM = function(params) {
-    prev_node = getElementByUuid(params._id);
-    cur_node = createDOMelement(params);
-    parent = getElementByUuid(params.parent);
-    parent.replaceChild(cur_node, prev_node);
+    var prev_node = getElementByUuid(params._id);
+    var cur_node = createDOMelement(params);
+    var parent = getElementByUuid(params.parent);
+    parent.removeChild(prev_node);
+    prev_node = parent.childNodes[params.position]
+    parent.insertBefore(cur_node, prev_node)
   };
 
   ws.onmessage = function(e) {
