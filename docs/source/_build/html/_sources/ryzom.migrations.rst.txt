@@ -1,0 +1,17 @@
+ryzom.migrations package
+========================
+
+Submodules
+----------
+
+.. toctree::
+
+   ryzom.migrations.0001_initial
+
+Module contents
+---------------
+
+.. automodule:: ryzom.migrations
+    :members:
+    :undoc-members:
+    :show-inheritance:

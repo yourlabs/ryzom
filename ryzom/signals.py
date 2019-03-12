@@ -1,3 +1,6 @@
+'''
+Defines the django signals handlers.
+'''
 import importlib
 
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -10,6 +13,14 @@ from ryzom.pubsub import Publishable
 
 @receiver(post_save)
 def _ddp_insert_change(sender, **kwargs):
+    '''
+    Function to send a DDP insert/change/remove messages to the channel layer
+    whenever a Publishable model's save() method is called.
+    This function will update the queryset of all subscriptions
+    associated with the sender model and send insert, remove or change
+    message for each _id that was added or removed from the old
+    queryset to the new one.
+    '''
     if Publishable not in sender.mro():
         return
     created = kwargs.pop('created')
@@ -64,6 +75,14 @@ def _ddp_insert_change(sender, **kwargs):
 
 @receiver(post_delete)
 def _ddp_delete(sender, **kwargs):
+    '''
+    Function to send a DDP insert/remove messages to the channel layer
+    whenever a Publishable model's delete() method is called.
+    This function will update the queryset of all subscriptions
+    associated with the sender model and send insert and remove
+    message for each _id that was added or removed from the old
+    queryset to the new one.
+    '''
     if Publishable not in sender.mro():
         return
     instance = kwargs.pop('instance')
