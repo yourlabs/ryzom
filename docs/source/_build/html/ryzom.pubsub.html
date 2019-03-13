@@ -54,6 +54,14 @@ called by the publish_all() method, or by publish()
 if the publishable has already been published.
 If a publication of given name already exists,
 this method only updates its fields.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body">see <a class="reference internal" href="#ryzom.pubsub.Publishable.publish" title="ryzom.pubsub.Publishable.publish"><code class="xref py py-meth docutils literal notranslate"><span class="pre">publish()</span></code></a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="classmethod">
@@ -66,6 +74,28 @@ this class, and the query that will filter, order,
 limit, ..etc, the set published.
 It defers the publication until the DB is ready to
 accept new entries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str</em>) – A unique name</li>
+<li><strong>template</strong> (<em>str</em>) – A Component module and class                 <cite>module.submodule.Class</cite></li>
+<li><strong>query</strong> (<em>list</em>) – A list of dict of query parameters</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Examples:</th><td class="field-body"><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Tasks</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s1">&#39;tasks&#39;</span><span class="p">,</span> <span class="s1">&#39;todos.components.tasks.Task&#39;</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;order_by&#39;</span><span class="p">:</span> <span class="s1">&#39;-about&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;offset&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="p">])</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="classmethod">
@@ -80,7 +110,7 @@ associated to the current model class.</p>
 
 <dl class="data">
 <dt id="ryzom.pubsub.to_publish">
-<code class="descclassname">ryzom.pubsub.</code><code class="descname">to_publish</code><em class="property"> = []</em><a class="headerlink" href="#ryzom.pubsub.to_publish" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">ryzom.pubsub.</code><code class="descname">to_publish</code><em class="property"> = [&lt;class 'todos.models.Tasks'&gt;]</em><a class="headerlink" href="#ryzom.pubsub.to_publish" title="Permalink to this definition">¶</a></dt>
 <dd><p>This variable is intented to be used only in the ryzom.apps
 AppConfig.ready() to populate the DB with publications
 at server startup.</p>

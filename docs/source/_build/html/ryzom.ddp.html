@@ -47,6 +47,20 @@ Uses the template class associated with a publication
 to create a new instance of a component attached to a
 model that was updated
 Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to change</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to change</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -59,6 +73,20 @@ Uses the template class associated with a publication
 to create a new instance of a component attached to a
 model that was inserted, updated or removed
 Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to insert</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to insert</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -72,6 +100,20 @@ to create a new instance of a component attached to a
 model that was removed, in order to get the computed _id
 and send the computed _id to the client.
 Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to remove</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to remove</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

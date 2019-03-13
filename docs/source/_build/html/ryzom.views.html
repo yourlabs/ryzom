@@ -47,12 +47,28 @@ It is necessary to overload the methods onurl and render when
 inheriting from this class.
 The methods oncreate() and ondestroy() can also be overloaded
 to run code on those events.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel_name</strong> (<em>str</em>) – The name of the channel this instance             is attached to</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="ryzom.views.View.addReactiveComponent">
 <code class="descname">addReactiveComponent</code><span class="sig-paren">(</span><em>component</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.addReactiveComponent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.addReactiveComponent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method intended to be used by reactive components.
 Registers a component to the reactive_components dict
 of the view instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>component</strong> (<a class="reference internal" href="ryzom.reactive.html#ryzom.reactive.ReactiveComponent" title="ryzom.reactive.ReactiveComponent"><em>ReactiveComponent</em></a>) – The reactive component to                 attach to this View instance</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -62,11 +78,19 @@ of the view instance.</p>
 This method will be called whenever a new instance of a View is
 created by the consumer.
 Its aim is to setup the view data, such as content, url or whatever.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="ryzom.views.View.ondestroy">
-<code class="descname">ondestroy</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.ondestroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.ondestroy" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ondestroy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.ondestroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.ondestroy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Hook to optionaly overload.
 This method will be called whenever a instance of a View is
 destroyed by the consumer.</p>
@@ -81,6 +105,14 @@ This method will be called whenever a websocket url is required
 controller.
 Its aim is to update the instance inheriting from this class
 on an geturl call.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -88,16 +120,36 @@ on an geturl call.</p>
 <code class="descname">reactive</code><span class="sig-paren">(</span><em>name</em>, <em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.reactive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.reactive" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to update the content of a reactive component by name.
 the content parameter must be a subclass of ryzom.components.Component</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – The name of the                 <a class="reference internal" href="ryzom.reactive.html#ryzom.reactive.ReactiveComponent" title="ryzom.reactive.ReactiveComponent"><code class="xref py py-class docutils literal notranslate"><span class="pre">ryzom.reactive.ReactiveComponent</span></code></a> to update</li>
+<li><strong>content</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The new content</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="ryzom.views.View.render">
-<code class="descname">render</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.render" title="Permalink to this definition">¶</a></dt>
+<code class="descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.render" title="Permalink to this definition">¶</a></dt>
 <dd><p>To be overloaded.
 This method will be called whenever a websocket url is required
 and router to a new View controller.
 Its aim is to render a full content. After that, only reactive
 content should be updated by the onurl() method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

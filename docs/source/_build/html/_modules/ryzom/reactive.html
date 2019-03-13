@@ -47,6 +47,9 @@
 <span class="sd">    Subclass of component with reactive content.</span>
 <span class="sd">    It takes a unique name and a ryzom.views.View in addition</span>
 <span class="sd">    to common component parameters.</span>
+
+<span class="sd">    :param str name: The (unique) name of the instance</span>
+<span class="sd">    :param View view: The rizom View this instance is attached to</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;div&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">events</span><span class="o">=</span><span class="p">{},</span> <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -60,6 +63,9 @@
 <span class="sd">        This method should be called only by the associated view</span>
 <span class="sd">        to update the component contents, then it sends the new</span>
 <span class="sd">        content to the client associated with the view instance</span>
+
+<span class="sd">        :param list(Component) content: A list of Component to replace \</span>
+<span class="sd">                the current content of the instance</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">preparecontent</span><span class="p">()</span>

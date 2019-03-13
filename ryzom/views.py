@@ -13,6 +13,9 @@ class View():
     inheriting from this class.
     The methods oncreate() and ondestroy() can also be overloaded
     to run code on those events.
+
+    :param str channel_name: The name of the channel this instance \
+            is attached to
     '''
     def __init__(self, channel_name):
         self.channel_name = channel_name
@@ -23,6 +26,9 @@ class View():
         Method intended to be used by reactive components.
         Registers a component to the reactive_components dict
         of the view instance.
+
+        :param ReactiveComponent component: The reactive component to \
+                attach to this View instance
         '''
         self.reactive_components[component.name] = component
 
@@ -30,6 +36,10 @@ class View():
         '''
         Method to update the content of a reactive component by name.
         the content parameter must be a subclass of ryzom.components.Component
+
+        :param str name: The name of the \
+                :class:`ryzom.reactive.ReactiveComponent` to update
+        :param Component content: The new content
         '''
         component = self.reactive_components[name]
         component.setcontent(content)
@@ -42,16 +52,20 @@ class View():
         controller.
         Its aim is to update the instance inheriting from this class
         on an geturl call.
+
+        :param str url: The url the client is trying to access
         '''
         raise NotImplementedError
 
-    def render(self, url):
+    def render(self):
         '''
         To be overloaded.
         This method will be called whenever a websocket url is required
         and router to a new View controller.
         Its aim is to render a full content. After that, only reactive
         content should be updated by the onurl() method.
+
+        :param str url: The url the client is trying to access
         '''
         raise NotImplementedError
 
@@ -61,10 +75,12 @@ class View():
         This method will be called whenever a new instance of a View is
         created by the consumer.
         Its aim is to setup the view data, such as content, url or whatever.
+
+        :param str url: The url the client is trying to access
         '''
         pass
 
-    def ondestroy(self, url):
+    def ondestroy(self):
         '''
         Hook to optionaly overload.
         This method will be called whenever a instance of a View is

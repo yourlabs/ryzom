@@ -48,6 +48,9 @@
 <span class="sd">    inheriting from this class.</span>
 <span class="sd">    The methods oncreate() and ondestroy() can also be overloaded</span>
 <span class="sd">    to run code on those events.</span>
+
+<span class="sd">    :param str channel_name: The name of the channel this instance \</span>
+<span class="sd">            is attached to</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span> <span class="o">=</span> <span class="n">channel_name</span>
@@ -58,6 +61,9 @@
 <span class="sd">        Method intended to be used by reactive components.</span>
 <span class="sd">        Registers a component to the reactive_components dict</span>
 <span class="sd">        of the view instance.</span>
+
+<span class="sd">        :param ReactiveComponent component: The reactive component to \</span>
+<span class="sd">                attach to this View instance</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reactive_components</span><span class="p">[</span><span class="n">component</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">component</span></div>
 
@@ -65,6 +71,10 @@
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Method to update the content of a reactive component by name.</span>
 <span class="sd">        the content parameter must be a subclass of ryzom.components.Component</span>
+
+<span class="sd">        :param str name: The name of the \</span>
+<span class="sd">                :class:`ryzom.reactive.ReactiveComponent` to update</span>
+<span class="sd">        :param Component content: The new content</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">component</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reactive_components</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="n">component</span><span class="o">.</span><span class="n">setcontent</span><span class="p">(</span><span class="n">content</span><span class="p">)</span></div>
@@ -77,16 +87,20 @@
 <span class="sd">        controller.</span>
 <span class="sd">        Its aim is to update the instance inheriting from this class</span>
 <span class="sd">        on an geturl call.</span>
+
+<span class="sd">        :param str url: The url the client is trying to access</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="View.render"><a class="viewcode-back" href="../../ryzom.views.html#ryzom.views.View.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+<div class="viewcode-block" id="View.render"><a class="viewcode-back" href="../../ryzom.views.html#ryzom.views.View.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        To be overloaded.</span>
 <span class="sd">        This method will be called whenever a websocket url is required</span>
 <span class="sd">        and router to a new View controller.</span>
 <span class="sd">        Its aim is to render a full content. After that, only reactive</span>
 <span class="sd">        content should be updated by the onurl() method.</span>
+
+<span class="sd">        :param str url: The url the client is trying to access</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
@@ -96,10 +110,12 @@
 <span class="sd">        This method will be called whenever a new instance of a View is</span>
 <span class="sd">        created by the consumer.</span>
 <span class="sd">        Its aim is to setup the view data, such as content, url or whatever.</span>
+
+<span class="sd">        :param str url: The url the client is trying to access</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="View.ondestroy"><a class="viewcode-back" href="../../ryzom.views.html#ryzom.views.View.ondestroy">[docs]</a>    <span class="k">def</span> <span class="nf">ondestroy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+<div class="viewcode-block" id="View.ondestroy"><a class="viewcode-back" href="../../ryzom.views.html#ryzom.views.View.ondestroy">[docs]</a>    <span class="k">def</span> <span class="nf">ondestroy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Hook to optionaly overload.</span>
 <span class="sd">        This method will be called whenever a instance of a View is</span>

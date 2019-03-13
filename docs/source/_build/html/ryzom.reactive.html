@@ -45,12 +45,32 @@ to create reactive content</p>
 <p>Subclass of component with reactive content.
 It takes a unique name and a ryzom.views.View in addition
 to common component parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – The (unique) name of the instance</li>
+<li><strong>view</strong> (<a class="reference internal" href="ryzom.views.html#ryzom.views.View" title="ryzom.views.View"><em>View</em></a>) – The rizom View this instance is attached to</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="ryzom.reactive.ReactiveComponent.setcontent">
 <code class="descname">setcontent</code><span class="sig-paren">(</span><em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/reactive.html#ReactiveComponent.setcontent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.reactive.ReactiveComponent.setcontent" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method should be called only by the associated view
 to update the component contents, then it sends the new
 content to the client associated with the view instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>content</strong> (<em>list</em><em>(</em><a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a><em>)</em>) – A list of Component to replace                 the current content of the instance</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

@@ -12,6 +12,9 @@ class ReactiveComponent(Component):
     Subclass of component with reactive content.
     It takes a unique name and a ryzom.views.View in addition
     to common component parameters.
+
+    :param str name: The (unique) name of the instance
+    :param View view: The rizom View this instance is attached to
     '''
     def __init__(self, name, view, tag='div', content=[], attr={},
                  events={}, parent='body', _id=None):
@@ -25,6 +28,9 @@ class ReactiveComponent(Component):
         This method should be called only by the associated view
         to update the component contents, then it sends the new
         content to the client associated with the view instance
+
+        :param list(Component) content: A list of Component to replace \
+                the current content of the instance
         '''
         self.content = content
         self.preparecontent()

@@ -38,9 +38,21 @@
 
 
 <div class="viewcode-block" id="RyzomConfig"><a class="viewcode-back" href="../../ryzom.apps.html#ryzom.apps.RyzomConfig">[docs]</a><span class="k">class</span> <span class="nc">RyzomConfig</span><span class="p">(</span><span class="n">AppConfig</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Ryzom application configuration</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ryzom&#39;</span>
 
 <div class="viewcode-block" id="RyzomConfig.ready"><a class="viewcode-back" href="../../ryzom.apps.html#ryzom.apps.RyzomConfig.ready">[docs]</a>    <span class="k">def</span> <span class="nf">ready</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        AppConfig.ready overloading.</span>
+<span class="sd">        Here we import the ryzom.signals module to connect</span>
+<span class="sd">        the signals handlers to receivers,</span>
+<span class="sd">        then we clean the Clients table (zombies clients stay after</span>
+<span class="sd">        a server reboot)</span>
+<span class="sd">        Finally, we create the publications that were registered</span>
+<span class="sd">        in the to_publish list of ryzom.pusub module.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="kn">import</span> <span class="nn">ryzom.signals</span> <span class="c1"># noqa</span>
         <span class="kn">from</span> <span class="nn">ryzom.pubsub</span> <span class="k">import</span> <span class="n">to_publish</span>
 

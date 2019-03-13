@@ -14,6 +14,13 @@ def send_insert(sub, model, tmpl, _id):
     to create a new instance of a component attached to a
     model that was inserted, updated or removed
     Essentially called by post_save and post_delete signal handlers
+
+    :param Subscriptions sub: The Subscription holding the connection \
+            information
+    :param Publishable model: The class of the model to insert
+    :param Component tmpl: The component subclass that templates \
+            the model instance
+    :param int _id: The id of the model to insert
     '''
     tmpl_instance = tmpl(model.objects.get(id=_id))
     tmpl_instance.parent = sub.parent
@@ -38,6 +45,13 @@ def send_change(sub, model, tmpl, _id):
     to create a new instance of a component attached to a
     model that was updated
     Essentially called by post_save and post_delete signal handlers
+
+    :param Subscriptions sub: The Subscription holding the connection \
+            information
+    :param Publishable model: The class of the model to change
+    :param Component tmpl: The component subclass that templates \
+            the model instance
+    :param int _id: The id of the model to change
     '''
     tmpl_instance = tmpl(model.objects.get(id=_id))
     tmpl_instance.parent = sub.parent
@@ -63,6 +77,13 @@ def send_remove(sub, model, tmpl, _id):
     model that was removed, in order to get the computed _id
     and send the computed _id to the client.
     Essentially called by post_save and post_delete signal handlers
+
+    :param Subscriptions sub: The Subscription holding the connection \
+            information
+    :param Publishable model: The class of the model to remove
+    :param Component tmpl: The component subclass that templates \
+            the model instance
+    :param int _id: The id of the model to remove
     '''
     tmp = model()
     tmp.id = _id

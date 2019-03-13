@@ -49,6 +49,13 @@
 <span class="sd">    to create a new instance of a component attached to a</span>
 <span class="sd">    model that was inserted, updated or removed</span>
 <span class="sd">    Essentially called by post_save and post_delete signal handlers</span>
+
+<span class="sd">    :param Subscriptions sub: The Subscription holding the connection \</span>
+<span class="sd">            information</span>
+<span class="sd">    :param Publishable model: The class of the model to insert</span>
+<span class="sd">    :param Component tmpl: The component subclass that templates \</span>
+<span class="sd">            the model instance</span>
+<span class="sd">    :param int _id: The id of the model to insert</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">tmpl_instance</span> <span class="o">=</span> <span class="n">tmpl</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">_id</span><span class="p">))</span>
     <span class="n">tmpl_instance</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">parent</span>
@@ -73,6 +80,13 @@
 <span class="sd">    to create a new instance of a component attached to a</span>
 <span class="sd">    model that was updated</span>
 <span class="sd">    Essentially called by post_save and post_delete signal handlers</span>
+
+<span class="sd">    :param Subscriptions sub: The Subscription holding the connection \</span>
+<span class="sd">            information</span>
+<span class="sd">    :param Publishable model: The class of the model to change</span>
+<span class="sd">    :param Component tmpl: The component subclass that templates \</span>
+<span class="sd">            the model instance</span>
+<span class="sd">    :param int _id: The id of the model to change</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">tmpl_instance</span> <span class="o">=</span> <span class="n">tmpl</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">_id</span><span class="p">))</span>
     <span class="n">tmpl_instance</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">parent</span>
@@ -98,6 +112,13 @@
 <span class="sd">    model that was removed, in order to get the computed _id</span>
 <span class="sd">    and send the computed _id to the client.</span>
 <span class="sd">    Essentially called by post_save and post_delete signal handlers</span>
+
+<span class="sd">    :param Subscriptions sub: The Subscription holding the connection \</span>
+<span class="sd">            information</span>
+<span class="sd">    :param Publishable model: The class of the model to remove</span>
+<span class="sd">    :param Component tmpl: The component subclass that templates \</span>
+<span class="sd">            the model instance</span>
+<span class="sd">    :param int _id: The id of the model to remove</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">tmp</span> <span class="o">=</span> <span class="n">model</span><span class="p">()</span>
     <span class="n">tmp</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">_id</span>

@@ -67,6 +67,20 @@
 <span class="sd">        limit, ..etc, the set published.</span>
 <span class="sd">        It defers the publication until the DB is ready to</span>
 <span class="sd">        accept new entries.</span>
+
+<span class="sd">        :param str name: A unique name</span>
+<span class="sd">        :param str template: A Component module and class \</span>
+<span class="sd">                `module.submodule.Class`</span>
+<span class="sd">        :param list query: A list of dict of query parameters</span>
+
+<span class="sd">        :examples:</span>
+<span class="sd">            ::</span>
+
+<span class="sd">                Tasks.publish(&#39;tasks&#39;, &#39;todos.components.tasks.Task&#39;, [</span>
+<span class="sd">                    {&#39;order_by&#39;: &#39;-about&#39;},</span>
+<span class="sd">                    {&#39;limit&#39;: 5},</span>
+<span class="sd">                    {&#39;offset&#39;: 3}</span>
+<span class="sd">                ])</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_published</span><span class="p">:</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_prepubs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
@@ -83,6 +97,8 @@
 <span class="sd">        if the publishable has already been published.</span>
 <span class="sd">        If a publication of given name already exists,</span>
 <span class="sd">        this method only updates its fields.</span>
+
+<span class="sd">        :parameters: see :meth:`publish`</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">tmpl_cls</span><span class="p">,</span> <span class="n">tmpl_mod</span> <span class="o">=</span> <span class="n">template</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">tmpl_mod</span> <span class="o">=</span> <span class="n">tmpl_mod</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>

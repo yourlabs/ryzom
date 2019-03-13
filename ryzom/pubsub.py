@@ -32,6 +32,20 @@ class Publishable():
         limit, ..etc, the set published.
         It defers the publication until the DB is ready to
         accept new entries.
+
+        :param str name: A unique name
+        :param str template: A Component module and class \
+                `module.submodule.Class`
+        :param list query: A list of dict of query parameters
+
+        :examples:
+            ::
+
+                Tasks.publish('tasks', 'todos.components.tasks.Task', [
+                    {'order_by': '-about'},
+                    {'limit': 5},
+                    {'offset': 3}
+                ])
         '''
         if not cls._published:
             cls._prepubs[name] = (template, query)
@@ -48,6 +62,8 @@ class Publishable():
         if the publishable has already been published.
         If a publication of given name already exists,
         this method only updates its fields.
+
+        :parameters: see :meth:`publish`
         '''
         tmpl_cls, tmpl_mod = template[::-1].split('.', 1)
         tmpl_mod = tmpl_mod[::-1]
