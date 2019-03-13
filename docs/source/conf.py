@@ -15,7 +15,7 @@
 import os
 import sys
 import django
-sys.path.insert(0, '/home/tmignot/projects/yourlabs/pyfront')
+sys.path.insert(0, '../..')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
 django.setup()
 
