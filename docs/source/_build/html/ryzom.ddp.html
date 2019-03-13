@@ -1,0 +1,211 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ryzom.ddp module &#8212; ryzom  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ryzom.models module" href="ryzom.models.html" />
+    <link rel="prev" title="ryzom.consumers module" href="ryzom.consumers.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-ryzom.ddp">
+<span id="ryzom-ddp-module"></span><h1>ryzom.ddp module<a class="headerlink" href="#module-ryzom.ddp" title="Permalink to this headline">¶</a></h1>
+<p>Functions to communicate DDP messages to the channel layer.</p>
+<dl class="function">
+<dt id="ryzom.ddp.send_change">
+<code class="descclassname">ryzom.ddp.</code><code class="descname">send_change</code><span class="sig-paren">(</span><em>sub</em>, <em>model</em>, <em>tmpl</em>, <em>_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/ddp.html#send_change"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.ddp.send_change" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send change message.
+Function used to send a DDP message to a specific client
+via the channel layer.
+Uses the template class associated with a publication
+to create a new instance of a component attached to a
+model that was updated
+Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to change</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to change</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ryzom.ddp.send_insert">
+<code class="descclassname">ryzom.ddp.</code><code class="descname">send_insert</code><span class="sig-paren">(</span><em>sub</em>, <em>model</em>, <em>tmpl</em>, <em>_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/ddp.html#send_insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.ddp.send_insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send insert message.
+Function used to send a DDP message to a specific client
+via the channel layer.
+Uses the template class associated with a publication
+to create a new instance of a component attached to a
+model that was inserted, updated or removed
+Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to insert</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to insert</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ryzom.ddp.send_remove">
+<code class="descclassname">ryzom.ddp.</code><code class="descname">send_remove</code><span class="sig-paren">(</span><em>sub</em>, <em>model</em>, <em>tmpl</em>, <em>_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/ddp.html#send_remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.ddp.send_remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send remove message.
+Function used to send a DDP message to a specific client
+via the channel layer.
+Uses the template class associated with a publication
+to create a new instance of a component attached to a
+model that was removed, in order to get the computed _id
+and send the computed _id to the client.
+Essentially called by post_save and post_delete signal handlers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub</strong> (<a class="reference internal" href="ryzom.models.html#ryzom.models.Subscriptions" title="ryzom.models.Subscriptions"><em>Subscriptions</em></a>) – The Subscription holding the connection             information</li>
+<li><strong>model</strong> (<a class="reference internal" href="ryzom.pubsub.html#ryzom.pubsub.Publishable" title="ryzom.pubsub.Publishable"><em>Publishable</em></a>) – The class of the model to remove</li>
+<li><strong>tmpl</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The component subclass that templates             the model instance</li>
+<li><strong>_id</strong> (<em>int</em>) – The id of the model to remove</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ryzom</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="ryzom.html">ryzom package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ryzom.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ryzom.apps.html">ryzom.apps module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.components.html">ryzom.components module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.consumers.html">ryzom.consumers module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ryzom.ddp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.models.html">ryzom.models module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.pubsub.html">ryzom.pubsub module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.reactive.html">ryzom.reactive module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.routing.html">ryzom.routing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.signals.html">ryzom.signals module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.urls.html">ryzom.urls module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.views.html">ryzom.views module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ryzom.html#module-ryzom">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="ryzom.html">ryzom package</a><ul>
+      <li>Previous: <a href="ryzom.consumers.html" title="previous chapter">ryzom.consumers module</a></li>
+      <li>Next: <a href="ryzom.models.html" title="next chapter">ryzom.models module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/ryzom.ddp.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

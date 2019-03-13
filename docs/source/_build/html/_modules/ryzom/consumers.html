@@ -1,0 +1,389 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ryzom.consumers &#8212; ryzom  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ryzom.consumers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Consumer for Django channels.</span>
+<span class="sd">Handles websockets messages from client and channels layer</span>
+<span class="sd">ddp_urlpattern and server_methods are subject to change in a</span>
+<span class="sd">near future. Both will be handled in a separate file</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">channels.generic.websocket</span> <span class="k">import</span> <span class="n">JsonWebsocketConsumer</span>
+<span class="kn">from</span> <span class="nn">channels.auth</span> <span class="k">import</span> <span class="n">get_user</span>
+<span class="kn">from</span> <span class="nn">django.contrib.auth.models</span> <span class="k">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">asgiref.sync</span> <span class="k">import</span> <span class="n">async_to_sync</span>
+
+<span class="kn">from</span> <span class="nn">django.conf</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">ryzom.models</span> <span class="k">import</span> <span class="n">Clients</span><span class="p">,</span> <span class="n">Subscriptions</span><span class="p">,</span> <span class="n">Publications</span>
+
+<span class="n">ddp_urlpatterns</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">DDP_URLPATTERNS</span><span class="p">)</span><span class="o">.</span><span class="n">urlpatterns</span>
+<span class="n">server_methods</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">SERVER_METHODS</span><span class="p">)</span><span class="o">.</span><span class="n">Methods</span>
+
+
+<div class="viewcode-block" id="Consumer"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer">[docs]</a><span class="k">class</span> <span class="nc">Consumer</span><span class="p">(</span><span class="n">JsonWebsocketConsumer</span><span class="p">,</span> <span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Consumer class, inherited from the channels&#39; JsonWebsocketConsumer</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="Consumer.connect"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Websocket connect handler.</span>
+<span class="sd">        This method tries to get the user connecting and create a new</span>
+<span class="sd">        ryzom.models.Client in DB, saving the channel name for future</span>
+<span class="sd">        access from the channel layer.</span>
+<span class="sd">        sends back a &#39;Connected&#39; message to the client</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">async_to_sync</span><span class="p">(</span><span class="n">get_user</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">)</span>
+        <span class="n">Clients</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">,</span>
+                <span class="n">user</span><span class="o">=</span><span class="n">user</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">User</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Connected&#39;</span><span class="p">}))</span></div>
+
+<div class="viewcode-block" id="Consumer.disconnect"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.disconnect">[docs]</a>    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">close_code</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Websocket disconnect handler.</span>
+<span class="sd">        Removes the ryzom.models.Clients entry attached to this</span>
+<span class="sd">        channel, cascading deletion to Suscriptions</span>
+<span class="sd">        Zombies that may stay in our DB on server reboots are removed in</span>
+<span class="sd">        the ryzom.apps Appconfig.ready() function</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">Clients</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Consumer.receive"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.receive">[docs]</a>    <span class="k">def</span> <span class="nf">receive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text_data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Websocket message handler.</span>
+<span class="sd">        Dispatches message to type specific subhandlers after some</span>
+<span class="sd">        error checking on the message format</span>
+<span class="sd">        Known message types are &#39;subscribe&#39;, &#39;unsubscribe&#39;, &#39;method&#39;</span>
+<span class="sd">        and &#39;geturl&#39;.</span>
+<span class="sd">        In a near future, login and logout could be handled too,</span>
+<span class="sd">        unless we use another way to do it, by method call or anything else</span>
+<span class="sd">        A message should have:</span>
+<span class="sd">        - an &#39;_id&#39; key, which is used to find the right</span>
+<span class="sd">        callback function the client defined</span>
+<span class="sd">        - a &#39;type&#39; key, one of the known message types described above</span>
+<span class="sd">        - a &#39;params&#39; key, which is used as a parameter, specific to</span>
+<span class="sd">        each message type.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">text_data</span><span class="p">)</span>
+        <span class="n">msg_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">msg_type</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bad message&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;message type not found&#39;</span>
+                <span class="p">}</span>
+            <span class="p">}))</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">msg_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;subscribe&#39;</span><span class="p">,</span> <span class="s1">&#39;unsubscribe&#39;</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="s1">&#39;geturl&#39;</span><span class="p">]:</span>
+            <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="s1">&#39;recv_</span><span class="si">{msg_type}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">func</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                        <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_id&#39;</span><span class="p">),</span>
+                        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bad format&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;&quot;params&quot; key not found&#39;</span>
+                        <span class="p">}</span>
+                    <span class="p">}))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bad message type&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{msg_type}</span><span class="s1"> not recognized&#39;</span>
+                <span class="p">}</span>
+            <span class="p">}))</span></div>
+
+<div class="viewcode-block" id="Consumer.recv_geturl"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.recv_geturl">[docs]</a>    <span class="k">def</span> <span class="nf">recv_geturl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        geturl message handler.</span>
+<span class="sd">        Creates a new ryzom.views.View based on ddp_urlpattern configuration</span>
+<span class="sd">        and attach it to this consumer instance.</span>
+<span class="sd">        Renders the view then send it to the client</span>
+<span class="sd">        If a view as already been created, destroy it and creates the new one</span>
+<span class="sd">        view&#39;s callback (oncreate, ondestroy) are called here</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">to_url</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">ddp_urlpatterns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">to_url</span><span class="p">):</span>
+                <span class="n">cview</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;view&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">cview</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cview</span><span class="p">,</span> <span class="n">url</span><span class="o">.</span><span class="n">callback</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">cview</span><span class="o">.</span><span class="n">onurl</span><span class="p">(</span><span class="n">to_url</span><span class="p">)):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                            <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Success&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[]</span>
+                        <span class="p">}))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">cview</span><span class="p">:</span>
+                        <span class="n">cview</span><span class="o">.</span><span class="n">ondestroy</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">oncreate</span><span class="p">(</span><span class="n">to_url</span><span class="p">)</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Success&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="Consumer.recv_method"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.recv_method">[docs]</a>    <span class="k">def</span> <span class="nf">recv_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        method message handler.</span>
+<span class="sd">        Lookup methods then call them with the &#39;params&#39; key as parameter.</span>
+<span class="sd">        Methods writers should handle that params.</span>
+<span class="sd">        Methods should return a value that evaluates to True on Success.</span>
+<span class="sd">        Methods return value should be serializable, it will be sent</span>
+<span class="sd">        to the client as parameter for the callback</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">to_send</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">]}</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">server_methods</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Not found&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">f</span><span class="s1">&#39;Method </span><span class="si">{params[&quot;name&quot;]}</span><span class="s1"> not found&#39;</span>
+                <span class="p">}</span>
+            <span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+                <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Success&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">ret</span>
+                <span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">ret</span>
+                <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">to_send</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Consumer.insert_component"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.insert_component">[docs]</a>    <span class="k">def</span> <span class="nf">insert_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">change</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This method is meant to be called by the DDP dispacher.</span>
+<span class="sd">        It send a DDP insert/change message to the client with</span>
+<span class="sd">        a serialized component as params</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;DDP&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;insert&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">change</span> <span class="k">else</span> <span class="s1">&#39;change&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;instance&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}))</span></div>
+
+<div class="viewcode-block" id="Consumer.remove_component"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.remove_component">[docs]</a>    <span class="k">def</span> <span class="nf">remove_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        This method is meant to be called by the DDP dispacher.</span>
+<span class="sd">        It send a DDP remove message to the client with the parent</span>
+<span class="sd">        and _id of the component to remove as params</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;DDP&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;remove&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;parent&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;parent&#39;</span><span class="p">]</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}))</span></div>
+
+<div class="viewcode-block" id="Consumer.handle_ddp"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.handle_ddp">[docs]</a>    <span class="k">def</span> <span class="nf">handle_ddp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        DDP dispacher.</span>
+<span class="sd">        handler for &#39;handle.ddp&#39; messages sent over the channel layer.</span>
+<span class="sd">        dispaches the message to the above two methods</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;inserted&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert_component</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;changed&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert_component</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;removed&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_component</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Consumer.recv_subscribe"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.recv_subscribe">[docs]</a>    <span class="k">def</span> <span class="nf">recv_subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        subscribe message handler.</span>
+<span class="sd">        Creates a new subscription for the current Client.</span>
+<span class="sd">        &#39;subscribe&#39; params should contain:</span>
+<span class="sd">        - an &#39;_id&#39; key, which refer to the component that asks for</span>
+<span class="sd">        a subscription</span>
+<span class="sd">        - a &#39;name&#39; key, corresponding to the name of the publication</span>
+<span class="sd">        this subscription is about</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="n">to_send</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">]}</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">Clients</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;_id&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bad format&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">f</span><span class="s1">&#39;Subscription </span><span class="si">{key}</span><span class="s1"> not found&#39;</span>
+                    <span class="p">}</span>
+                <span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">to_send</span><span class="p">))</span>
+                <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Client not found&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No client was found for this channel name&#39;</span>
+                <span class="p">}</span>
+            <span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pub</span> <span class="o">=</span> <span class="n">Publications</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+            <span class="n">sub</span> <span class="o">=</span> <span class="n">Subscriptions</span><span class="p">(</span>
+                    <span class="n">publication</span><span class="o">=</span><span class="n">pub</span><span class="p">,</span>
+                    <span class="n">parent</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+                    <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">)</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            <span class="n">sub</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="n">to_send</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;sub_id&#39;</span><span class="p">:</span> <span class="n">sub</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">}</span>
+            <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">to_send</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Consumer.recv_unsubscribe"><a class="viewcode-back" href="../../ryzom.consumers.html#ryzom.consumers.Consumer.recv_unsubscribe">[docs]</a>    <span class="k">def</span> <span class="nf">recv_unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        unsubscribe message handler.</span>
+<span class="sd">        not implemented yes but meant to delete the subscription</span>
+<span class="sd">        attached to the current Client/Publication name from DB</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;_id&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;unsubscribed&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Got unsub&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}))</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">ryzom</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../ryzom.html">ryzom package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

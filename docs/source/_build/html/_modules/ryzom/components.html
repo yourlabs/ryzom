@@ -1,0 +1,386 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ryzom.components &#8212; ryzom  documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ryzom.components</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Ryzom components declarations.</span>
+<span class="sd">There&#39;s still a lot of tags missing.</span>
+<span class="sd">They will be added when they&#39;ll be needed</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">jsonpickle</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+
+<div class="viewcode-block" id="Component"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component">[docs]</a><span class="k">class</span> <span class="nc">Component</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Main ryzom component &#39;abstract&#39; class to be inherited.</span>
+
+<span class="sd">    This class defines the common attributes and methods to all</span>
+<span class="sd">    components,the main one being to_obj() that format an instance</span>
+<span class="sd">    as a serializable dict that can be sent to the client over websocket</span>
+<span class="sd">    the to_html() method is missing for now, it will be usefull when</span>
+<span class="sd">    implementing Server-Side Rendering</span>
+
+<span class="sd">    Upon creation, if not precised, an instance of the Component class</span>
+<span class="sd">    is considered as a child of the &lt;html&gt; tag, this is not guaranteed</span>
+<span class="sd">    to be kept in a near future, because it&#39;s totally useless.</span>
+<span class="sd">    Being a childnode of &lt;body&gt; seem a lot more meaningfull.</span>
+<span class="sd">    If no _id is precised, a random (but still unique) one will be</span>
+<span class="sd">    generated.</span>
+
+<span class="sd">    :param str tag: The HTML tag of the component</span>
+<span class="sd">    :param list&lt;Component&gt; content: The component instances contained \</span>
+<span class="sd">            by the current instance</span>
+<span class="sd">    :param dict attr: HTML attributes (id, class, style, ...)</span>
+<span class="sd">    :param dict events: The events to add listeners to \</span>
+<span class="sd">            (click, hover, ...)</span>
+<span class="sd">    :param str parent: The id of the component that contains the \</span>
+<span class="sd">            current instance</span>
+<span class="sd">    :param str _id: The _id of the current instance (must be unique)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">tag</span><span class="o">=</span><span class="s1">&#39;div&#39;</span><span class="p">,</span>
+                 <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">events</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span>
+                 <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="n">_id</span> <span class="ow">or</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;HTML&#39;</span> <span class="k">if</span> <span class="n">parent</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">tag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">attr</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">attr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">events</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">events</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">content</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">preparecontent</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Component.preparecontent"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.preparecontent">[docs]</a>    <span class="k">def</span> <span class="nf">preparecontent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Set the parent and position of children</span>
+
+<span class="sd">        meant to be called by __init__().</span>
+<span class="sd">        This method sets the current component as parent of each child</span>
+<span class="sd">        Moreover it sets the child&#39;s position attribute to its index</span>
+<span class="sd">        in the current component&#39;s content list</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># handle text node as content</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">):</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="p">[</span><span class="n">Text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="Component.addchild"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.addchild">[docs]</a>    <span class="k">def</span> <span class="nf">addchild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Add a child component</span>
+
+<span class="sd">        Currently not used at all, but meant to push a new child</span>
+<span class="sd">        at the end of the content&#39;s list</span>
+<span class="sd">        A call to preparecontent() should follow the call to this method</span>
+
+<span class="sd">        :param Component component: The child component to add to the \</span>
+<span class="sd">                content of the current instance</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">component</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">component</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">component</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Component.addchildren"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.addchildren">[docs]</a>    <span class="k">def</span> <span class="nf">addchildren</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">components</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Add a list of children</span>
+
+<span class="sd">        Currently not used at all, meant to push children at the</span>
+<span class="sd">        end of the content&#39;s list.</span>
+<span class="sd">        A call to preparecontent() should follow the call to this method</span>
+
+<span class="sd">        :param list(Component) components: The component list to insert \</span>
+<span class="sd">                in the content of the current instance</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addchild</span><span class="p">(</span><span class="n">component</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Component.addevents"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.addevents">[docs]</a>    <span class="k">def</span> <span class="nf">addevents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Add events to instance</span>
+
+<span class="sd">        Currently not used, meant to add/update a dict of eventListener</span>
+<span class="sd">        attached to the DOM element associated with this instance</span>
+
+<span class="sd">        :param dict events: The dict to update events with</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">events</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Component.to_json"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        No more used, subject to deletion</span>
+
+<span class="sd">        :returns: A serialized JSON representation of the instance</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">jsonpickle</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Component.to_obj"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Component.to_obj">[docs]</a>    <span class="k">def</span> <span class="nf">to_obj</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Get a serializable dict of the instance</span>
+
+<span class="sd">        This methods returns a dict representation of the current</span>
+<span class="sd">        instance. I handles subscriptions that will have this component</span>
+<span class="sd">        instance _id as parent attribute.</span>
+<span class="sd">        Recursively sets the content as dict too (maybe recursiveness is not</span>
+<span class="sd">        a good thing to do without any control of how deep can the tree be,</span>
+<span class="sd">        there&#39;s a risk of stack overflow that we must keep in mind)</span>
+
+<span class="sd">        :returns: A serializable representation of the instance</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">to_obj</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span>
+            <span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">!=</span> <span class="s1">&#39;text&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+            <span class="s1">&#39;parent&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span>
+            <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span><span class="p">,</span>
+            <span class="s1">&#39;events&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">,</span>
+            <span class="s1">&#39;attr&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr</span><span class="p">,</span>
+            <span class="s1">&#39;subscriptions&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;subscriptions&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="p">}</span></div></div>
+
+
+<div class="viewcode-block" id="Div"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Div">[docs]</a><span class="k">class</span> <span class="nc">Div</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Div component</span>
+
+<span class="sd">    Represents a &lt;div&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;div&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ul"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Ul">[docs]</a><span class="k">class</span> <span class="nc">Ul</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Ul component</span>
+
+<span class="sd">    Represents a &lt;ul&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;ul&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ol"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Ol">[docs]</a><span class="k">class</span> <span class="nc">Ol</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Ol component</span>
+
+<span class="sd">    Represents a &lt;ol&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;ol&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Li"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Li">[docs]</a><span class="k">class</span> <span class="nc">Li</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Li component</span>
+
+<span class="sd">    Represents a &lt;li&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;li&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Span"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Span">[docs]</a><span class="k">class</span> <span class="nc">Span</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Span component</span>
+
+<span class="sd">    Represents a &lt;span&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;span&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Text"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Text">[docs]</a><span class="k">class</span> <span class="nc">Text</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Text component</span>
+
+<span class="sd">    Represents a HTML text node</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Form"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Form">[docs]</a><span class="k">class</span> <span class="nc">Form</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Form component</span>
+
+<span class="sd">    Represents a &lt;form&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;form&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Input"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Input">[docs]</a><span class="k">class</span> <span class="nc">Input</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Input component</span>
+
+<span class="sd">    Represents a &lt;input&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Button"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Button">[docs]</a><span class="k">class</span> <span class="nc">Button</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Button component</span>
+
+<span class="sd">    Represents a &lt;button&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;button&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Nav"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.Nav">[docs]</a><span class="k">class</span> <span class="nc">Nav</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Nav component</span>
+
+<span class="sd">    Represents a &lt;nav&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;nav&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="H1"><a class="viewcode-back" href="../../ryzom.components.html#ryzom.components.H1">[docs]</a><span class="k">class</span> <span class="nc">H1</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    H1 component</span>
+
+<span class="sd">    Represents a &lt;h1&gt; HTML tag</span>
+
+<span class="sd">    :parameters: see :class:`Component`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="p">[],</span> <span class="n">attr</span><span class="o">=</span><span class="p">{},</span> <span class="n">events</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">parent</span><span class="o">=</span><span class="s1">&#39;body&#39;</span><span class="p">,</span> <span class="n">_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">_id</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">ryzom</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../ryzom.html">ryzom package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

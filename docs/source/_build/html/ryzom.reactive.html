@@ -1,0 +1,176 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ryzom.reactive module &#8212; ryzom  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ryzom.routing module" href="ryzom.routing.html" />
+    <link rel="prev" title="ryzom.pubsub module" href="ryzom.pubsub.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-ryzom.reactive">
+<span id="ryzom-reactive-module"></span><h1>ryzom.reactive module<a class="headerlink" href="#module-ryzom.reactive" title="Permalink to this headline">¶</a></h1>
+<p>Defines the ReactiveComponent class to be inherited
+to create reactive content</p>
+<dl class="class">
+<dt id="ryzom.reactive.ReactiveComponent">
+<em class="property">class </em><code class="descclassname">ryzom.reactive.</code><code class="descname">ReactiveComponent</code><span class="sig-paren">(</span><em>name</em>, <em>view</em>, <em>tag='div'</em>, <em>content=[]</em>, <em>attr={}</em>, <em>events={}</em>, <em>parent='body'</em>, <em>_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/reactive.html#ReactiveComponent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.reactive.ReactiveComponent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">ryzom.components.Component</span></code></a></p>
+<p>Subclass of component with reactive content.
+It takes a unique name and a ryzom.views.View in addition
+to common component parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – The (unique) name of the instance</li>
+<li><strong>view</strong> (<a class="reference internal" href="ryzom.views.html#ryzom.views.View" title="ryzom.views.View"><em>View</em></a>) – The rizom View this instance is attached to</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="ryzom.reactive.ReactiveComponent.setcontent">
+<code class="descname">setcontent</code><span class="sig-paren">(</span><em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/reactive.html#ReactiveComponent.setcontent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.reactive.ReactiveComponent.setcontent" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method should be called only by the associated view
+to update the component contents, then it sends the new
+content to the client associated with the view instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>content</strong> (<em>list</em><em>(</em><a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a><em>)</em>) – A list of Component to replace                 the current content of the instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="ryzom.reactive.ReactiveDiv">
+<em class="property">class </em><code class="descclassname">ryzom.reactive.</code><code class="descname">ReactiveDiv</code><span class="sig-paren">(</span><em>name</em>, <em>view</em>, <em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/reactive.html#ReactiveDiv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.reactive.ReactiveDiv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ryzom.reactive.ReactiveComponent" title="ryzom.reactive.ReactiveComponent"><code class="xref py py-class docutils literal notranslate"><span class="pre">ryzom.reactive.ReactiveComponent</span></code></a></p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ryzom</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="ryzom.html">ryzom package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ryzom.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ryzom.apps.html">ryzom.apps module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.components.html">ryzom.components module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.consumers.html">ryzom.consumers module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.ddp.html">ryzom.ddp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.models.html">ryzom.models module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.pubsub.html">ryzom.pubsub module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ryzom.reactive module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.routing.html">ryzom.routing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.signals.html">ryzom.signals module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.urls.html">ryzom.urls module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.views.html">ryzom.views module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ryzom.html#module-ryzom">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="ryzom.html">ryzom package</a><ul>
+      <li>Previous: <a href="ryzom.pubsub.html" title="previous chapter">ryzom.pubsub module</a></li>
+      <li>Next: <a href="ryzom.routing.html" title="next chapter">ryzom.routing module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/ryzom.reactive.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

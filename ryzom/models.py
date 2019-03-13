@@ -1,3 +1,7 @@
+'''
+This file defines the models needed for ryzom pub/sub system.
+They're not intended to be used by end-user.
+'''
 import importlib
 
 from django.db import models
@@ -8,6 +12,14 @@ from ryzom.ddp import send_insert
 
 
 class Clients(models.Model):
+    '''
+    Clients are the representation of connected Clients
+    over websockets. It stores the channel name of a single
+    client to communicate over the channel layer
+    The user field is not used for now but in a near future
+    it will be used to store the user using this channel
+    once it's connected
+    '''
     channel = models.CharField(max_length=255)
     user = models.ForeignKey(
                 User,
@@ -18,6 +30,16 @@ class Clients(models.Model):
 
 
 class Publications(models.Model):
+    '''
+    Publications model is used to store the apps publications
+    Each publication should have a unique name and define
+    the component used as template for the publicated model.
+    One can publish a model multiple time with varying templates
+    or query.
+    The query is a JSON field containing informations on what and
+    how to publish about the model concerned, such as
+    order_by, limit, offset, filters and more soon
+    '''
     name = models.CharField(max_length=255, unique=True)
     model_module = models.CharField(max_length=255)
     model_class = models.CharField(max_length=255)
@@ -27,12 +49,29 @@ class Publications(models.Model):
 
 
 class Subscriptions(models.Model):
+    '''
+    A subscription is an object representing the relation between
+    a client and a publication. It also stores the _id of the component
+    that subscribes to a given publication, and the queryset
+    computed from that publication query. This queryset is computed
+    per-subscription to permit user specific sets
+    After being instanciated, a subscription must be initialized by
+    it's init() method so that it fills the component asking for it
+    by its content via ryzom.ddp send_insert.
+    '''
     parent = models.CharField(max_length=255)
     client = models.ForeignKey(Clients, models.CASCADE)
     publication = models.ForeignKey(Publications, models.CASCADE)
     queryset = ArrayField(models.IntegerField(), default=list)
 
     def init(self):
+        '''
+        This method is used to populate the component which made
+        the current subsription with its content, and to compute
+        the queryset for the first time.
+        This part is subject to near changes when SSR will be
+        implemented
+        '''
         pub = self.publication
         model_mod = importlib.import_module(pub.model_module)
         model_cls = getattr(model_mod, pub.model_class)
@@ -44,6 +83,15 @@ class Subscriptions(models.Model):
             send_insert(self, model_cls, tmpl_cls, _id)
 
     def exec_query(self, model):
+        '''
+        This method computes the publication query and create/update the
+        queryset for the current subscription.
+        It supports somme special variables such as $count and $user that
+        are parsed and replaced with, respectively, the queryset.count()
+        value and the current user associated with the subscription client
+        More will come with special variables and function. Such as an $add
+        to replace that ugly tupple i'm using for now.. to be discussed
+        '''
         # such an ugly code!
         # I really have to makes this clearer...and more robust!
         # but it works for now

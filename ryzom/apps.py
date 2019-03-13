@@ -3,9 +3,21 @@ from django.db import OperationalError, ProgrammingError
 
 
 class RyzomConfig(AppConfig):
+    '''
+    Ryzom application configuration
+    '''
     name = 'ryzom'
 
     def ready(self):
+        '''
+        AppConfig.ready overloading.
+        Here we import the ryzom.signals module to connect
+        the signals handlers to receivers,
+        then we clean the Clients table (zombies clients stay after
+        a server reboot)
+        Finally, we create the publications that were registered
+        in the to_publish list of ryzom.pusub module.
+        '''
         import ryzom.signals # noqa
         from ryzom.pubsub import to_publish
 

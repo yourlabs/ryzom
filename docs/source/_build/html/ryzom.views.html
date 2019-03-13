@@ -1,0 +1,258 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ryzom.views module &#8212; ryzom  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="ryzom.urls module" href="ryzom.urls.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-ryzom.views">
+<span id="ryzom-views-module"></span><h1>ryzom.views module<a class="headerlink" href="#module-ryzom.views" title="Permalink to this headline">¶</a></h1>
+<p>Defines the ryzom View class and the main index view</p>
+<dl class="class">
+<dt id="ryzom.views.View">
+<em class="property">class </em><code class="descclassname">ryzom.views.</code><code class="descname">View</code><span class="sig-paren">(</span><em>channel_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>View class, inherit from this class to create a ryzom View.
+the only parameter it take is the channel name of the client
+creating the view instance.
+It is necessary to overload the methods onurl and render when
+inheriting from this class.
+The methods oncreate() and ondestroy() can also be overloaded
+to run code on those events.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>channel_name</strong> (<em>str</em>) – The name of the channel this instance             is attached to</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="ryzom.views.View.addReactiveComponent">
+<code class="descname">addReactiveComponent</code><span class="sig-paren">(</span><em>component</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.addReactiveComponent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.addReactiveComponent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method intended to be used by reactive components.
+Registers a component to the reactive_components dict
+of the view instance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>component</strong> (<a class="reference internal" href="ryzom.reactive.html#ryzom.reactive.ReactiveComponent" title="ryzom.reactive.ReactiveComponent"><em>ReactiveComponent</em></a>) – The reactive component to                 attach to this View instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ryzom.views.View.oncreate">
+<code class="descname">oncreate</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.oncreate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.oncreate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook to optionaly overload.
+This method will be called whenever a new instance of a View is
+created by the consumer.
+Its aim is to setup the view data, such as content, url or whatever.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ryzom.views.View.ondestroy">
+<code class="descname">ondestroy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.ondestroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.ondestroy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook to optionaly overload.
+This method will be called whenever a instance of a View is
+destroyed by the consumer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ryzom.views.View.onurl">
+<code class="descname">onurl</code><span class="sig-paren">(</span><em>url</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.onurl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.onurl" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overloaded.
+This method will be called whenever a websocket url is required
+(see ryzom.consumers.recv_geturl) and routed to the same view
+controller.
+Its aim is to update the instance inheriting from this class
+on an geturl call.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ryzom.views.View.reactive">
+<code class="descname">reactive</code><span class="sig-paren">(</span><em>name</em>, <em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.reactive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.reactive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to update the content of a reactive component by name.
+the content parameter must be a subclass of ryzom.components.Component</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – The name of the                 <a class="reference internal" href="ryzom.reactive.html#ryzom.reactive.ReactiveComponent" title="ryzom.reactive.ReactiveComponent"><code class="xref py py-class docutils literal notranslate"><span class="pre">ryzom.reactive.ReactiveComponent</span></code></a> to update</li>
+<li><strong>content</strong> (<a class="reference internal" href="ryzom.components.html#ryzom.components.Component" title="ryzom.components.Component"><em>Component</em></a>) – The new content</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="ryzom.views.View.render">
+<code class="descname">render</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#View.render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.View.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overloaded.
+This method will be called whenever a websocket url is required
+and router to a new View controller.
+Its aim is to render a full content. After that, only reactive
+content should be updated by the onurl() method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<em>str</em>) – The url the client is trying to access</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="ryzom.views.index">
+<code class="descclassname">ryzom.views.</code><code class="descname">index</code><span class="sig-paren">(</span><em>request</em>, <em>url=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ryzom/views.html#index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ryzom.views.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default HTTP django view.
+This view renders the main ryzom template (index.html) to the client.
+index.html contains all the core JS ryzom logic in a basic HTML document.
+it defines the ‘url’ and ‘query_string’ variable, templated in the document
+to allow the JS router to know where it is.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ryzom</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="ryzom.html">ryzom package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ryzom.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ryzom.apps.html">ryzom.apps module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.components.html">ryzom.components module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.consumers.html">ryzom.consumers module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.ddp.html">ryzom.ddp module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.models.html">ryzom.models module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.pubsub.html">ryzom.pubsub module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.reactive.html">ryzom.reactive module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.routing.html">ryzom.routing module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.signals.html">ryzom.signals module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ryzom.urls.html">ryzom.urls module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ryzom.views module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ryzom.html#module-ryzom">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="ryzom.html">ryzom package</a><ul>
+      <li>Previous: <a href="ryzom.urls.html" title="previous chapter">ryzom.urls module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/ryzom.views.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
