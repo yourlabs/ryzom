@@ -1,3 +1,4 @@
 django
 channels
 channels-redis
+psycopg2
