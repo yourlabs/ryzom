@@ -12,8 +12,10 @@ then juste run ./manage.py runserver from the root directory of this project
 
 What to do next?
 
-Documentation for sure.
-Plus a tutorial
+OK/ Documentation for sure.
+OK/ Automatic websocket reconnection and page reloading on success
+
+A tutorial
 
 Authentication:
   - Without authentication and user specific filtering, it will remain a toy, a nice toy, but just a toy
@@ -23,8 +25,6 @@ Authentication:
 Server Side Rendering:
   - the first HTTP request should return a full HTML page
   - all links should be 'a' tag that have no effect on current location
-
-Automatic websocket reconnection and page reloading on success
 
 Change the way methods works, maybe by importing a dict and assigning funcptr to method name
 

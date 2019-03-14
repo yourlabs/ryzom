@@ -8,6 +8,10 @@
 <body>
 </body>
 <script>
+  $ = function(q) {
+    return document.querySelector(q);
+  };
+
   ID = function(){
     function chr4(){
       return Math.random().toString(16).slice(-4);
@@ -73,10 +77,6 @@
     return elem;
   };
 
-  var ws = new WebSocket(
-    'ws://' + window.location.host + '/ws/ddp/'
-  );
-
   handleDDP = function(data) {
     switch (data.type) {
       case 'insert': constructDOM(data.params); break;
@@ -112,34 +112,6 @@
     parent.removeChild(prev_node);
     prev_node = parent.childNodes[params.position]
     parent.insertBefore(cur_node, prev_node)
-  };
-
-  ws.onmessage = function(e) {
-    var data = JSON.parse(e.data);
-    var result, error;
-    switch (data.type) {
-      case 'Connected': init(); break;
-      case 'DDP': handleDDP(data.params); break;
-      default:
-        if (data.type == 'Error')
-          error = data;
-        else if (data.type == 'Success')
-          result = data;
-
-        ws.callbacks[data._id](result, error);
-        delete ws.callbacks[data._id]
-    };
-  };
-
-  ws.onclose = function(e) {
-  };
-
-  ws.callbacks = [];
-  ws_send = function(data, cb) {
-    var _id = ID();
-    data._id = _id;
-    ws.callbacks[_id] = cb;
-    ws.send(JSON.stringify(data));
   };
 
   var initialized = false;
@@ -182,13 +154,6 @@
     }
   };
 
-  onwsready = function(cb) {
-    if (typeof(window.onwsready_cb) == 'undefined') {
-      window.onwsready_cb = []
-    }
-    window.onwsready_cb.push(cb);
-  };
-
   init = function() {
     setup();
     window.onwsready_cb.forEach(function(cb) {
@@ -196,10 +161,6 @@
     });
     initialized = true;
   };
-
-  onwsready(function() {
-    route(current_url, query_string);
-  });
 
   call = function(name, params) {
     ws_send({
@@ -214,9 +175,64 @@
     });
   };
 
-  $ = function(q) {
-    return document.querySelector(q);
+  var ws;
+
+  ws_connect = function(reconnecting) {
+    ws = new WebSocket(
+      'ws://' + window.location.host + '/ws/ddp/'
+    );
+
+    if (reconnecting) {
+      ws.onopen = function() {
+        window.location.reload(true);
+      };
+    };
+
+    ws.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+      var result, error;
+      switch (data.type) {
+        case 'Connected': init(); break;
+        case 'DDP': handleDDP(data.params); break;
+        default:
+          if (data.type == 'Error')
+            error = data;
+          else if (data.type == 'Success')
+            result = data;
+
+          ws.callbacks[data._id](result, error);
+          delete ws.callbacks[data._id]
+      };
+    };
+
+    ws.onclose = function(e) {
+      setTimeout(function() {
+        ws_connect(true);
+      }, 1000);
+    };
+
+    ws.callbacks = [];
   };
+
+  ws_connect();
+
+  ws_send = function(data, cb) {
+    var _id = ID();
+    data._id = _id;
+    ws.callbacks[_id] = cb;
+    ws.send(JSON.stringify(data));
+  };
+
+  onwsready = function(cb) {
+    if (typeof(window.onwsready_cb) == 'undefined') {
+      window.onwsready_cb = []
+    }
+    window.onwsready_cb.push(cb);
+  };
+
+  onwsready(function() {
+    route(current_url, query_string);
+  });
 
 </script>
 </html>
