@@ -7,7 +7,7 @@ class Task(Li):
         content = [
             Span(task_object.about),
             Button('Done', {'class': 'btn float-right'}, {
-                'click': f'call("remove_task", {{id: {task_object.id}}})'
+                'click': f'ryzom.call("remove_task", {{id: {task_object.id}}})'
             })
         ]
         super().__init__(content, attr, _id=f'task_{task_object.id}')
@@ -44,7 +44,7 @@ class Taskform(Div):
                                     'class': 'btn btn-primary'
                                 },
                                 events={
-                                    'click': 'call("insert_task", {   \
+                                    'click': 'ryzom.call("insert_task", {   \
                                         about: $("#task_input").value \
                                     }); $("#task_input").value = ""'
                                 }

@@ -134,4 +134,6 @@ STATIC_ROOT = 'static/'
 
 # ryzom settings
 DDP_URLPATTERNS = 'todos.routing'
-SERVER_METHODS = 'todos.methods'
+SERVER_METHODS = [
+        'todos.methods'
+    ]
