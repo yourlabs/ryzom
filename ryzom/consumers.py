@@ -8,7 +8,7 @@ import importlib
 import json
 
 from channels.generic.websocket import JsonWebsocketConsumer
-from channels.auth import get_user, login, logout
+from channels.auth import get_user, login
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
@@ -125,34 +125,31 @@ class Consumer(JsonWebsocketConsumer, object):
             }))
 
     def recv_login(self, data):
-        params = data['params']
-        username = params.get('username', None)
-        password = params.get('password', None)
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user:
-                async_to_sync(login)(self.scope, user)
-                self.scope['session'].save()
-                client = Clients.objects.get(channel=self.channel_name)
-                client.user = user
-                client.save()
-                token, created = Tokens.objects.get_or_create(user=user)
-                self.send(json.dumps({
-                    '_id': data['_id'],
-                    'type': 'Success',
-                    'params': {
-                        'token': f'{token.token}'
-                    }
-                }))
-            else:
-                self.send(json.dumps({
-                    '_id': data['_id'],
-                    'type': 'Error',
-                    'params': {
-                        'name': 'Credentials mismatch',
-                        'message': 'Wrong username/password combination'
-                    }
-                }))
+        credentials = data['params']
+        user = authenticate(**credentials)
+        if user:
+            async_to_sync(login)(self.scope, user)
+            self.scope['session'].save()
+            client = Clients.objects.get(channel=self.channel_name)
+            client.user = user
+            client.save()
+            token, created = Tokens.objects.get_or_create(user=user)
+            self.send(json.dumps({
+                '_id': data['_id'],
+                'type': 'Success',
+                'params': {
+                    'token': f'{token.token}'
+                }
+            }))
+        else:
+            self.send(json.dumps({
+                '_id': data['_id'],
+                'type': 'Error',
+                'params': {
+                    'name': 'Credentials mismatch',
+                    'message': 'Wrong username/password combination'
+                }
+            }))
 
     def recv_logout(self, data):
         pass
