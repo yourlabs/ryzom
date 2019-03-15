@@ -17,7 +17,7 @@ OK/ Automatic websocket reconnection and page reloading on success
 
 A tutorial
 
-Authentication:
+OK/ Authentication:
   - Without authentication and user specific filtering, it will remain a toy, a nice toy, but just a toy
   - With authentication, publishing can filter output by user and that will be great!
   - With authentication AND roles, it will become something really usable
@@ -26,7 +26,7 @@ Server Side Rendering:
   - the first HTTP request should return a full HTML page
   - all links should be 'a' tag that have no effect on current location
 
-Change the way methods works, maybe by importing a dict and assigning funcptr to method name
+OK/ Change the way methods works, maybe by importing a dict and assigning funcptr to method name
 
 Errors handling: It won't ever be stable enough without good errors
 
