@@ -162,25 +162,13 @@
     initialized = true;
   };
 
-  call = function(name, params) {
-    ws_send({
-      type: 'method',
-      params: {
-        name: name,
-        params: params
-      }
-    }, function(r, e) {
-      if (e)
-        console.log(e);
-    });
-  };
-
   var ws;
 
   ws_connect = function(reconnecting) {
-    ws = new WebSocket(
-      'ws://' + window.location.host + '/ws/ddp/'
-    );
+    ws_path = 'ws://' + window.location.host + '/ws/ddp/'
+    if (token = localStorage.getItem('auth_token'))
+      ws_path += '?' + token
+    ws = new WebSocket(ws_path);
 
     if (reconnecting) {
       ws.onopen = function() {
@@ -234,5 +222,34 @@
     route(current_url, query_string);
   });
 
+  ryzom = {
+    login: function(credentials) {
+      ws_send({
+        type: 'login',
+        params: credentials
+      }, function(r, e) {
+        if (e)
+          console.log(e);
+        else
+          localStorage.setItem('auth_token', r.params.token)
+      });
+    },
+
+    logout: function() {
+    },
+
+    call: function(name, params) {
+      ws_send({
+        type: 'method',
+        params: {
+          name: name,
+          params: params
+        }
+      }, function(r, e) {
+        if (e)
+          console.log(e);
+      });
+    }
+  };
 </script>
 </html>

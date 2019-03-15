@@ -3,12 +3,20 @@ This file defines the models needed for ryzom pub/sub system.
 They're not intended to be used by end-user.
 '''
 import importlib
+import secrets
 
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.postgres.aggregates import ArrayAgg
 from ryzom.ddp import send_insert
+
+
+class Tokens(models.Model):
+    '''
+    '''
+    token = models.CharField(default=secrets.token_urlsafe, max_length=255, unique=True)
+    user = models.OneToOneField(User, models.CASCADE)
 
 
 class Clients(models.Model):

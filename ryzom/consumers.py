@@ -8,15 +8,22 @@ import importlib
 import json
 
 from channels.generic.websocket import JsonWebsocketConsumer
-from channels.auth import get_user
+from channels.auth import get_user, login, logout
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
-from ryzom.models import Clients, Subscriptions, Publications
+from ryzom.methods import Methods
+from ryzom.models import Clients, Subscriptions, Publications, Tokens
 
 ddp_urlpatterns = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
-server_methods = importlib.import_module(settings.SERVER_METHODS).Methods
+
+for module in settings.SERVER_METHODS:
+    importlib.import_module(module)
+'''
+Import all user defined server methods from the SERVER_METHODS settings
+'''
 
 
 class Consumer(JsonWebsocketConsumer, object):
@@ -31,12 +38,20 @@ class Consumer(JsonWebsocketConsumer, object):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
-        self.accept()
         user = async_to_sync(get_user)(self.scope)
+        token = self.scope['query_string']
+        if token:
+            user_token = Tokens.objects.filter(token=token.decode()).last()
+            if user_token:
+                user = user_token.user
+                async_to_sync(login)(self.scope, user)
+                self.scope['session'].save()
+
         Clients.objects.create(
                 channel=self.channel_name,
                 user=user if isinstance(user, User) else None
         )
+        self.accept()
         self.send(json.dumps({'type': 'Connected'}))
 
     def disconnect(self, close_code):
@@ -82,13 +97,13 @@ class Consumer(JsonWebsocketConsumer, object):
             }))
             return
 
-        if msg_type in ['subscribe', 'unsubscribe', 'method', 'geturl']:
+        if msg_type in [
+                'subscribe', 'unsubscribe',
+                'method', 'geturl',
+                'login', 'logout']:
             func = getattr(self, f'recv_{msg_type}', None)
             if func:
-                try:
-                    func(data)
-                except KeyError as e:
-                    print(e)
+                if not data.get('params', None):
                     self.send(json.dumps({
                         '_id': data.get('_id'),
                         'type': 'Error',
@@ -97,6 +112,8 @@ class Consumer(JsonWebsocketConsumer, object):
                             'message': '"params" key not found'
                         }
                     }))
+                else:
+                    func(data)
         else:
             self.send(json.dumps({
                 '_id': data['_id'],
@@ -106,6 +123,39 @@ class Consumer(JsonWebsocketConsumer, object):
                     'message': f'{msg_type} not recognized'
                 }
             }))
+
+    def recv_login(self, data):
+        params = data['params']
+        username = params.get('username', None)
+        password = params.get('password', None)
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if user:
+                async_to_sync(login)(self.scope, user)
+                self.scope['session'].save()
+                client = Clients.objects.get(channel=self.channel_name)
+                client.user = user
+                client.save()
+                token, created = Tokens.objects.get_or_create(user=user)
+                self.send(json.dumps({
+                    '_id': data['_id'],
+                    'type': 'Success',
+                    'params': {
+                        'token': f'{token.token}'
+                    }
+                }))
+            else:
+                self.send(json.dumps({
+                    '_id': data['_id'],
+                    'type': 'Error',
+                    'params': {
+                        'name': 'Credentials mismatch',
+                        'message': 'Wrong username/password combination'
+                    }
+                }))
+
+    def recv_logout(self, data):
+        pass
 
     def recv_geturl(self, data):
         '''
@@ -151,7 +201,7 @@ class Consumer(JsonWebsocketConsumer, object):
         '''
         to_send = {'_id': data['_id']}
         params = data['params']
-        method = getattr(server_methods, params['name'], None)
+        method = Methods.get(params['name'])
         if method is None:
             to_send.update({
                 'type': 'Error',
@@ -161,7 +211,8 @@ class Consumer(JsonWebsocketConsumer, object):
                 }
             })
         else:
-            ret = method(params['params'])
+            user = async_to_sync(get_user)(self.scope)
+            ret = method(user, params['params'])
             if ret:
                 to_send.update({
                     'type': 'Success',
