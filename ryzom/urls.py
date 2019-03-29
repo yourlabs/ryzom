@@ -9,8 +9,8 @@ from django.conf.urls.static import static
 
 from . import views
 
-urlpatterns = static(settings.STATIC_URL,
-                     document_root=settings.STATIC_ROOT) + [
+urlpatterns = static('ryzom/static/', document_root='ryzom/static/') + \
+        static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + [
         path('', views.index, name='index'),
         path('<path:url>', views.index, name='index')
 ]
