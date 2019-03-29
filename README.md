@@ -22,7 +22,7 @@ OK/ Authentication:
   - With authentication, publishing can filter output by user and that will be great!
   - With authentication AND roles, it will become something really usable
 
-Server Side Rendering:
+OK/ Server Side Rendering:
   - the first HTTP request should return a full HTML page
   - all links should be 'a' tag that have no effect on current location
 
