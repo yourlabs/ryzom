@@ -35,14 +35,15 @@ class ReactiveComponent(Component):
         self.content = content
         self.preparecontent()
         channel_name = self.view.channel_name
-        channel = get_channel_layer()
-        async_to_sync(channel.send)(channel_name, {
-            'type': 'handle.ddp',
-            'params': {
-                'type': 'changed',
-                'instance': self.to_obj()
-            }
-        })
+        if channel_name:
+            channel = get_channel_layer()
+            async_to_sync(channel.send)(channel_name, {
+                'type': 'handle.ddp',
+                'params': {
+                    'type': 'changed',
+                    'instance': self.to_obj()
+                }
+            })
 
 
 class ReactiveDiv(ReactiveComponent):

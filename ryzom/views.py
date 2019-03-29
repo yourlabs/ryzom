@@ -1,7 +1,17 @@
 '''
 Defines the ryzom View class and the main index view
 '''
+import importlib
+import os
+
+from django.conf import settings
 from django.shortcuts import render
+from ryzom.components import Script
+
+dir_path = os.path.dirname(__file__)
+ryzom_js_file = os.path.join(dir_path, 'static/js/ryzom.js')
+ryzom_js_fd = open(ryzom_js_file, 'r')
+ryzom_js = f'{ryzom_js_fd.read()}\n'
 
 
 class View():
@@ -69,6 +79,46 @@ class View():
         '''
         raise NotImplementedError
 
+    def renderHTML(self, url, qs):
+
+        content = self.render()
+
+        def find_tag(c, t):
+            if c.tag == t:
+                return c
+            for children in c.content:
+                if c.tag != 'text':
+                    tag = find_tag(children, t)
+                    if tag:
+                        return tag
+
+        script = f'current_url = "{url}";\nquery_string = "{qs}";\n'
+        script += ryzom_js
+        script += self.renderScript(content)
+
+        body = find_tag(content, 'body')
+        body.addchild(Script(script))
+
+        return content.to_html()
+
+    def renderScript(self, content, set_tag=True):
+        script = '(function() {' if set_tag else ''
+        content = content if isinstance(content, list) else [content]
+        for component in content:
+            for sub in component.subscriptions:
+                script += f'ryzom.subscribe("{sub}","{component._id}",'
+                script += 'function(r,e){if (e) {console.log(e);}});\n'
+            for event, cb in component.events.items():
+                script += f'getElementByUuid("{component._id}").'
+                script += f'addEventListener("{event}",' + \
+                          f'function(e){{{cb}}});\n'
+
+            if component.tag is not 'text':
+                script += self.renderScript(component.content, False)
+        if set_tag:
+            script += '})();'
+        return script
+
     def oncreate(self, url):
         '''
         Hook to optionaly overload.
@@ -97,7 +147,15 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
+    view = None
+    urls = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
+    for u in urls:
+        if u.pattern.match(url):
+            view = u.callback('')
+            view.oncreate(url)
+            view.onurl(url)
+            break
+
     return render(request, 'index.html', {
-            'url': url,
-            'query_string': request.GET.urlencode()
-        })
+        'html_content': view.renderHTML(url, request.GET.urlencode())
+    })

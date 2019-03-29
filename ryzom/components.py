@@ -33,6 +33,9 @@ class Component():
             current instance
     :param str _id: The _id of the current instance (must be unique)
     '''
+
+    __subscriptions = []
+
     def __init__(self,
                  tag='div',
                  content=None,
@@ -64,7 +67,10 @@ class Component():
                 c.parent = self._id
                 c.position = i
         elif isinstance(self.content, str) and self.tag is not 'text':
-            self.content = [Text(self.content)]
+            if self.content:
+                self.content = [Text(self.content)]
+            else:
+                self.content = []
 
     def addchild(self, component):
         '''Add a child component
@@ -134,8 +140,71 @@ class Component():
             'position': self.position,
             'events': self.events,
             'attr': self.attr,
-            'subscriptions': getattr(self, 'subscriptions', [])
+            'subscriptions': self.subscriptions
         }
+
+    @property
+    def subscriptions(self):
+        return self.__subscriptions
+
+    @subscriptions.setter
+    def subscriptions(self, value=[]):
+        self.__subscriptions = value
+
+    def to_html(self):
+        if self.tag == 'text':
+            return f'{self.content}'
+        attr = ''
+        for k, v in self.attr.items():
+            attr += f'{k}="{v}" '
+        attr += f'ryzom-id="{self._id}"'
+        html = ''
+        if getattr(self, 'selfclose', False):
+            html = f'<{self.tag} {attr}/>'
+        elif getattr(self, 'noclose', False):
+            html = f'<{self.tag} {attr}>'
+        else:
+            html = f'<{self.tag} {attr}>'
+            for c in self.content:
+                html += c.to_html()
+            html += f'</{self.tag}>'
+        return html
+
+
+class Html(Component):
+    def __init__(self, content=[]):
+        super().__init__('html', content, parent=None, _id='html')
+
+
+class Head(Component):
+    def __init__(self, content=[]):
+        super().__init__('head', content, parent='html', _id='head')
+
+
+class Body(Component):
+    def __init__(self, content=[]):
+        super().__init__('body', content, parent='html', _id='body')
+
+
+class Title(Component):
+    def __init__(self, content=''):
+        super().__init__('title', content, parent='head', _id='title')
+
+
+class Meta(Component):
+    def __init__(self, attr={}):
+        super().__init__('meta', attr=attr, parent='head')
+
+
+class Link(Component):
+    def __init__(self, attr={}):
+        self.noclose = True
+        super().__init__('link', attr=attr, parent='head')
+
+
+class Script(Component):
+    def __init__(self, content='', attr={}):
+        super().__init__('script', content, attr, parent='head')
 
 
 class Div(Component):
@@ -149,6 +218,12 @@ class Div(Component):
     def __init__(self, content=[], attr={}, events={},
                  parent='body', _id=None):
         super().__init__('div', content, attr, events, parent, _id)
+
+
+class A(Component):
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('a', content, attr, events, parent, _id)
 
 
 class Ul(Component):
