@@ -88,7 +88,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'django_ddp_test_project',
-        'USER': 'tmignot'
+        'USER': ''
     }
 }
 
