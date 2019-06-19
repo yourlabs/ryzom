@@ -163,7 +163,7 @@ class Consumer(JsonWebsocketConsumer, object):
         If a view as already been created, destroy it and creates the new one
         view's callback (oncreate, ondestroy) are called here
         '''
-        to_url = data['params']['url']
+        to_url = data['params'].get('url', '/')
         for url in ddp_urlpatterns:
             if url.pattern.match(to_url):
                 cview = getattr(self, 'view', None)
