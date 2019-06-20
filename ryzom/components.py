@@ -88,6 +88,8 @@ class Component:
             for i, c in enumerate(self.content):
                 c.parent = self._id
                 c.position = i
+                if isinstance(c, str):
+                    self.content[i] = Text(c)
         elif isinstance(self.content, str) and self.tag is not 'text':
             if self.content:
                 self.content = [Text(self.content)]
