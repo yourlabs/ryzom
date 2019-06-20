@@ -3,11 +3,33 @@ Ryzom components declarations.
 There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
+import cli2
 import jsonpickle
 import uuid
 
 
-class Component():
+def component_html(path, *args, **kwargs):
+    from django.utils.safestring import mark_safe
+    try:
+        from jinja2.utils import Markup
+    except ImportError:
+        Markup = None
+    Component = cli2.Importable.factory(path).target
+    component = Component(*args, **kwargs)
+    html = component.to_html()
+    print()
+    print()
+    print()
+    print('HTML')
+    print(html)
+    print()
+    print()
+    if Markup:
+        html = Markup(html)
+    return mark_safe(html)
+
+
+class Component:
     '''Main ryzom component 'abstract' class to be inherited.
 
     This class defines the common attributes and methods to all
