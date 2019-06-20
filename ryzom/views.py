@@ -5,7 +5,7 @@ import importlib
 import os
 
 from django.conf import settings
-from django.shortcuts import render
+from django import http
 from ryzom.components import Script
 
 dir_path = os.path.dirname(__file__)
@@ -147,7 +147,4 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
-
-    return render(request, 'index.html', {
-        'html_content': request.ryzom.renderHTML(url, request.GET.urlencode())
-    })
+    return http.HttpResponse('<!DOCTYPE html>' + request.ryzom.renderHTML(url, request.GET.urlencode()))
