@@ -68,7 +68,7 @@ class Component:
         self._id = _id or uuid.uuid1().hex
         self.parent = parent
         self.position = 0
-        self.tag = 'HTML' if parent is None else tag
+        self.tag = tag
         self.attr = {} if attr is None else attr
         self.events = {} if events is None else events
         self.content = [] if content is None else content
