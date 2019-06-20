@@ -147,15 +147,7 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
-    view = None
-    urls = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
-    for u in urls:
-        if u.pattern.match(url):
-            view = u.callback('')
-            view.oncreate(url)
-            view.onurl(url)
-            break
 
     return render(request, 'index.html', {
-        'html_content': view.renderHTML(url, request.GET.urlencode())
+        'html_content': request.ryzom.renderHTML(url, request.GET.urlencode())
     })
