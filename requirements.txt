@@ -1,5 +1,0 @@
-django
-channels
-channels-redis
-psycopg2
-jsonpickle
