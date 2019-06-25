@@ -3,6 +3,7 @@ Ryzom components declarations.
 There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
+import cli2
 import jsonpickle
 import uuid
 
@@ -13,10 +14,11 @@ def component_html(path, *args, **kwargs):
         from jinja2.utils import Markup
     except ImportError:
         Markup = None
-    import cli2
     Component = cli2.Importable.factory(path).target
     component = Component(*args, **kwargs)
     html = component.to_html()
+
+    # DEBUG:
     print()
     print()
     print()
@@ -24,6 +26,7 @@ def component_html(path, *args, **kwargs):
     print(html)
     print()
     print()
+
     if Markup:
         html = Markup(html)
     return mark_safe(html)

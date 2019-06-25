@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'channels',
         'channels-redis',
+        'cli2',
         'jsonpickle',
     ],
     tests_require=['tox'],
@@ -25,7 +26,6 @@ setup(
         dev=[
             'django',
             'psycopg2',
-            'cli2',
         ],
     ),
     entry_points={
