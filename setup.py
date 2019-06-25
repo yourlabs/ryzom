@@ -25,6 +25,7 @@ setup(
         dev=[
             'django',
             'psycopg2',
+            'cli2',
         ],
     ),
     entry_points={
