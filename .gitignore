@@ -1,2 +1,20 @@
-__pycache__/
+# Python
+.cache
+*.egg-info
+.eggs/
+__pycache__
 *.py[cod]
+.tox
+.coverage
+.pytest_cache
+# Django
+db.sqlite3
+static/
+# Sphinx
+_build/
+# yarn
+node_modules
+yarn.lock
+yarn-error.log
+package-lock.json
+__javascript__/

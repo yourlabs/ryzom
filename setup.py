@@ -13,24 +13,28 @@ setup(
     author_email='jamespic@gmail.com',
     url='https://yourlabs.io/oss/ryzom',
     packages=find_packages(),
+    # packages=find_packages('src'),
+    # package_dir={'': 'src'},
     include_package_data=True,
     keywords='django frontend',
     install_requires=[
         'channels',
         'channels-redis',
         'cli2',
+        'django',
         'jsonpickle',
+        'psycopg2',
     ],
-    tests_require=['tox'],
+    tests_require=[
+        'tox',
+    ],
     extras_require=dict(
         dev=[
-            'django',
-            'psycopg2',
         ],
     ),
     entry_points={
         'console_scripts': [
-            'ryzom = manage:main',
+            'ryzom = project.manage:main',
         ],
     },
     classifiers=[
