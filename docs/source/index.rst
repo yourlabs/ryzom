@@ -10,6 +10,7 @@ Welcome to ryzom's documentation!
    :maxdepth: 4
    :caption: Contents:
 
+   install
    ryzom
 
 
