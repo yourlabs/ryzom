@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from ryzom.methods import Methods
-from todos.models import Tasks
+from todos.models import Task
 
 
 def create_user(user, params):
@@ -37,7 +37,7 @@ def create_user(user, params):
 def insert_task(user, params):
     if 'about' in params:
         user = user if user.id else None
-        t = Tasks(user=user, about=params['about'])
+        t = Task(user=user, about=params['about'])
         t.save()
         return True
     return False
@@ -45,7 +45,7 @@ def insert_task(user, params):
 
 def remove_task(user, params):
     if 'id' in params:
-        t = Tasks.objects.get(id=params['id'])
+        t = Task.objects.get(id=params['id'])
         if t:
             t.delete()
             return True

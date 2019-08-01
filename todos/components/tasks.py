@@ -13,13 +13,13 @@ class Task(Li):
         super().__init__(content, attr, _id=f'task_{task_object.id}')
 
 
-class Tasklist(Ul):
+class TaskList(Ul):
     def __init__(self):
-        self.subscriptions = ['tasks']
+        self.subscriptions = ['task']
         super().__init__(attr={'class': 'list-group'}, _id='tasklist')
 
 
-class Taskform(Div):
+class TaskForm(Div):
     def __init__(self):
         attr = {
             'class': 'form-group',

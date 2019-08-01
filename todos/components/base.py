@@ -2,7 +2,7 @@ from ryzom.components import Html, Head, Body, Meta, Title, Link
 from ryzom.components import Div, A, Nav, H1
 from ryzom.reactive import ReactiveDiv
 from todos.components.home import Welcome
-from todos.components.tasks import Tasklist, Taskform
+from todos.components.tasks import TaskList, TaskForm
 
 
 class Document(Html):
@@ -29,8 +29,8 @@ class Base(Div):
                 'href': '/'
             }),
             ReactiveDiv('main-container', view, [
-                Tasklist(),
-                Taskform()
+                TaskList(),
+                TaskForm()
             ]) if view.url == 'todos'
             else ReactiveDiv('main-container', view, [Welcome()])
         ]
