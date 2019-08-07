@@ -21,6 +21,7 @@ setup(
         'channels',
         'channels-redis',
         'cli2',
+        'crudlfap',
         'django',
         'jsonpickle',
         'psycopg2',
