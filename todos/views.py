@@ -1,7 +1,7 @@
 from ryzom.views import View
 from todos.components.base import Document
 from todos.components.home import Welcome
-from todos.components.tasks import TaskList, TaskForm
+from todos.components.task import TaskList, TaskForm
 
 
 class Layout(View):

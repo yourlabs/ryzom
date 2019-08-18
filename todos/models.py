@@ -12,7 +12,7 @@ class Task(models.Model, Publishable):
 
 Task.publish(
         name='task',
-        template='todos.components.tasks.Task',
+        template='todos.components.task.Task',
         query=[
             {'order_by': 'about'},
             {'offset': ('$count', -5)},
