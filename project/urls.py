@@ -31,6 +31,7 @@ from django.conf.urls import include, url, re_path
 from django.views.static import serve
 
 urlpatterns = [
+    url('^', include('ryzom.urls')),
     crudlfap.site.urlpattern,
     re_path(
         r'^%s(?P<path>.*)$' % settings.STATIC_URL.lstrip('/'),
