@@ -20,7 +20,7 @@ class TaskCreateView(TaskMixin, crudlfap.CreateView):
 
 class TaskRouter(crudlfap.Router):
     fields = '__all__'
-    icon = 'tasks'
+    material_icon = 'view_list'
     model = Task
 
     views = [
