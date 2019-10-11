@@ -4,6 +4,7 @@ INSTALLED_APPS = [  # noqa
     'channels',
     'ryzom',
     ] + INSTALLED_APPS + [
+    'project',
     'todos',
 ]
 
@@ -65,8 +66,8 @@ SERVER_METHODS = [
     ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"]["render_form"] = \
-    "project.jinja2_utils.render_form"
-
+    "crudlfap.jinja2.render_form"
+#     "project.jinja2_project.render_form"
 """
 CRUDLFAP_TEMPLATE_BACKEND = {
     "BACKEND": "django_jinja.backend.Jinja2",
@@ -103,8 +104,7 @@ CRUDLFAP_TEMPLATE_BACKEND = {
             "int": int,
             "isinstance": isinstance,
             "type": type,
-            "render_form": "jinja2_project.render_form",
-#             "render_form": "crudlfap.jinja2.render_form",
+            "render_form": "crudlfap.jinja2.render_form",
             "render_button": "bootstrap3.forms.render_button",
             "ryzom": "ryzom.components.component_html",
         },
