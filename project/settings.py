@@ -66,8 +66,9 @@ SERVER_METHODS = [
     ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"]["render_form"] = \
-    "crudlfap.jinja2.render_form"
-#     "project.jinja2_project.render_form"
+    "project.jinja2_project.render_form"
+#     "crudlfap.jinja2.render_form"
+
 """
 CRUDLFAP_TEMPLATE_BACKEND = {
     "BACKEND": "django_jinja.backend.Jinja2",

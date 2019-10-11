@@ -9,6 +9,9 @@ class Task(models.Model, Publishable):
         on_delete=models.SET_NULL, blank=True, null=True)
     about = models.CharField(max_length=1024)
 
+    class Project:  # app_label (for model options)
+        ryzom = False
+
 
 Task.publish(
         name='task',
