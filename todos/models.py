@@ -10,7 +10,7 @@ class Task(models.Model, Publishable):
     about = models.CharField(max_length=1024)
 
     class Project:  # app_label - for app-specific model options
-        ryzom = False
+        ryzom = True
 
 
 Task.publish(
