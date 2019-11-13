@@ -7,7 +7,10 @@ class TaskMixin:
     allowed_groups = 'any'
 
     def get_exclude(self):
-        if not self.request.user.is_staff:
+        req = getattr(self, 'request', None)
+        if (req is None
+            or
+                req and not self.request.user.is_staff):
             return ['user']
         return super().get_exclude()
 

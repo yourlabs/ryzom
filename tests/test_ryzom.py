@@ -50,16 +50,21 @@ def router():
     return TaskRouter()
 
 
-@pytest.mark.django_db
-def test_render_input_field(router, srf):
+@pytest.fixture
+def form(router, srf):
     view = router.views['create']()
-    view.request = srf.get('/task/create')
-    form = view.form
+    view.request = srf.get('/task/create', )
+    return view.form
+
+
+@pytest.mark.django_db
+def test_render_input_field(form):
     rendered = component_html('ryzom.components.django.Form', form)
     assert 'User' in rendered
     assert 'About' in rendered
 
 
+# @pytest.mark.skip
 class FormTest(TestCase):
 
     @classmethod
@@ -79,17 +84,12 @@ class FormTest(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    @pytest.mark.django_db
-    def test_form_display(self):
+    def test_page_display(self):
         response = self.client.get("/task/create")
         assert response.status_code == 200
 
-    @pytest.mark.django_db
     def test_render_ryzom(self):
         response = self.client.get("/task/create")
-        assert response.status_code == 200
         resp = response.content.decode()
-        # DEBUG:
-        print(resp)
         assert 'User' in resp
         assert 'About' in resp
