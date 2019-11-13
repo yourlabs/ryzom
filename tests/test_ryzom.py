@@ -33,7 +33,8 @@ class RequestFactory(drf):
 @pytest.fixture
 def user():
     user = get_user_model().objects.create(username='dev',
-                                           is_superuser=True)
+                                           is_superuser=True,
+                                           is_staff=True)
     user.set_password('dev')
     user.save()
     return user
@@ -55,8 +56,7 @@ def test_render_input_field(router, srf):
     view.request = srf.get('/task/create')
     form = view.form
     rendered = component_html('ryzom.components.django.Form', form)
-    # DEBUG: user not authenticated?
-    # assert 'User' in rendered
+    assert 'User' in rendered
     assert 'About' in rendered
 
 
