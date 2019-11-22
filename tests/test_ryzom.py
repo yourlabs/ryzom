@@ -11,6 +11,7 @@ from django.contrib.sessions.backends.base import SessionBase
 from django.test.client import RequestFactory as drf
 
 from ryzom.components import component_html
+from ryzom.components.django import Field
 
 from todos.crudlfap import TaskRouter
 
@@ -57,8 +58,11 @@ def form(router, srf):
     return view.form
 
 
+# @pytest.mark.skip
 @pytest.mark.django_db
-def test_render_input_field(form):
+def test_render_input_fields(form):
+    # form.renderer = Field()
+    # rendered = form.as_table()
     rendered = component_html('ryzom.components.django.Form', form)
     assert 'User' in rendered
     assert 'About' in rendered
