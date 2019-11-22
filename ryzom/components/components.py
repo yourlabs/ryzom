@@ -183,7 +183,10 @@ class Component:
             return f'{self.content}'
         attr = ''
         for k, v in self.attr.items():
-            attr += f'{k}="{v}" '
+            if v is True:
+                attr += f'{k} '
+            elif v is not False:
+                attr += f'{k}="{v}" '
         attr += f'ryzom-id="{self._id}"'
         html = ''
         if getattr(self, 'selfclose', False):
@@ -342,6 +345,19 @@ class Input(Component):
     def __init__(self, content=[], attr={}, events={},
                  parent='body', _id=None):
         super().__init__('input', content, attr, events, parent, _id)
+
+
+class Label(Component):
+    '''
+    Input component
+
+    Represents a <input> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('label', content, attr, events, parent, _id)
 
 
 class Button(Component):
