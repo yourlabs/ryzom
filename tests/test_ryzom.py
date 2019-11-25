@@ -60,9 +60,25 @@ def form(router, srf):
 
 # @pytest.mark.skip
 @pytest.mark.django_db
-def test_render_input_fields(form):
-    # form.renderer = Field()
-    # rendered = form.as_table()
+def test_render_field_input(form):
+    rendered = component_html('ryzom.components.django.Field', form['about'])
+    assert '<input' in rendered
+    assert 'type="text"' in rendered
+    assert '<label ' in rendered
+    assert 'About' in rendered  # label
+
+
+# @pytest.mark.skip
+@pytest.mark.django_db
+def test_render_field_select(form):
+    rendered = component_html('ryzom.components.django.Field', form['user'])
+    # assert "<select" in rendered
+    assert 'User' in rendered  # label
+
+
+# @pytest.mark.skip
+@pytest.mark.django_db
+def test_render_form_fields(form):
     rendered = component_html('ryzom.components.django.Form', form)
     assert 'User' in rendered
     assert 'About' in rendered

@@ -4,14 +4,51 @@ Render Django forms using ryzom components.
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
+from cli2 import Importable
+
 from .components import *
+
+
+COMPONENTS_MODULE = __name__  # 'ryzom.components.django'
+COMPONENTS_PREFIX = 'Django'  # Django / MUICSS / Materialize
 
 
 class Factory:
     @classmethod
     def as_component(self, field):
-        # TODO: map different widget.input_type(s) to ryzom.components
-        return Input
+        widget_type = type(field.field.widget).__name__
+        widget_type = f"{COMPONENTS_MODULE}.{COMPONENTS_PREFIX}{widget_type}"
+        Component = Importable.factory(widget_type).target
+        """ this would work for imported modules - is speed a factor?
+        import sys
+        component = getattr(sys.modules[module_name], widget_type, None)
+        """
+        if Component is None:
+            raise NotImplementedError
+        return Component
+
+
+class DjangoTextInput(Input):
+    def __init__(self, context):
+        attrs = context['attrs']
+        attrs.update({
+            'name': context['name'],
+            'type': context['type']
+        })
+        if context['value'] is not None:
+            attrs['value'] = context['value']
+
+        super().__init__(attr=attrs)
+
+
+class DjangoSelect(Input):
+    def __init__(self, context):
+        attrs = context['attrs']
+        attrs.update({
+            'name': context['name'],
+        })
+        # TODO: optgroups and options
+        super().__init__(attr=attrs)
 
 
 class NonFieldErrors(Ul):
@@ -60,11 +97,6 @@ class HiddenFields(Div):
         )
 
 
-def add_attrs(_dict, attrs):
-    for name, value in _dict.items:
-        pass
-
-
 class FieldErrors(Ul):
     """ Render field errors. """
     def __init__(self, errors):
@@ -102,24 +134,28 @@ class Field(Div):
     {{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %}
     {% endif %}{% endfor %}
     """
-    def __init__(self, field):
-        # TODO: get this closer to BoundField.as_widget()
-        context = field.field.widget.get_context(field.label, field.value, {})
-        widget = context['widget']
+    def __init__(self, field, widget=None, attrs=None, only_initial=False):
+        widget = field.field.widget
+        if field.field.localize:
+            widget.is_localized = True
+        attrs = attrs or {}
+        attrs = field.build_widget_attrs(attrs, widget)
+        if field.auto_id and 'id' not in widget.attrs:
+            attrs.setdefault('id', field.html_initial_id
+                             if only_initial else field.auto_id)
+
+        context = widget.get_context(
+            name=field.html_initial_name if only_initial else field.html_name,
+            value=field.value(),
+            attrs=attrs,
+        )
+        widget_context = context['widget']
         content = []
         html_class_attr = {}
         errors = field.form.error_class(field.errors)
         css_classes = field.css_classes()
         if css_classes:
             html_class_attr = {"class": css_classes}
-        # build attrs
-        attrs = {
-            "type": widget.get('type', field.field.widget.input_type),
-            "name": field.name,
-        }
-        if field.value() is not None:
-            attrs['value'] = str(field.value())
-        attrs.update(widget['attrs'])
 
         if field.label:
             label = conditional_escape(field.label)
@@ -127,14 +163,12 @@ class Field(Div):
         else:
             label = ''
 
-        fld_component = Factory.as_component(field)
+        component = Factory.as_component(field)
         if label:
             content.append(
-                Label([Text(field.label)],
-                      {'for': field.id_for_label}
-                      )
+                Text(label)
             )
-        content.append(fld_component(attr=attrs))
+        content.append(component(widget_context))
         if errors:
             content.append(FieldErrors(errors))
         if field.help_text:
