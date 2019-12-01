@@ -38,14 +38,14 @@ class Component:
     This class defines the common attributes and methods to all
     components,the main one being to_obj() that format an instance
     as a serializable dict that can be sent to the client over websocket
-    the to_html() method is missing for now, it will be usefull when
+    the to_html() method is missing for now, it will be useful when
     implementing Server-Side Rendering
 
-    Upon creation, if not precised, an instance of the Component class
+    Upon creation, if not specified, an instance of the Component class
     is considered as a child of the <html> tag, this is not guaranteed
     to be kept in a near future, because it's totally useless.
-    Being a childnode of <body> seem a lot more meaningfull.
-    If no _id is precised, a random (but still unique) one will be
+    Being a childnode of <body> seem a lot more meaningful.
+    If no _id is specified, a random (but still unique) one will be
     generated.
 
     :param str tag: The HTML tag of the component
@@ -312,13 +312,26 @@ class Text(Component):
     '''
     Text component
 
-    Represents a HTML text node
+    Represents a text node
 
     :parameters: see :class:`Component`
     '''
     def __init__(self, content=[],
                  parent='body', _id=None):
         super().__init__('text', content, parent=parent, _id=_id)
+
+
+class Textarea(Component):
+    '''
+    Textarea component
+
+    Represents a <textarea> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('textarea', content, attr, events, parent, _id)
 
 
 class Form(Component):
@@ -345,6 +358,45 @@ class Input(Component):
     def __init__(self, content=[], attr={}, events={},
                  parent='body', _id=None):
         super().__init__('input', content, attr, events, parent, _id)
+
+
+class Select(Component):
+    '''
+    Select component
+
+    Represents a <select> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('select', content, attr, events, parent, _id)
+
+
+class Option(Component):
+    '''
+    Option component (within Select)
+
+    Represents a <option> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('option', content, attr, events, parent, _id)
+
+
+class Optgroup(Component):
+    '''
+    Option group component (within Select)
+
+    Represents a <optgroup> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None):
+        super().__init__('optgroup', content, attr, events, parent, _id)
 
 
 class Label(Component):

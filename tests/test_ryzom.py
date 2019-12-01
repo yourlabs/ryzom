@@ -72,7 +72,8 @@ def test_render_field_input(form):
 @pytest.mark.django_db
 def test_render_field_select(form):
     rendered = component_html('ryzom.components.django.Field', form['user'])
-    # assert "<select" in rendered
+    assert 'select' in rendered
+    assert 'dev' in rendered  # user name
     assert 'User' in rendered  # label
 
 
