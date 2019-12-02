@@ -1,16 +1,23 @@
-# pyfront
+# ryzom
 
-Meteorish django responsive frontend
+Meteor-ish Django responsive front-end
 
-you first need to install:
-- django 2.1
-- django_channels
-- channels_redis
-- redis-server (up and running)
+Dependencies:
+  * django 2.1
+  * django_channels
+  * channels_redis
+  * redis-server (up and running)
+  * psycopg2 (up and running with database and user)
 
-then juste run ./manage.py runserver from the root directory of this project
+Install `ryzom`:
 
-What to do next?
+    pip install git+https://yourlabs.io/oss/ryzom.git
+
+Run the example project server:
+
+    ryzom runserver
+
+What next?
 
 OK/ Documentation for sure.
 OK/ Automatic websocket reconnection and page reloading on success
@@ -22,17 +29,17 @@ OK/ Authentication:
   - With authentication, publishing can filter output by user and that will be great!
   - With authentication AND roles, it will become something really usable
 
-Server Side Rendering:
+OK/ Server Side Rendering:
   - the first HTTP request should return a full HTML page
   - all links should be 'a' tag that have no effect on current location
 
 OK/ Change the way methods works, maybe by importing a dict and assigning funcptr to method name
 
-Errors handling: It won't ever be stable enough without good errors
+Error handling: It won't ever be stable enough without good error reporting.
 
 Pagination: Very important too (maybe it could be implemented through subscriptions queries?)
 
-Transcrypt would be nice to avoid switching to JS..
+Transcrypt: Would be nice to avoid switching to JS.
 
 (S)CSS components?
-  - We could make scss-like class to be inherited in components? Seems like a good idea.
+  - We could make an SCSS-like class to be inherited in components? Seems like a good idea.

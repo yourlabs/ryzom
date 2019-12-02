@@ -163,26 +163,26 @@ class Consumer(JsonWebsocketConsumer, object):
         If a view as already been created, destroy it and creates the new one
         view's callback (oncreate, ondestroy) are called here
         '''
-        to_url = data['params']['url']
+        to_url = data['params'].get('url', '/')
         for url in ddp_urlpatterns:
             if url.pattern.match(to_url):
                 cview = getattr(self, 'view', None)
-                if cview and isinstance(cview, url.callback):
-                    if (cview.onurl(to_url)):
-                        self.send(json.dumps({
-                            '_id': data['_id'],
-                            'type': 'Success',
-                            'params': []
-                        }))
-                else:
+                if not cview or not isinstance(cview, url.callback):
                     if cview:
                         cview.ondestroy()
-                    self.view = url.callback(self.channel_name)
-                    self.view.oncreate(to_url)
-                    data = {
+                    cview = self.view = url.callback(self.channel_name)
+                    cview.oncreate(to_url)
+                if (cview.onurl(to_url)):
+                    self.send(json.dumps({
                         '_id': data['_id'],
                         'type': 'Success',
-                        'params': self.view.render()
+                        'params': []
+                    }))
+                else:
+                    data = {
+                        '_id': data['_id'],
+                        'type': 'Error',
+                        'params': ''
                     }
                     self.send(json.dumps(data))
                 break
@@ -310,7 +310,8 @@ class Consumer(JsonWebsocketConsumer, object):
                 'type': 'Success',
                 'params': {
                     'name': params['name'],
-                    'sub_id': sub.id
+                    'sub_id': sub.id,
+                    'length': len(sub.queryset)
                 }
             })
         self.send(json.dumps(to_send))

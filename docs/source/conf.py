@@ -26,6 +26,9 @@ django.setup()
 project = 'ryzom'
 copyright = '2019, Author'
 author = 'Author'
+copyright = '2019, Thomas Mignot & contributors'
+author = 'Thomas Mignot & contributors'
+
 
 # The short X.Y version
 version = ''

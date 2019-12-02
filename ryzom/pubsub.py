@@ -41,7 +41,7 @@ class Publishable():
         :examples:
             ::
 
-                Tasks.publish('tasks', 'todos.components.tasks.Task', [
+                Task.publish('task', 'todos.components.task.Task', [
                     {'order_by': '-about'},
                     {'limit': 5},
                     {'offset': 3}

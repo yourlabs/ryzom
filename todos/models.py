@@ -1,16 +1,21 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from ryzom.pubsub import Publishable
 
 
-class Tasks(models.Model, Publishable):
-    user = models.ForeignKey(User, models.SET_NULL, blank=True, null=True)
+class Task(models.Model, Publishable):
+    user = models.ForeignKey(
+        getattr(settings, 'AUTH_USER_MODEL', 'auth.User'),
+        on_delete=models.SET_NULL, blank=True, null=True)
     about = models.CharField(max_length=1024)
 
+    class Project:  # app_label - for app-specific model options
+        ryzom = True
 
-Tasks.publish(
-        name='tasks',
-        template='todos.components.tasks.Task',
+
+Task.publish(
+        name='task',
+        template='todos.components.task.Task',
         query=[
             {'order_by': 'about'},
             {'offset': ('$count', -5)},

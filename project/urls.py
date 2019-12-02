@@ -13,8 +13,48 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+""" original `project/urls.py`
 from django.conf.urls import include, url
 
 urlpatterns = [
     url('^', include('ryzom.urls')),
 ]
+"""
+from crudlfap import shortcuts as crudlfap
+
+from django.conf import settings
+from django.conf.urls import include, url, re_path
+from django.utils.translation import ugettext_lazy as _
+from django.views.static import serve
+
+from crudlfap.views.generic import TemplateView
+
+
+view = TemplateView.clone(
+    template_name='project/home.html',
+    title=_('Home'),
+    title_heading='',
+    urlname='home',
+    urlpath='',
+    authenticate=False,
+)
+
+crudlfap.site.title = 'Ryzom - Demo'  # used by base.html
+crudlfap.site.urlpath = ''  # example url prefix
+crudlfap.site.views['home'] = view
+
+urlpatterns = [
+    url('^', include('ryzom.urls')),
+    crudlfap.site.urlpattern,
+    re_path(
+        r'^%s(?P<path>.*)$' % settings.STATIC_URL.lstrip('/'),
+        serve,
+        kwargs=dict(document_root=settings.STATIC_ROOT)
+    ),
+]
+if 'debug_toolbar' in settings.INSTALLED_APPS and settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
