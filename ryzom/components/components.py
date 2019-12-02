@@ -357,6 +357,7 @@ class Input(Component):
     '''
     def __init__(self, content=[], attr={}, events={},
                  parent='body', _id=None):
+        self.noclose = True
         super().__init__('input', content, attr, events, parent, _id)
 
 
