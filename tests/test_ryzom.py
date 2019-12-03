@@ -1,8 +1,5 @@
 import pytest
-import unittest
 
-from django import forms
-from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.test import SimpleTestCase, TestCase
 
@@ -12,7 +9,6 @@ from django.contrib.sessions.backends.base import SessionBase
 from django.test.client import RequestFactory as drf
 
 from ryzom.components import component_html
-from ryzom.components.django import Field
 
 from todos.crudlfap import TaskRouter
 
@@ -86,39 +82,8 @@ def test_render_form_fields(form):
     assert 'About' in rendered
 
 
-class ExampleForm(forms.Form):
-    char_field = forms.CharField(label='Char field', max_length=50)
-    date_field = forms.DateField(label='Date field')
-    email_field = forms.EmailField(label='Email field')
-
-
-class FormTest(SimpleTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(FormTest, cls).setUpClass()
-        cls.form = ExampleForm()
-
-    def test_char_field(self):
-        rendered = component_html('ryzom.components.django.Field',
-                                  self.form['char_field'])
-        # TODO: add fixture to compare HTML - but not ryzom-id?
-        self.assertHTMLEqual(rendered, '<input type="text">')
-
-    def test_date_field(self):
-        rendered = component_html('ryzom.components.django.Field',
-                                  self.form['date_field'])
-        # TODO: add fixture to compare HTML - but not ryzom-id?
-        self.assertHTMLEqual(rendered, '<input type="text">')
-
-    def test_email_field(self):
-        rendered = component_html('ryzom.components.django.Field',
-                                  self.form['email_field'])
-        # TODO: add fixture to compare HTML - but not ryzom-id?
-        self.assertHTMLEqual(rendered, '<input type="email">')
-
-
 # @pytest.mark.skip
-class TaskTest(TestCase):
+class TestTask(TestCase):
 
     @classmethod
     def setUpClass(cls):
