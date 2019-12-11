@@ -69,6 +69,9 @@ CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"]["render_form"] = \
     "project.jinja2_project.render_form"
 #     "crudlfap.jinja2.render_form"
 
+RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'
+# RYZOM_COMPONENTS_PREFIX = 'Django'  # Optional
+
 """
 CRUDLFAP_TEMPLATE_BACKEND = {
     "BACKEND": "django_jinja.backend.Jinja2",

@@ -3,6 +3,7 @@ Render Django forms using ryzom components.
 """
 from collections.abc import Iterable
 
+from django.conf import settings
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
@@ -11,8 +12,11 @@ from cli2 import Importable
 from .components import *
 
 
-COMPONENTS_MODULE = __name__  # 'ryzom.components.django'
-COMPONENTS_PREFIX = 'Django'  # Django / MUICSS / Materialize
+COMPONENTS_MODULE = getattr(
+    settings, 'RYZOM_COMPONENTS_MODULE', 'ryzom.components.django')
+COMPONENTS_PREFIX = getattr(
+    settings, 'RYZOM_COMPONENTS_PREFIX',
+    COMPONENTS_MODULE.split('.')[-1].title())
 
 
 class Factory:
@@ -403,7 +407,8 @@ class Form(Div):
         content.append(Fields(form))
         # form.hidden_fields
         content.append(HiddenFields(form))
-        content.append(Text(f'Django Form {form.__class__.__name__}'))
+        # DEBUG: helper message
+        content.append(Text(f'ryzom Django Form {form.__class__.__name__}'))
         super().__init__(
             content,
         )
