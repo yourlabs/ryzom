@@ -58,7 +58,8 @@ def form(router, srf):
 # @pytest.mark.skip
 @pytest.mark.django_db
 def test_render_field_input(form):
-    rendered = component_html('ryzom.components.django.Field', form['about'])
+    rendered = component_html(
+        'ryzom.components.django.Field', form['about'])
     assert '<input' in rendered
     assert 'type="text"' in rendered
     assert '<label ' in rendered
@@ -68,7 +69,8 @@ def test_render_field_input(form):
 # @pytest.mark.skip
 @pytest.mark.django_db
 def test_render_field_select(form):
-    rendered = component_html('ryzom.components.django.Field', form['user'])
+    rendered = component_html(
+        'ryzom.components.django.Field', form['user'])
     assert 'select' in rendered
     assert 'dev' in rendered  # user name
     assert 'User' in rendered  # label
@@ -83,7 +85,7 @@ def test_render_form_fields(form):
 
 
 # @pytest.mark.skip
-class TestTask(TestCase):
+class TestTaskCreateView(TestCase):
 
     @classmethod
     def setUpClass(cls):

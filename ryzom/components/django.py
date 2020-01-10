@@ -9,7 +9,10 @@ from django.utils.translation import gettext as _
 
 from cli2 import Importable
 
-from .components import *
+from .components import (
+    Button, Component, Div, Input, Label, Li,
+    Optgroup, Option, Select, Text, Textarea, Ul,
+)
 
 
 COMPONENTS_MODULE = getattr(
@@ -17,21 +20,23 @@ COMPONENTS_MODULE = getattr(
 COMPONENTS_PREFIX = getattr(
     settings, 'RYZOM_COMPONENTS_PREFIX',
     COMPONENTS_MODULE.split('.')[-1].title())
+LABEL_EMBEDDED = False
 
 
 class Factory:
+    """ Return the class required to render the ~django.forms.Widget. """
     @classmethod
     def as_component(self, widget):
         widget_type = type(widget).__name__
         widget_type = f"{COMPONENTS_MODULE}.{COMPONENTS_PREFIX}{widget_type}"
-        Component = Importable.factory(widget_type).target
+        ComponentCls = Importable.factory(widget_type).target
         """ this would work for imported modules - is speed a factor?
         import sys
         component = getattr(sys.modules[module_name], widget_type, None)
         """
-        if Component is None:
+        if ComponentCls is None:
             raise NotImplementedError
-        return Component
+        return ComponentCls
 
 
 class DjangoTextInput(Input):
@@ -67,7 +72,7 @@ class DjangoHiddenInput(DjangoTextInput):
     pass
 
 
-class DjangoMultipleWidget(Div):
+class DjangoMultiWidget(Div):
     """ Return a list of widgets of the correct types.
         NOTE: Adds an extra div tag as a container for the widgets.
     """
@@ -90,7 +95,7 @@ class DjangoMultipleWidget(Div):
         super().__init__(content)
 
 
-class DjangoMultipleHiddenInput(DjangoMultipleWidget):
+class DjangoMultipleHiddenInput(DjangoMultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
         super().__init(multi_widget)
@@ -145,7 +150,7 @@ class DjangoChoiceWidget():
     pass
 
 
-class DjangoOption(Option):
+class DjangoSelectOption(Option):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
@@ -166,7 +171,7 @@ class DjangoSelect(Select):
             option_content = []
             for option in group_choices:
                 option_content.append(
-                    DjangoOption(option)
+                    DjangoSelectOption(option)
                 )
             if group_name:
                 group_attrs = {
@@ -187,8 +192,11 @@ class DjangoSelectMultiple(DjangoSelect):
     pass
 
 
-class DjangoRadioOption(Component):
-    """ Return either an input element or a label wrapped around an input. """
+class DjangoInputOption(Label):
+    """ Return either an input element or a label wrapped around an input.
+        Current style doesn't allow different element tags to be returned
+        from one component so return the wrap_label version as default.
+    """
     def __init__(self, widget):
         attrs = widget['attrs']
         if widget['wrap_label']:
@@ -196,17 +204,18 @@ class DjangoRadioOption(Component):
                 label_attrs = {
                     'for': attrs['id']
                 }
-            Label.__init__(
+            super().__init__(
                 [DjangoTextInput(widget),
                  Text(widget['label'])
                  ],
                 label_attrs
             )
         else:
-            DjangoTextInput.__init__(widget)
+            raise NotImplementedError
+            # Use DjangoTextInput() if the label is not required.
 
 
-class DjangoRadioSelect(Ul):
+class DjangoMultipleInput(Ul):
     def __init__(self, widget):
         attrs = widget['attrs']
         radio_attrs = {}
@@ -215,24 +224,23 @@ class DjangoRadioSelect(Ul):
             radio_attrs.update({
                 'id': _id
             })
-        if attrs['class']:
+        if 'class' in attrs:
             radio_attrs.update({
                 'class': attrs['class']
             })
         group_content = []
         for group, options, index in widget['optgroups']:
-            group_content = []
             option_content = []
             for option in options:
                 option_content.append(
-                    Li([DjangoRadioOption(option)])
+                    Li([DjangoInputOption(option) if option['wrap_label']
+                        else DjangoTextInput(option)
+                        ])
                 )
             if group:
                 group_attrs = {}
                 if _id:
-                    group_attrs.update({
-                        'id': f'{_id}_{index}'
-                    })
+                    group_attrs['id'] = f'{_id}_{index}'
                 group_content.append(
                     Li([
                         Text(group),
@@ -245,6 +253,26 @@ class DjangoRadioSelect(Ul):
                 )
 
         super().__init__(group_content, attr=radio_attrs)
+
+
+class DjangoRadioSelect(DjangoMultipleInput):
+    pass
+
+
+class DjangoCheckboxSelectMultiple(DjangoMultipleInput):
+    pass
+
+
+class DjangoSplitDateTimeWidget(DjangoMultiWidget):
+    pass
+
+
+class DjangoSplitHiddenDateTimeWidget(DjangoSplitDateTimeWidget):
+    pass
+
+
+class DjangoSelectDateWidget(DjangoMultiWidget):
+    pass
 
 
 class NonFieldErrors(Ul):
@@ -365,12 +393,16 @@ class Field(Div):
         else:
             label = ''
 
-        Component = Factory.as_component(widget)
+        widget_context['label_tag'] = label
+
+        ComponentCls = Factory.as_component(widget)
         if label:
-            content.append(
-                Text(label)
-            )
-        component = Component(widget_context)
+            # MUICSS embeds the label after the field in a containing div.
+            if not LABEL_EMBEDDED:
+                content.append(
+                    Text(label)
+                )
+        component = ComponentCls(widget_context)
         content.extend(
             component if isinstance(component, Iterable) else [component]
         )
@@ -385,7 +417,14 @@ class Field(Div):
         )
 
 
-class Fields(Div):
+class VisibleFields(Div):
+    """Render the regular Django fields of a form using ryzom components
+    and return an AST.
+
+    :param ~django.forms.Form: The form being rendered.
+    :return: An AST representing the rendered fields.
+    :rtype: list
+    """
     def __init__(self, form):
         content = []
         for field in form.visible_fields():
@@ -396,19 +435,24 @@ class Fields(Div):
 
 
 class Form(Div):
+    """Render a complete Django form using ryzom components and return an AST.
+
+    :param ~django.forms.Form: The form being rendered.
+    :return: An AST representing the rendered fields.
+    :rtype: list
+    """
     def __init__(self, form):
         content = []
-        # form = context or {}
-        # self.form = form
         # form.non_field_errors
         content.append(NonFieldErrors(form))
         content.append(HiddenErrors(form))
         # form.visible_fields
-        content.append(Fields(form))
+        content.append(VisibleFields(form))
         # form.hidden_fields
         content.append(HiddenFields(form))
         # DEBUG: helper message
-        content.append(Text(f'ryzom Django Form {form.__class__.__name__}'))
+        content.append(
+            Text(f'ryzom {COMPONENTS_PREFIX} Form {form.__class__.__name__}'))
         super().__init__(
             content,
         )

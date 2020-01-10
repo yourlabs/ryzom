@@ -1,4 +1,5 @@
 import os.path
+import pytest
 import re
 
 from django import forms
@@ -36,8 +37,13 @@ class NonModelForm(forms.Form):
     boolean_field = forms.BooleanField()
     null_boolean_field = forms.NullBooleanField()
     choice_field = forms.ChoiceField(choices=MEDIA_CHOICES)
+    choice_radio_field = forms.ChoiceField(
+        choices=MEDIA_CHOICES,
+        widget=forms.RadioSelect()
+    )
 
 
+# @pytest.mark.skip
 @override_settings(RYZOM_COMPONENTS_MODULE='ryzom.components.django')
 @override_settings(RYZOM_COMPONENTS_PREFIX='Django')
 class TestDjangoNonModelForm(SimpleTestCase):
@@ -65,9 +71,9 @@ class TestDjangoNonModelForm(SimpleTestCase):
         )
         cls.render = 'ryzom.components.django.Field'
 
-    def compare_HTML(self, field_name):
+    def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
-        type_name = type(field.field).__name__
+        type_name = f'{type(field.field).__name__}{widget_name}'
         prefix = settings.RYZOM_COMPONENTS_PREFIX
         rendered = component_html(self.render, field)
         rendered = self.ryzom_re.sub(self.ryzom_sub, rendered)
@@ -98,3 +104,7 @@ class TestDjangoNonModelForm(SimpleTestCase):
     def test_choice_field(self):
         field_name = 'choice_field'
         self.compare_HTML(field_name)
+
+    def test_choice_radio_field(self):
+        field_name = 'choice_radio_field'
+        self.compare_HTML(field_name, 'RadioSelect')
