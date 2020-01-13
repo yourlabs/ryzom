@@ -1,0 +1,1 @@
+<div ryzom-id="uuid"><label for="id_null_boolean_field">Null boolean field:</label><div class="mui-select" ryzom-id="uuid"><select id="id_null_boolean_field" name="null_boolean_field" ryzom-id="uuid"><option selected value="1" ryzom-id="uuid">Unknown</option><option value="2" ryzom-id="uuid">Yes</option><option value="3" ryzom-id="uuid">No</option></select></div></div>

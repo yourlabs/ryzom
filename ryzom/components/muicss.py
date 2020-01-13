@@ -1,71 +1,156 @@
-"""
-Render Django forms using ryzom components.
-"""
+'''
+Ryzom MUI CSS components.
+'''
 from collections.abc import Iterable
 
 from django.conf import settings
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
-from cli2 import Importable
-
 from .components import (
     Button, Component, Div, Input, Label, Li,
     Optgroup, Option, Select, Text, Textarea, Ul,
 )
+from .django import Factory, DjangoTextInput
 
 
-class Factory:
-    """ Return the class required to render the ~django.forms.Widget. """
-    @classmethod
-    def as_component(self, widget):
-        widget_type = type(widget).__name__
-        widget_type = (
-            f'{settings.RYZOM_COMPONENTS_MODULE}'
-            f'.{settings.RYZOM_COMPONENTS_PREFIX}{widget_type}'
-        )
-        ComponentCls = Importable.factory(widget_type).target
-        if ComponentCls is None:
-            raise NotImplementedError(
-                f'Widget class {widget_type} not found.'
-            )
-        return ComponentCls
+COMPONENTS_MODULE = getattr(
+    settings, 'RYZOM_COMPONENTS_MODULE', 'ryzom.components.django')
+COMPONENTS_PREFIX = getattr(
+    settings, 'RYZOM_COMPONENTS_PREFIX',
+    COMPONENTS_MODULE.split('.')[-1].title())
 
 
-class DjangoTextInput(Input):
+"""
+class MuiComponent(Component):
+    def __init__(self, *args, **kwargs):
+        self.context = kwargs.pop('context', {})
+        super().__init__(*args, **kwargs)
+
+
+class Appbar(MuiComponent):
+    '''
+    Appbar component
+
+    Represents a MUI CSS <appbar>.
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None, context={}):
+        return Div(content,
+                   attr={'class': "mui-appbar"},
+                   events, parent, _id)
+
+
+class Button(MuiComponent):
+    '''
+    Button component
+
+    Represents a MUI CSS <button>.
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={},
+                 events={}, parent='body', _id=None, context={}):
+        cls = attr.setdefault('class', '')
+        attr['class'] = f"mui-btn {cls}"
+        return Button(content, attr, events, parent, _id)
+
+
+class Container(Component):
+    '''
+    Container component
+
+    Represents a MUI CSS <container>.
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None, context={}):
+        return Div(content,
+                   attr={'class': "mui-container"},
+                   events, parent, _id)
+"""
+
+
+class MuiForm(Component):
+    '''
+    MuiForm component
+
+    Represents a MUI CSS <form>.
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None, context={}):
+        attr = {'class': "mui-form"}
+        super().__init__('form', content, attr,
+                         events, parent, _id)
+
+
+class MuiLegend(Component):
+    '''
+    Legend component
+
+    Represents a MUI CSS <legend>.
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, content=[], attr={}, events={},
+                 parent='body', _id=None, context={}):
+        super().__init__('legend', content,
+                         events, parent, _id)
+
+
+class MuiTextInput(Div):
+    # Prevent default pre-element labelling
+    embed_label = True
+
     def __init__(self, widget):
+
+        div_content = []
         attrs = widget['attrs']
         attrs.update({
             'name': widget['name'],
-            'type': widget['type']
+            'type': widget['type'],
         })
         if widget['value'] is not None:
             attrs['value'] = widget['value']
+        div_content.append(
+            Input([], attrs),
+        )
+        if 'label_tag' in widget:
+            # Radio input options won't have a label_tag.
+            div_content.append(
+                widget['label_tag'],
+            )
+        div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
-        super().__init__(attr=attrs)
+        super().__init__(div_content, attr=div_attrs)
 
 
-class DjangoNumberInput(DjangoTextInput):
+class MuiNumberInput(MuiTextInput):
     pass
 
 
-class DjangoEmailInput(DjangoTextInput):
+class MuiEmailInput(MuiTextInput):
     pass
 
 
-class DjangoURLInput(DjangoTextInput):
+class MuiURLInput(MuiTextInput):
     pass
 
 
-class DjangoPasswordInput(DjangoTextInput):
+class MuiPasswordInput(MuiTextInput):
     pass
 
 
-class DjangoHiddenInput(DjangoTextInput):
+class MuiHiddenInput(MuiTextInput):
     pass
 
 
-class DjangoMultiWidget(Div):
+class MuiMultiWidget(Div):
     """ Return a list of widgets of the correct types.
         NOTE: Adds an extra div tag as a container for the widgets.
     """
@@ -88,22 +173,25 @@ class DjangoMultiWidget(Div):
         super().__init__(content)
 
 
-class DjangoMultipleHiddenInput(DjangoMultiWidget):
+class MuiMultipleHiddenInput(MuiMultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
         super().__init(multi_widget)
 
 
-class DjangoFileInput(DjangoTextInput):
+class MuiFileInput(MuiTextInput):
     pass
 
 
-class DjangoClearableFileInput():
+class MuiClearableFileInput():
     # TODO: Code ClearableFileInput()
     pass
 
 
-class DjangoTextarea(Textarea):
+class MuiTextarea(Textarea):
+    # Prevent default pre-element labelling
+    embed_label = True
+
     def __init__(self, widget):
         content = []
         attrs = widget['attrs']
@@ -112,38 +200,44 @@ class DjangoTextarea(Textarea):
         })
         if widget['value'] is not None:
             content.append(
-                Text(widget['value'])
+                Text(widget['value']),
+                widget['label_tag'],
             )
+        div_content = []
+        div_content.append(
+            Textarea(content, attr=attrs)
+        )
+        div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
-        super().__init__(content, attr=attrs)
+        super().__init__(div_content, attr=div_attrs)
 
 
-class DjangoDateTimeBaseInput(DjangoTextInput):
+class MuiDateTimeBaseInput(MuiTextInput):
     pass
 
 
-class DjangoDateInput(DjangoDateTimeBaseInput):
+class MuiDateInput(MuiDateTimeBaseInput):
     pass
 
 
-class DjangoDateTimeInput(DjangoDateTimeBaseInput):
+class MuiDateTimeInput(MuiDateTimeBaseInput):
     pass
 
 
-class DjangoTimeInput(DjangoDateTimeBaseInput):
+class MuiTimeInput(MuiDateTimeBaseInput):
     pass
 
 
-class DjangoCheckboxInput(DjangoTextInput):
+class MuiCheckboxInput(MuiTextInput):
     pass
 
 
-class DjangoChoiceWidget():
+class MuiChoiceWidget():
     # not directly called
     pass
 
 
-class DjangoSelectOption(Option):
+class MuiSelectOption(Option):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
@@ -153,8 +247,9 @@ class DjangoSelectOption(Option):
         super().__init__(content, attr=attrs)
 
 
-class DjangoSelect(Select):
+class MuiSelect(Div):
     def __init__(self, widget):
+        div_content = []
         attrs = widget['attrs']
         attrs.update({
             'name': widget['name'],
@@ -164,7 +259,7 @@ class DjangoSelect(Select):
             option_content = []
             for option in group_choices:
                 option_content.append(
-                    DjangoSelectOption(option)
+                    MuiSelectOption(option)
                 )
             if group_name:
                 group_attrs = {
@@ -174,22 +269,24 @@ class DjangoSelect(Select):
                     Optgroup(option_content, group_attrs))
             else:
                 group_content.extend(option_content)
-        super().__init__(group_content, attr=attrs)
+
+        div_content.append(
+            Select(group_content, attr=attrs),
+        )
+        div_attrs = {"class": "mui-select"}
+        super().__init__(div_content, attr=div_attrs)
 
 
-class DjangoNullBooleanSelect(DjangoSelect):
+class MuiNullBooleanSelect(MuiSelect):
     pass
 
 
-class DjangoSelectMultiple(DjangoSelect):
+class MuiSelectMultiple(MuiSelect):
     pass
 
 
-class DjangoInputOption(Label):
-    """ Return either an input element or a label wrapped around an input.
-        Current style doesn't allow different element tags to be returned
-        from one component so return the wrap_label version as default.
-    """
+class MuiInputOption(Label):
+    """ Return either an input element or a label wrapped around an input. """
     def __init__(self, widget):
         attrs = widget['attrs']
         if widget['wrap_label']:
@@ -208,7 +305,7 @@ class DjangoInputOption(Label):
             # Use DjangoTextInput() if the label is not required.
 
 
-class DjangoMultipleInput(Ul):
+class MuiMultipleInput(Ul):
     def __init__(self, widget):
         attrs = widget['attrs']
         radio_attrs = {}
@@ -226,7 +323,7 @@ class DjangoMultipleInput(Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    Li([DjangoInputOption(option) if option['wrap_label']
+                    Li([MuiInputOption(option) if option['wrap_label']
                         else DjangoTextInput(option)
                         ])
                 )
@@ -248,24 +345,63 @@ class DjangoMultipleInput(Ul):
         super().__init__(group_content, attr=radio_attrs)
 
 
-class DjangoRadioSelect(DjangoMultipleInput):
+class MuiRadioSelect(MuiMultipleInput):
     pass
 
 
-class DjangoCheckboxSelectMultiple(DjangoMultipleInput):
+class MuiCheckboxSelectMultiple(MuiMultipleInput):
     pass
 
 
-class DjangoSplitDateTimeWidget(DjangoMultiWidget):
+class MuiSplitDateTimeWidget(MuiMultiWidget):
     pass
 
 
-class DjangoSplitHiddenDateTimeWidget(DjangoSplitDateTimeWidget):
+class MuiSplitHiddenDateTimeWidget(MuiSplitDateTimeWidget):
     pass
 
 
-class DjangoSelectDateWidget(DjangoMultiWidget):
+class MuiSelectDateWidget(MuiMultiWidget):
     pass
+
+
+class MuiButton(Button):
+    """
+    {{ render_button(view.title_submit, button_type="submit",
+        button_class="btn-primary") }}
+    """
+    def __init__(self, widget):
+        """
+        def render_button(
+            content,
+            button_type=None,
+            icon=None,
+            button_class="btn-default",
+            size="",
+            href="",
+            name=None,
+            value=None,
+            title=None,
+            extra_classes="",
+            id="",
+        ):
+
+        """
+        div_content = []
+        attrs = widget['attrs']
+        attrs.update({
+            'name': widget['name'],
+            'type': widget['type'],
+        })
+        if widget['value'] is not None:
+            attrs['value'] = widget['value']
+        div_content.append(
+            Input([], attrs),
+            widget['label'],
+        )
+        div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
+
+        super().__init__(div_content, attr=div_attrs)
 
 
 class NonFieldErrors(Ul):
@@ -342,7 +478,7 @@ class HelpText(Ul):
 
 
 class Field(Div):
-    """Render a Django field using ryzom components and return an AST.
+    """Render a MUI field using ryzom components and return an AST.
 
     Prepare the widget attrs, field label and context then render the
     field using ryzom components.
@@ -390,8 +526,8 @@ class Field(Div):
 
         ComponentCls = Factory.as_component(widget)
         if label:
-            # MUICSS may embed <label> after <input> in a containing div.
-            if not getattr(ComponentCls, 'embed_label', False):
+            # MUICSS embeds the label after the field in a containing div.
+            if not LABEL_EMBEDDED:
                 content.append(
                     Text(label)
                 )
@@ -445,11 +581,7 @@ class Form(Div):
         content.append(HiddenFields(form))
         # DEBUG: helper message
         content.append(
-            Text(
-                f'ryzom {settings.RYZOM_COMPONENTS_PREFIX}'
-                f' Form {form.__class__.__name__}'
-            )
-        )
+            Text(f'ryzom {COMPONENTS_PREFIX} Form {form.__class__.__name__}'))
         super().__init__(
             content,
         )

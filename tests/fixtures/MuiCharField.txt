@@ -1,0 +1,1 @@
+<div ryzom-id="uuid"><div class="mui-textfield mui-textfield--float-label" ryzom-id="uuid"><input maxlength="50" required id="id_char_field" name="char_field" type="text" value="charfield" ryzom-id="uuid"><label for="id_char_field">Char field:</label></div></div>
