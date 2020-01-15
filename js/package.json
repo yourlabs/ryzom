@@ -1,0 +1,30 @@
+{
+  "name": "ryzom",
+  "version": "GIT_TAG",
+  "description": "ryzom component-based front-end as code",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "webpack-cli"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://yourlabs.io/oss/ryzom.git"
+  },
+  "keywords": [
+    "django"
+  ],
+  "dependencies": {
+    "autoprefixer": "^9.1.5",
+    "css-loader": "^2.1.0",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "material-components-web": "^0.39.1",
+    "muicss": "^0.9.41",
+    "node-sass": "^4.11.0",
+    "postcss-loader": "^3.0.0",
+    "sass-loader": "^7.1.0",
+    "webpack": "^4.16.1",
+    "webpack-cli": "^3.1.0",
+    "yarn": "^1.7.0"
+  }
+}
