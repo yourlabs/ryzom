@@ -30,19 +30,12 @@ from django.views.static import serve
 
 from crudlfap.views.generic import TemplateView
 
+from .views import Home
 
-view = TemplateView.clone(
-    template_name='project/home.html',
-    title=_('Home'),
-    title_heading='',
-    urlname='home',
-    urlpath='',
-    authenticate=False,
-)
 
 crudlfap.site.title = 'Ryzom - Demo'  # used by base.html
 crudlfap.site.urlpath = ''  # example url prefix
-crudlfap.site.views['home'] = view
+crudlfap.site.views['home'] = Home
 
 urlpatterns = [
     url('^', include('ryzom.urls')),

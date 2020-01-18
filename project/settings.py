@@ -3,9 +3,9 @@ from crudlfap.settings import *  # noqa
 INSTALLED_APPS = [  # noqa
     'channels',
     'ryzom',
-    ] + INSTALLED_APPS + [
     'project',
     'todos',
+    ] + INSTALLED_APPS + [
 ]
 
 # CRUDLFA+ optional dependencies
