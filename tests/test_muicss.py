@@ -70,6 +70,7 @@ class TestMuiNonModelForm(SimpleTestCase):
             'fixtures'
         )
         cls.render = 'ryzom.components.django.Field'
+        cls.maxDiff = None
 
     def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
