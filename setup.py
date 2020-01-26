@@ -12,9 +12,9 @@ setup(
     author='Thomas Mignot',
     author_email='jamespic@gmail.com',
     url='https://yourlabs.io/oss/ryzom',
-    packages=find_packages(),
-    # packages=find_packages('src'),
-    # package_dir={'': 'src'},
+    # packages=find_packages(),
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     include_package_data=True,
     keywords='django frontend',
     install_requires=[
