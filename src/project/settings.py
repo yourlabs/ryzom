@@ -1,11 +1,11 @@
 from crudlfap.settings import *  # noqa
 
-INSTALLED_APPS = [  # noqa
+INSTALLED_APPS = [  # noqa: F405
     'channels',
     'ryzom',
     'project',
     'todos',
-    ] + INSTALLED_APPS + [
+    ] + INSTALLED_APPS + [  # noqa: F405
 ]
 
 # CRUDLFA+ optional dependencies
@@ -19,7 +19,7 @@ OPTIONAL_MIDDLEWARE = [
     {'debug_toolbar.middleware.DebugToolbarMiddleware': None}
 ]
 
-MIDDLEWARE += [
+MIDDLEWARE += [  # noqa: F405
     'ryzom.middleware.RyzomMiddleware',
 ]
 
@@ -65,8 +65,8 @@ SERVER_METHODS = [
         'todos.methods'
     ]
 
-CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"]["render_form"] = \
-    "project.jinja2_project.render_form"
+CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
+    "render_form"] = "project.jinja2_project.render_form"
 #     "crudlfap.jinja2.render_form"
 
 # RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'

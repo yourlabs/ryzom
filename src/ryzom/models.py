@@ -15,7 +15,8 @@ from ryzom.ddp import send_insert
 class Tokens(models.Model):
     '''
     '''
-    token = models.CharField(default=secrets.token_urlsafe, max_length=255, unique=True)
+    token = models.CharField(default=secrets.token_urlsafe,
+                             max_length=255, unique=True)
     user = models.OneToOneField(User, models.CASCADE)
 
 
@@ -90,7 +91,7 @@ class Subscriptions(models.Model):
         for _id in self.queryset:
             send_insert(self, model_cls, tmpl_cls, _id)
 
-    def exec_query(self, model):
+    def exec_query(self, model):  # noqa: C901
         '''
         This method computes the publication query and create/update the
         queryset for the current subscription.

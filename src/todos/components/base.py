@@ -25,9 +25,10 @@ class Base(Div):
             'class': 'container'
         }
         content = [
-            A([Nav([H1('Todos')], {'class': 'navbar navbar-light bg-light'})], {
-                'href': '/'
-            }),
+            A([Nav([H1('Todos')],
+                   {'class': 'navbar navbar-light bg-light'})],
+              {'href': '/'}
+              ),
             ReactiveDiv('main-container', view, [
                 TaskList(),
                 TaskForm()

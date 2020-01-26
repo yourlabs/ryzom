@@ -493,7 +493,7 @@ class Field(Div):
     :return: An AST representing the rendered field.
     :rtype: list
     """
-    def __init__(self, field, widget=None, attrs=None, only_initial=False):
+    def __init__(self, field, widget=None, attrs=None, only_initial=False):  # noqa: C901 E501
         widget = widget or field.field.widget
         if field.field.localize:
             widget.is_localized = True
@@ -527,7 +527,7 @@ class Field(Div):
         ComponentCls = Factory.as_component(widget)
         if label:
             # MUICSS embeds the label after the field in a containing div.
-            if not LABEL_EMBEDDED:
+            if not getattr(ComponentCls, 'embed_label', False):
                 content.append(
                     Text(label)
                 )

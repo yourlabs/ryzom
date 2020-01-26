@@ -93,7 +93,7 @@ class Component:
                 c.position = i
                 if isinstance(c, str):
                     self.content[i] = Text(c)
-        elif isinstance(self.content, str) and self.tag is not 'text':
+        elif isinstance(self.content, str) and self.tag != 'text':
             if self.content:
                 self.content = [Text(self.content)]
             else:

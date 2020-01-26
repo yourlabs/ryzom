@@ -1,10 +1,8 @@
 '''
 Defines the ryzom View class and the main index view
 '''
-import importlib
 import os
 
-from django.conf import settings
 from django import http
 from ryzom.components import Script
 
@@ -113,7 +111,7 @@ class View():
                 script += f'addEventListener("{event}",' + \
                           f'function(e){{{cb}}});\n'
 
-            if component.tag is not 'text':
+            if component.tag != 'text':
                 script += self.renderScript(component.content, False)
         if set_tag:
             script += '})();'
@@ -147,4 +145,7 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
-    return http.HttpResponse('<!DOCTYPE html>' + request.ryzom.renderHTML(url, request.GET.urlencode()))
+    return http.HttpResponse('<!DOCTYPE html>',
+                             request.ryzom.renderHTML(
+                                 url, request.GET.urlencode())
+                             )

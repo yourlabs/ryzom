@@ -10,7 +10,7 @@ from django.utils.translation import gettext as _
 from cli2 import Importable
 
 from .components import (
-    Button, Component, Div, Input, Label, Li,
+    Div, Input, Label, Li,
     Optgroup, Option, Select, Text, Textarea, Ul,
 )
 
@@ -80,8 +80,8 @@ class DjangoMultiWidget(Div):
                 attrs['type'] = widget['type']
             if widget['value'] is not None:
                 attrs['value'] = widget['value']
-            Component = Factory.as_component(widget)
-            component = Component(widget)
+            ComponentCls = Factory.as_component(widget)
+            component = ComponentCls(widget)
             content.extend(
                 component if isinstance(component, Iterable) else [component]
             )
@@ -357,7 +357,7 @@ class Field(Div):
     :return: An AST representing the rendered field.
     :rtype: list
     """
-    def __init__(self, field, widget=None, attrs=None, only_initial=False):
+    def __init__(self, field, widget=None, attrs=None, only_initial=False):  # noqa: C901 E501
         widget = widget or field.field.widget
         if field.field.localize:
             widget.is_localized = True

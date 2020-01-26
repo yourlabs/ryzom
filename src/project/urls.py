@@ -1,4 +1,5 @@
-"""project URL Configuration
+'''
+Project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/2.1/topics/http/urls/
@@ -20,7 +21,7 @@ from django.conf.urls import include, url
 urlpatterns = [
     url('^', include('ryzom.urls')),
 ]
-"""
+'''
 from crudlfap import shortcuts as crudlfap
 
 from django.conf import settings
@@ -28,12 +29,10 @@ from django.conf.urls import include, url, re_path
 from django.utils.translation import ugettext_lazy as _
 from django.views.static import serve
 
-from crudlfap.views.generic import TemplateView
-
 from .views import Home
 
 
-crudlfap.site.title = 'Ryzom - Demo'  # used by base.html
+crudlfap.site.title = _('Ryzom - Demo')  # used by base.html
 crudlfap.site.urlpath = ''  # example url prefix
 crudlfap.site.views['home'] = Home
 

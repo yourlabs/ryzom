@@ -1,11 +1,11 @@
 from operator import attrgetter
 
-from django import template
+# from django import template
 
 from crudlfap.jinja2 import render_form as render_crudlfap
 
 from ryzom.components import component_html
-from ryzom.components import django as ryzom
+# from ryzom.components import django as ryzom
 
 
 def render_form(form):

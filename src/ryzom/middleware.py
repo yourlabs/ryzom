@@ -27,4 +27,3 @@ class RyzomMiddleware:
         # the view is called.
 
         return response
-
