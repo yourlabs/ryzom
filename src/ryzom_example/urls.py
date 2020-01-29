@@ -29,7 +29,7 @@ from django.conf.urls import include, url, re_path
 from django.utils.translation import ugettext_lazy as _
 from django.views.static import serve
 
-from .views import Home
+from ryzom_example.views import Home
 
 
 crudlfap.site.title = _('Ryzom - Demo')  # used by base.html
