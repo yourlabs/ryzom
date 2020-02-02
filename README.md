@@ -21,6 +21,7 @@ What next?
 
 OK/ Documentation for sure.
 OK/ Automatic websocket reconnection and page reloading on success
+Attach javascript events into forms and formfields with basic AST thanks to transcrypt
 
 A tutorial
 
