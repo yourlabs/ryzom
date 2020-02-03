@@ -1,10 +1,10 @@
 from crudlfap.settings import *  # noqa
 
 INSTALLED_APPS = [  # noqa: F405
+    'ryz_ex',
+    'todos',
     'channels',
     'ryzom',
-    'ryzom_example',
-    'todos',
     ] + INSTALLED_APPS + [  # noqa: F405
 ]
 
@@ -32,15 +32,15 @@ AUTHENTICATION_BACKENDS += [  # noqa
 ]
 """
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = 'ryz_ex.urls'
 
 # Database
-# https://docs.djangoryzom_example.com/en/2.1/ref/settings/#databases
+# https://docs.django.com/en/2.1/ref/settings/#databases
 """ This should be provided as ENV variables as expected by crudlfap.settings.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'django_ddp_test_ryzom_example',
+        'NAME': 'django_ddp_test_project',
         'USER': 'ryzom',
         'PASSWORD': 'ryzom',
         'HOST': 'localhost',
@@ -48,7 +48,7 @@ DATABASES = {
 }
 """
 
-ASGI_APPLICATION = 'ryzom_example.routing.application'
+ASGI_APPLICATION = 'ryz_ex.routing.application'
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -66,7 +66,7 @@ SERVER_METHODS = [
     ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
-    "render_form"] = "ryzom_example.jinja2_ryzom.render_form"
+    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
 # RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'
