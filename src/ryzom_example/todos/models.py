@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.db import models
+
 from ryzom.pubsub import Publishable
 
 
-class Task(models.Model, Publishable):
+class Task(Publishable, models.Model):
     user = models.ForeignKey(
         getattr(settings, 'AUTH_USER_MODEL', 'auth.User'),
         on_delete=models.SET_NULL, blank=True, null=True)
@@ -11,6 +12,9 @@ class Task(models.Model, Publishable):
 
     class Project:  # app_label - for app-specific model options
         ryzom = True
+
+    def __str__(self):
+        return self.about
 
 
 Task.publish(

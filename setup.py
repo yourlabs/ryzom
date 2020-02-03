@@ -35,7 +35,7 @@ setup(
     ),
     entry_points={
         'console_scripts': [
-            'ryzom = project.manage:main',
+            'ryzom = ryzom_example.manage:main',
         ],
     },
     classifiers=[

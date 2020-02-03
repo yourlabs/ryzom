@@ -16,7 +16,7 @@ import os
 import sys
 import django
 sys.path.insert(0, '../..')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ryzom_example.settings'
 django.setup()
 
 

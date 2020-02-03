@@ -1,10 +1,10 @@
 from crudlfap.settings import *  # noqa
 
 INSTALLED_APPS = [  # noqa: F405
+    'ryz_ex',
+    'todos',
     'channels',
     'ryzom',
-    'project',
-    'todos',
     ] + INSTALLED_APPS + [  # noqa: F405
 ]
 
@@ -23,8 +23,8 @@ MIDDLEWARE += [  # noqa: F405
     'ryzom.middleware.RyzomMiddleware',
 ]
 
-# install_optional(OPTIONAL_APPS, INSTALLED_APPS)  # noqa
-# install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa
+# install_optional(OPTIONAL_APPS, INSTALLED_APPS)  # noqa: F405
+# install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa: F405
 
 """
 AUTHENTICATION_BACKENDS += [  # noqa
@@ -32,10 +32,10 @@ AUTHENTICATION_BACKENDS += [  # noqa
 ]
 """
 
-ROOT_URLCONF = 'project.urls'
+ROOT_URLCONF = 'ryz_ex.urls'
 
 # Database
-# https://docs.djangoproject.com/en/2.1/ref/settings/#databases
+# https://docs.django.com/en/2.1/ref/settings/#databases
 """ This should be provided as ENV variables as expected by crudlfap.settings.
 DATABASES = {
     'default': {
@@ -48,7 +48,7 @@ DATABASES = {
 }
 """
 
-ASGI_APPLICATION = 'project.routing.application'
+ASGI_APPLICATION = 'ryz_ex.routing.application'
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -66,7 +66,7 @@ SERVER_METHODS = [
     ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
-    "render_form"] = "project.jinja2_project.render_form"
+    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
 # RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'

@@ -3,11 +3,12 @@ const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const extractSass = new ExtractTextPlugin({
-  filename: 'ryzom.css',
+  filename: 'ryzom_ex.css',
 });
 
 var cfg = {
   mode: 'development',
+  context: __dirname,
   entry: {
     main: [
       './index.js',
@@ -15,8 +16,8 @@ var cfg = {
     ],
   },
   output: {
-    path: path.resolve(__dirname, '../ryzom/static'),
-    filename: 'ryzom.js',
+    path: path.resolve('../src/ryzom_example/ryzom_example/static/'),
+    filename: 'ryzom_ex.js',
   },
   devtool: 'source-map',
 //   entry: './webpack_entry.py',
@@ -53,9 +54,11 @@ var cfg = {
               loader: 'sass-loader',
               options: {
                 sourceMap: true,
-                includePaths: [
-                  path.resolve(__dirname, 'node_modules')
-                ]
+                sassOptions: {
+                    includePaths: [
+                      path.resolve('node_modules')
+                    ]
+                }
               }
             }
           ]

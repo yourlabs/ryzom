@@ -1,8 +1,9 @@
 from ryzom.components import Html, Head, Body, Meta, Title, Link
 from ryzom.components import Div, A, Nav, H1
 from ryzom.reactive import ReactiveDiv
-from todos.components.home import Welcome
-from todos.components.task import TaskList, TaskForm
+
+from .home import Welcome
+from .task import TaskList, TaskForm
 
 
 class Document(Html):

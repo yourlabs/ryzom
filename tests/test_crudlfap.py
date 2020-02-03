@@ -12,6 +12,7 @@ import pytest
 from crudlfap import shortcuts as crudlfap
 from crudlfap.route import Route
 from crudlfap.router import Router
+
 from todos.models import Task
 
 

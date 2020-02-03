@@ -2,4 +2,4 @@
 from ryzom.manage import main
 
 if __name__ == '__main__':
-    main('project.settings')
+    main('ryzom_example.settings')
