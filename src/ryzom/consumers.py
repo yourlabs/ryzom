@@ -17,19 +17,20 @@ from django.conf import settings
 from ryzom.methods import Methods
 from ryzom.models import Clients, Subscriptions, Publications, Tokens
 
-ddp_urlpatterns = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
-
-for module in settings.SERVER_METHODS:
-    importlib.import_module(module)
-'''
-Import all user defined server methods from the SERVER_METHODS settings
-'''
-
 
 class Consumer(JsonWebsocketConsumer, object):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
+    ddp_urlpatterns = importlib.import_module(
+        settings.DDP_URLPATTERNS).urlpatterns
+
+    '''
+    Import all user defined server methods
+    '''
+    for module in settings.SERVER_METHODS:
+        importlib.import_module(module)
+
     def connect(self):
         '''
         Websocket connect handler.
@@ -164,7 +165,7 @@ class Consumer(JsonWebsocketConsumer, object):
         view's callback (oncreate, ondestroy) are called here
         '''
         to_url = data['params'].get('url', '/')
-        for url in ddp_urlpatterns:
+        for url in Consumer.ddp_urlpatterns:
             if url.pattern.match(to_url):
                 cview = getattr(self, 'view', None)
                 if not cview or not isinstance(cview, url.callback):

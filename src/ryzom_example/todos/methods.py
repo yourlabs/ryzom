@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 
 from ryzom.methods import Methods
 
-# Avoid possible INSTALLED_APPS conflicts on startup.
-APP_MODEL = apps.get_model('todos.Task')
+# Avoid importing models during django_setup().
+AppModel = apps.get_model('todos.Task')
 
 
 def create_user(user, params):
@@ -41,7 +41,7 @@ def create_user(user, params):
 def insert_task(user, params):
     if 'about' in params:
         user = user if user.id else None
-        t = APP_MODEL(user=user, about=params['about'])
+        t = AppModel(user=user, about=params['about'])
         t.save()
         return True
     return False
@@ -49,7 +49,7 @@ def insert_task(user, params):
 
 def remove_task(user, params):
     if 'id' in params:
-        t = APP_MODEL.objects.get(id=params['id'])
+        t = AppModel.objects.get(id=params['id'])
         if t:
             t.delete()
             return True
