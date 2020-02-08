@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage import default_storage
@@ -16,8 +17,8 @@ from crudlfap.router import Router
 from todos.models import Task
 
 
-# DEBUG: remove later
-pytest.skip("skip crudlfap tests", allow_module_level=True)
+pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', False),
+                                reason="skip tests in this module")
 
 
 class RequestFactory(drf):

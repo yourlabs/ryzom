@@ -1,5 +1,6 @@
 import pytest
 
+from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.test import SimpleTestCase, TestCase
 
@@ -11,6 +12,10 @@ from django.test.client import RequestFactory as drf
 from ryzom.components import component_html
 
 from todos.crudlfap import TaskRouter
+
+
+pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', False),
+                                reason="skip tests in this module")
 
 
 class RequestFactory(drf):

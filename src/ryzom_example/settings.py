@@ -74,6 +74,8 @@ CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
 RYZOM_COMPONENTS_MODULE = 'ryzom.components.muicss'
 RYZOM_COMPONENTS_PREFIX = 'Mui'
 
+PYTEST_SKIP = True
+
 """
 CRUDLFAP_TEMPLATE_BACKEND = {
     "BACKEND": "django_jinja.backend.Jinja2",
