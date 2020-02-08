@@ -145,7 +145,7 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
-    return http.HttpResponse('<!DOCTYPE html>',
-                             request.ryzom.renderHTML(
-                                 url, request.GET.urlencode())
-                             )
+    return http.HttpResponse(
+        '<!DOCTYPE html>' +
+        request.ryzom.renderHTML(url, request.GET.urlencode())
+    )
