@@ -8,7 +8,7 @@ from .task import TaskList, TaskForm
 
 class Document(Html):
     def __init__(self, view):
-        bs_src = '/static/css/bootstrap.min.css'
+        bs_src = '/static/ryz_ex/css/bootstrap.min.css'
         content = [
             Head([
                 Title('TODOs'),

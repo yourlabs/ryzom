@@ -4,10 +4,12 @@ Defines the ryzom View class and the main index view
 import os
 
 from django import http
+from django.contrib.staticfiles import finders
+
 from ryzom.components import Script
 
-dir_path = os.path.dirname(__file__)
-ryzom_js_file = os.path.join(dir_path, 'static/js/ryzom.js')
+
+ryzom_js_file = finders.find('ryzom/js/ryzom.js')
 ryzom_js_fd = open(ryzom_js_file, 'r')
 ryzom_js = f'{ryzom_js_fd.read()}\n'
 

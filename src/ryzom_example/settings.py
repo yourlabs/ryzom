@@ -48,6 +48,9 @@ DATABASES = {
 }
 """
 
+STATIC_ROOT = os.getenv(
+    'STATIC_ROOT', Path(os.path.dirname(__file__)) / 'static')
+
 ASGI_APPLICATION = 'ryz_ex.routing.application'
 CHANNEL_LAYERS = {
     "default": {
