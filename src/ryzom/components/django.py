@@ -436,6 +436,14 @@ class Form(Div):
     """
     def __init__(self, form):
         content = []
+        if form.errors:
+            content.append(
+                Ul([
+                    Li([Text(_("Please fix any errors in this form."))])
+                    ],
+                    attr={"class": "errorlist"}
+                )
+            )
         # form.non_field_errors
         content.append(NonFieldErrors(form))
         content.append(HiddenErrors(form))
