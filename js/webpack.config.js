@@ -16,7 +16,7 @@ var cfg = {
     ],
   },
   output: {
-    path: path.resolve('../src/ryzom_example/ryzom_example/static/'),
+    path: path.resolve('../src/ryzom_example/ryz_ex/static/ryz_ex/'),
     filename: 'ryzom_ex.js',
   },
   devtool: 'source-map',
