@@ -36,8 +36,8 @@ class Appbar(MuiComponent):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
-                 parent='body', _id=None, context={}):
+    def __init__(self, content=None, attr=None, events=None,
+                 parent='body', _id=None, context=None):
         return Div(content,
                    attr={'class': "mui-appbar"},
                    events, parent, _id)
@@ -51,8 +51,9 @@ class Button(MuiComponent):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={},
-                 events={}, parent='body', _id=None, context={}):
+    def __init__(self, content=None, attr=None,
+                 events=None, parent='body', _id=None, context=None):
+        attr = attr or {}
         cls = attr.setdefault('class', '')
         attr['class'] = f"mui-btn {cls}"
         return Button(content, attr, events, parent, _id)
@@ -66,8 +67,8 @@ class Container(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
-                 parent='body', _id=None, context={}):
+    def __init__(self, content=None, attr=None, events=None,
+                 parent='body', _id=None, context=None):
         return Div(content,
                    attr={'class': "mui-container"},
                    events, parent, _id)
@@ -82,8 +83,8 @@ class MuiForm(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
-                 parent='body', _id=None, context={}):
+    def __init__(self, content=None, attr=None, events=None,
+                 parent='body', _id=None, context=None):
         attr = {'class': "mui-form"}
         super().__init__('form', content, attr,
                          events, parent, _id)
@@ -97,8 +98,8 @@ class MuiLegend(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
-                 parent='body', _id=None, context={}):
+    def __init__(self, content=None, attr=None, events=None,
+                 parent='body', _id=None, context=None):
         super().__init__('legend', content,
                          events, parent, _id)
 

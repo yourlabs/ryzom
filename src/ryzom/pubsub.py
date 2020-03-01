@@ -23,7 +23,7 @@ class Publishable():
     _prepubs = {}
 
     @classmethod
-    def publish(cls, name, template=None, query={}):
+    def publish(cls, name, template=None, query=None):
         '''
         This method permit the publication of a model
         specifying the (unique) name of the publication,
@@ -47,6 +47,7 @@ class Publishable():
                     {'offset': 3}
                 ])
         '''
+        query = query or {}
         if not cls._published:
             cls._prepubs[name] = (template, query)
             if cls not in to_publish:

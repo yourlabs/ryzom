@@ -72,9 +72,9 @@ class Component:
         self.parent = parent
         self.position = 0
         self.tag = tag
-        self.attr = {} if attr is None else attr
-        self.events = {} if events is None else events
-        self.content = [] if content is None else content
+        self.attr = attr or {}
+        self.events = events or {}
+        self.content = content or []
 
         self.preparecontent()
 
@@ -175,8 +175,8 @@ class Component:
         return self.__subscriptions
 
     @subscriptions.setter
-    def subscriptions(self, value=[]):
-        self.__subscriptions = value
+    def subscriptions(self, value=None):
+        self.__subscriptions = value or []
 
     def to_html(self):
         if self.tag == 'text':
@@ -202,17 +202,17 @@ class Component:
 
 
 class Html(Component):
-    def __init__(self, content=[]):
+    def __init__(self, content=None):
         super().__init__('html', content, parent=None, _id='html')
 
 
 class Head(Component):
-    def __init__(self, content=[]):
+    def __init__(self, content=None):
         super().__init__('head', content, parent='html', _id='head')
 
 
 class Body(Component):
-    def __init__(self, content=[]):
+    def __init__(self, content=None):
         super().__init__('body', content, parent='html', _id='body')
 
 
@@ -222,18 +222,18 @@ class Title(Component):
 
 
 class Meta(Component):
-    def __init__(self, attr={}):
+    def __init__(self, attr=None):
         super().__init__('meta', attr=attr, parent='head')
 
 
 class Link(Component):
-    def __init__(self, attr={}):
+    def __init__(self, attr=None):
         self.noclose = True
         super().__init__('link', attr=attr, parent='head')
 
 
 class Script(Component):
-    def __init__(self, content='', attr={}):
+    def __init__(self, content='', attr=None):
         super().__init__('script', content, attr, parent='head')
 
 
@@ -245,13 +245,13 @@ class Div(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('div', content, attr, events, parent, _id)
 
 
 class A(Component):
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('a', content, attr, events, parent, _id)
 
@@ -264,7 +264,7 @@ class Ul(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('ul', content, attr, events, parent, _id)
 
@@ -277,7 +277,7 @@ class Ol(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('ol', content, attr, events, parent, _id)
 
@@ -290,7 +290,7 @@ class Li(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('li', content, attr, events, parent, _id)
 
@@ -303,7 +303,7 @@ class Span(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('span', content, attr, events, parent, _id)
 
@@ -316,7 +316,7 @@ class Text(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[],
+    def __init__(self, content=None,
                  parent='body', _id=None):
         super().__init__('text', content, parent=parent, _id=_id)
 
@@ -329,7 +329,7 @@ class Textarea(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('textarea', content, attr, events, parent, _id)
 
@@ -342,7 +342,7 @@ class Form(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('form', content, attr, events, parent, _id)
 
@@ -355,7 +355,7 @@ class Input(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         self.noclose = True
         super().__init__('input', content, attr, events, parent, _id)
@@ -369,7 +369,7 @@ class Select(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('select', content, attr, events, parent, _id)
 
@@ -382,7 +382,7 @@ class Option(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('option', content, attr, events, parent, _id)
 
@@ -395,7 +395,7 @@ class Optgroup(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('optgroup', content, attr, events, parent, _id)
 
@@ -408,7 +408,7 @@ class Label(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('label', content, attr, events, parent, _id)
 
@@ -421,7 +421,7 @@ class Button(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('button', content, attr, events, parent, _id)
 
@@ -434,7 +434,7 @@ class Nav(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('nav', content, attr, events, parent, _id)
 
@@ -447,6 +447,6 @@ class H1(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=[], attr={}, events={},
+    def __init__(self, content=None, attr=None, events=None,
                  parent='body', _id=None):
         super().__init__('h1', content, attr, events, parent, _id)
