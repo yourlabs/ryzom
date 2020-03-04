@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title_heading %}
+<h1>Record {% if record %}update{% else %}create{% endif %}</h1>
+{% endblock title_heading %}
+
+{% block content %}
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+{% block form %}
+<form method="post">
+    {% csrf_token %}
+    {{ render_form(form) }}
+    {# {{ form.as_p() }} #}
+    {# <input type="submit" value="Save"> #}
+    <div>
+      <button class="mui-btn mui-btn--primary" type="submit">Save</button>
+    </div>
+</form>
+{% endblock form %}
+{% endblock content %}

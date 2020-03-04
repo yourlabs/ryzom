@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title_heading %}
+<h1><a href="{{ url('records:index') }}">Record</a> detail</h1>
+{% endblock title_heading %}
+
+{% block content %}
+<ul>
+    <li>Char field: {{ record.char_field }}</li>
+    <li>Date field: {{ record.date_field|date('SHORT_DATE_FORMAT') }}</li>
+</ul>
+
+{% block form %}
+<form action="{{ url('records:update', record.pk) }}">
+    {# <input type="submit" value="Update?" /> #}
+    <div>
+      <button class="mui-btn mui-btn--primary" type="submit">Update?</button>
+    </div>
+</form>
+{% endblock form %}
+{% endblock content %}

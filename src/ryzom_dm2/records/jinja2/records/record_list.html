@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block extra_style %}
+<style>
+table, th, td {
+    border: 1px solid teal;
+    border-collapse: collapse;
+}
+</style>
+{% endblock extra_style %}
+
+{% block title_heading %}
+<h1>Welcome to the Records department</h1>
+{% endblock title_heading %}
+
+{% block content %}
+<table class="mui-table">
+  <tr>
+    <th>ID#</th>
+    <th>Description</th>
+  </tr>
+  {% for record in record_list %}
+  <tr>
+    <td>
+      <a href="{{ url('records:detail', record.id) }}">{{ record.id }}</a>
+    </td>
+    <td>
+      {{ record }}
+    </td>
+  </tr>
+  {% else %}
+  <tr>
+    <td>
+      No records available.
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock content %}

@@ -27,7 +27,7 @@ import warnings
 def main(settings_module=None):
     os.environ.setdefault(
         'DJANGO_SETTINGS_MODULE',
-        settings_module or 'ryzom_example.settings'
+        settings_module or 'ryzom_dm2.settings'
     )
 
     if 'DEBUG' not in os.environ:
