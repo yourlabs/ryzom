@@ -13,7 +13,9 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))))
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,9 +34,9 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'records.apps.RecordsConfig',
-    'ryzom_dm2.apps.RyzomConfig',
-    'ryzom_dm2.apps.RyzomAdminConfig',
+    'ryzom_dm2.records.apps.RecordsConfig',
+    'ryzom_dm2.ryzom_dm2.apps.RyzomConfig',
+    'ryzom_dm2.ryzom_dm2.apps.RyzomAdminConfig',
     'django_jinja',
     'ryzom',
     # 'django.contrib.admin',
@@ -55,7 +57,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'ryzom_dm2.urls'
+ROOT_URLCONF = 'ryzom_dm2.ryzom_dm2.urls'
 
 """
 TEMPLATES = [
@@ -75,7 +77,7 @@ TEMPLATES = [
 ]
 """
 
-WSGI_APPLICATION = 'ryzom_dm2.wsgi.application'
+WSGI_APPLICATION = 'ryzom_dm2.ryzom_dm2.wsgi.application'
 
 
 # Database
@@ -182,7 +184,7 @@ TEMPLATES = [
                 "int": int,
                 "isinstance": isinstance,
                 "type": type,
-                "render_form": "ryzom_dm2.jinja2_ryzom.render_form",
+                "render_form": "ryzom_dm2.ryzom_dm2.jinja2_ryzom.render_form",
                 "ryzom": "ryzom.components.component_html",
             },
             "newstyle_gettext": True,

@@ -35,7 +35,7 @@ setup(
     ),
     entry_points={
         'console_scripts': [
-            'ryzom = ryzom_example.manage:main',
+            'ryzom = ryzom_dm2.manage:main',
         ],
     },
     classifiers=[

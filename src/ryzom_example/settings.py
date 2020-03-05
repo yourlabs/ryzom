@@ -1,8 +1,8 @@
 from crudlfap.settings import *  # noqa
 
 INSTALLED_APPS = [  # noqa: F405
-    'ryz_ex',
-    'todos',
+    'ryzom_example.ryz_ex',
+    'ryzom_example.todos',
     'channels',
     'ryzom',
     ] + INSTALLED_APPS + [  # noqa: F405
@@ -32,7 +32,7 @@ AUTHENTICATION_BACKENDS += [  # noqa
 ]
 """
 
-ROOT_URLCONF = 'ryz_ex.urls'
+ROOT_URLCONF = 'ryzom_example.ryz_ex.urls'
 
 # Database
 # https://docs.django.com/en/2.1/ref/settings/#databases
@@ -51,7 +51,7 @@ DATABASES = {
 STATIC_ROOT = os.getenv(
     'STATIC_ROOT', Path(os.path.dirname(__file__)) / 'static')
 
-ASGI_APPLICATION = 'ryz_ex.routing.application'
+ASGI_APPLICATION = 'ryzom_example.ryz_ex.routing.application'
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -62,14 +62,14 @@ CHANNEL_LAYERS = {
 }
 
 # ryzom settings
-RYZOM_APP = 'todos'
-DDP_URLPATTERNS = 'todos.routing'
+RYZOM_APP = 'ryzom_example.todos'
+DDP_URLPATTERNS = 'ryzom_example.todos.routing'
 SERVER_METHODS = [
-        'todos.methods'
+        'ryzom_example.todos.methods'
     ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
-    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
+    "render_form"] = "ryzom_example.ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
 # RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'

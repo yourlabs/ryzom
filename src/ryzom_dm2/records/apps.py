@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class RecordsConfig(AppConfig):
-    name = 'records'
+    name = 'ryzom_dm2.records'
