@@ -25,6 +25,7 @@ setup(
         'crudlfap',
         'jsonpickle',
         'psycopg2',
+        'transcrypt==3.6',
     ],
     tests_require=[
         'tox',
@@ -35,7 +36,8 @@ setup(
     ),
     entry_points={
         'console_scripts': [
-            'ryzom = ryzom_dm2.manage:main',
+            'ryzom = ryzom_example.manage:main',
+            'ryzom2 = ryzom_dm2.manage:main',
         ],
     },
     classifiers=[
@@ -46,9 +48,9 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    python_requires='>=3',
+    python_requires='==3.6',
 )

@@ -34,27 +34,43 @@ Installing from source
 
        pip install -e ./ryzom
 
-Create database for example project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Build Javascript bundles using webpack
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Use ``yarn`` to download required modules and build bundles.::
+
+    cd <install dir>/js
+    yarn install
+    yarn start  # to build ryzom_example CRUDLFA+ demo (requires postgres db)
+    yarn start2  # to build ryzom_dm2 MUI demo (uses sqlite3 db)
+
+Create database for ryzom_example project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Install ``postgres`` on your platform. For Linux::
 
-       sudo apt install postgresql-10
+    sudo apt install postgresql-10
 
 2. Create database user for the example project::
 
-       sudo -u postgres psql -c "create user ryzom password 'ryzom';"
+    sudo -u postgres psql -c "create user ryzom password 'ryzom';"
 
 3. Create database for the example project::
 
-       sudo -u postgres psql -c "create database django_ddp_test_project owner ryzom;"
+    sudo -u postgres psql -c "create database django_ddp_test_project owner ryzom;"
 
-4. Migrate database and start development server for the example project::
+Migrate database for either example project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-       ryzom migrate
-       ryzom runserver  # demo now available at http://localhost:8000
+1. Migrate database and start development server for the example projects::
 
-Move on to the :doc:`tutorial`.
+    ryzom migrate
+    ryzom runserver  # ryzom_example demo now at http://localhost:8000
+
+    ryzom2 migrate
+    ryzom2 runserver  # ryzom_dm2 demo now at http://localhost:8000
+
+Now move on to the :doc:`tutorial`.
 
 .. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _pip: https://pip.pypa.io/en/stable/installing/

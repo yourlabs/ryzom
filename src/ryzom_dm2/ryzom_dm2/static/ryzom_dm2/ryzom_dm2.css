@@ -110,10 +110,11 @@ button {
 /**
  * Header CSS
  */
-.sidedrawer-toggle {
-  color: #fff;
+a.sidedrawer-toggle {
+  color: #FFFFFF          !important;
   cursor: pointer;
-  font-size: 20px;
+  /* font-size: 20px; */
+  font-size: xx-large;
   line-height: 20px;
   margin-right: 10px;
 }

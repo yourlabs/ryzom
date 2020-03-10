@@ -63,7 +63,14 @@ var cfg = {
             }
           ]
         })
-      }
+      },
+      {
+      	test: /\.py$/,
+          loader: 'py-loader',
+          options: {
+            compiler: 'transcrypt'
+          }
+        },
     ]
   },
   plugins: [

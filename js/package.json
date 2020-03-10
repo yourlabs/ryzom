@@ -5,7 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-cli"
+    "start": "webpack-cli --config webpack.config.js",
+    "start-dm2": "webpack-cli --config webpack.dm2.config.js"
   },
   "repository": {
     "type": "git",
@@ -20,13 +21,16 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "jquery": "^3.4.1",
     "material-components-web": "^0.39.1",
+    "mini-css-extract-plugin": "^0.9.0",
     "muicss": "^0.10.0",
     "node-gyp": "^6.1.0",
     "node-sass": "^4.11.0",
     "postcss-loader": "^3.0.0",
+    "py-loader": "^0.3.1",
     "sass-loader": "^7.3.1",
     "webpack": "^4.16.1",
     "webpack-cli": "^3.1.0",
     "yarn": "^1.7.0"
-  }
+  },
+  "devDependencies": {}
 }

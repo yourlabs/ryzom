@@ -13,21 +13,23 @@
 
     {% block bundles %}
       {% block style_bundle %}
-      <link href="{{ static('ryzom_dm2/ryzom_ex.css') }}" rel="stylesheet">
-      <link href="{{ static('ryzom_dm2/ryzom_dm2.css') }}" rel="stylesheet">
+      <link href="{{ static('ryzom_dm2/maincss.css') }}" rel="stylesheet">
       {% endblock %}
 
       {% block script_bundle %}
-      <script src="{{ static('ryzom_dm2/ryzom_ex.js') }}" defer></script>
-      # Transcrypt generated code.
-      <script src="{{ static('ryzom_dm2/__javascript__/ryzom_dm2.js') }}" defer></script>
+      <script src="{{ static('ryzom_dm2/main.js') }}" defer></script>
+      <!-- # Transcrypt generated code. -->
+      <!-- <script src="{{ static('ryzom_dm2/__javascript__/ryzom_dm2.js') }}" defer></script> -->
+      <script>
+      <!-- $('ryzom_dm2.muiSidedrawer'); -->
+      </script>
       {% endblock %}
     {% endblock %}
 
     {% block extra_style %}{% endblock %}
   </head>
 
-  <body class="{% block body_class %}{% endblock %}">
+  <body class="{% block body_class %}{% endblock %}" >
     <div id="sidedrawer" class="mui--no-user-select">
       <!-- Side drawer content goes here -->
       <div id="sidedrawer-brand" class="mui--appbar-line-height">
@@ -65,8 +67,8 @@
     <header id="header">
       <div class="mui-appbar mui--appbar-line-height">
         <div class="mui-container-fluid">
-          <a class="sidedrawer-toggle mui--visible-xs-inline-block mui--visible-sm-inline-block js-show-sidedrawer" style="font-size: xx-large;">☰</a>
-          <a class="sidedrawer-toggle mui--hidden-xs mui--hidden-sm js-hide-sidedrawer" style="font-size: xx-large;">☰</a>
+          <a class="sidedrawer-toggle mui--visible-xs-inline-block mui--visible-sm-inline-block js-show-sidedrawer">☰</a>
+          <a class="sidedrawer-toggle mui--hidden-xs mui--hidden-sm js-hide-sidedrawer">☰</a>
           <span class="mui--text-title mui--visible-xs-inline-block">Records Department</span>
         </div>
       </div>

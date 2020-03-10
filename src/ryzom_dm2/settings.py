@@ -14,8 +14,8 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__))
 
 
 # Quick-start development settings - unsuitable for production
@@ -34,8 +34,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'ryzom_dm2.records.apps.RecordsConfig',
-    'ryzom_dm2.ryzom_dm2.apps.RyzomConfig',
+    'ryzom_dm2.records',  # .apps.RecordsConfig',
+    'ryzom_dm2.ryzom_dm2',  # .apps.RyzomConfig',
     'ryzom_dm2.ryzom_dm2.apps.RyzomAdminConfig',
     'django_jinja',
     'ryzom',
