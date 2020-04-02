@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "start": "webpack-cli --config webpack.config.js",
-    "start-dm2": "webpack-cli --config webpack.dm2.config.js"
+    "start2": "webpack-cli --config webpack.dm2.config.js"
   },
   "repository": {
     "type": "git",

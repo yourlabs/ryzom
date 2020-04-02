@@ -8,13 +8,11 @@ var cfg = {
   context: __dirname,
   entry: {
     main: [
-      './index.js',
-      './transcrypt.js',
-    ],
-    // Ensure ordering of CSS for overrides.
-    maincss: [
-      './style.scss',
-      './style.css',
+      './index-dm2.js',
+      './transcrypt-dm2.js',
+      // Ensure ordering of CSS for overridden styles.
+      './style-dm2.scss',
+      './style-dm2.css',
     ],
   },
   output: {
