@@ -11,7 +11,7 @@ from django.test.client import RequestFactory as drf
 
 from ryzom.components import component_html
 
-from todos.crudlfap import TaskRouter
+from ryzom_example.todos.crudlfap import TaskRouter
 
 
 pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', False),

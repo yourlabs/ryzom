@@ -438,8 +438,9 @@ class Form(Div):
         content = []
         if form.errors:
             content.append(
-                Ul([
-                    Li([Text(_("Please fix any errors in this form."))])
+                Ul(
+                    [
+                        Li([Text(_("Please fix any errors in this form."))])
                     ],
                     attr={"class": "errorlist"}
                 )

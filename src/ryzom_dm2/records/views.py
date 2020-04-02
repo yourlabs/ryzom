@@ -14,7 +14,7 @@ class RecordModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # When creating a record, force the field labels to float above any
-        # date fields.
+        # date fields, otherwise they sit behind the default placeholder.
         if not self.is_bound:
             for k, f in self.fields.items():
                 if isinstance(f.widget, forms.DateInput):
@@ -24,6 +24,7 @@ class RecordModelForm(forms.ModelForm):
         model = Record
         fields = '__all__'
         widgets = {
+            # HTML5 datepicker requires specific date format.
             'date_field': forms.DateInput(
                 attrs={'type': 'date'},
                 format=settings.DATE_INPUT_FORMATS[0],

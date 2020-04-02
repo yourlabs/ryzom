@@ -3,6 +3,10 @@ from setuptools.command.install import install
 import os
 import sys
 
+transcrypt_ver = "<3.7"
+if (sys.version_info[0] == 3
+    and sys.version_info[1] > 6):
+    transcrypt_ver = ">=3.7"
 
 setup(
     name='ryzom',
@@ -25,7 +29,7 @@ setup(
         'crudlfap',
         'jsonpickle',
         'psycopg2',
-        'transcrypt==3.6',
+        f'transcrypt{transcrypt_ver}',
     ],
     tests_require=[
         'tox',
@@ -52,5 +56,5 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    python_requires='==3.6',
+    python_requires='>=3.6',
 )

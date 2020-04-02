@@ -6,4 +6,3 @@ from django.contrib import admin
 class RyzomAdminSite(admin.AdminSite):
     site_header = 'Records Department'
     site_title = 'ryzom_dm2'
-

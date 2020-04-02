@@ -14,7 +14,7 @@ from crudlfap import shortcuts as crudlfap
 from crudlfap.route import Route
 from crudlfap.router import Router
 
-from todos.models import Task
+from ryzom_example.todos.models import Task
 
 
 pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', False),
