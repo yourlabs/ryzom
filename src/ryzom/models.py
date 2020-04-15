@@ -9,7 +9,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.postgres.aggregates import ArrayAgg
-from ryzom.ddp import send_insert
 
 
 class Tokens(models.Model):
@@ -81,6 +80,7 @@ class Subscriptions(models.Model):
         This part is subject to near changes when SSR will be
         implemented
         '''
+        from ryzom.ddp import send_insert
         pub = self.publication
         model_mod = importlib.import_module(pub.model_module)
         model_cls = getattr(model_mod, pub.model_class)

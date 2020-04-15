@@ -18,9 +18,11 @@ Installing from GitLab
 
 You can install the latest current trunk of ryzom directly from GitLab using pip_::
 
-   pip install --user -e git+git://yourlabs.io/oss/ryzom.git@master#egg=ryzom
+   pip install --user -e git+git://yourlabs.io/oss/ryzom.git@master#egg=ryzom[dev]
 
-.. warning:: ``[dev]``, ``--user``, ``@master`` are all optional above.
+.. warning:: ``[dev]`` (to install channels and client-side rendering),
+             ``--user`` (to install a local version), and
+             ``@master`` are all optional above.
 
 Installing from source
 ----------------------
@@ -34,8 +36,8 @@ Installing from source
 
        pip install -e ./ryzom
 
-Create database for example project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create database for the ryzom_example project in the [dev] install
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Install ``postgres`` on your platform. For Linux::
 
@@ -52,7 +54,8 @@ Create database for example project
 4. Migrate database and start development server for the example project::
 
        ryzom migrate
-       ryzom runserver  # demo now available at http://localhost:8000
+       ryzom runserver  # CRUDLFA+ demo available at http://localhost:8000
+	   # Client-side rendering demo at http://localhost:8000/todos
 
 Move on to the :doc:`tutorial`.
 

@@ -18,19 +18,19 @@ setup(
     include_package_data=True,
     keywords='django frontend',
     install_requires=[
-        'channels',
-        'channels-redis',
         'cli2',
         'django<3.0',
         'crudlfap',
-        'jsonpickle',
-        'psycopg2',
     ],
     tests_require=[
         'tox',
     ],
     extras_require=dict(
         dev=[
+        'channels',
+        'channels-redis',
+        'jsonpickle',
+        'psycopg2',
         ],
     ),
     entry_points={

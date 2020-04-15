@@ -66,9 +66,7 @@ class Publishable():
 
         :parameters: see :meth:`publish`
         '''
-        tmpl_cls, tmpl_mod = template[::-1].split('.', 1)
-        tmpl_mod = tmpl_mod[::-1]
-        tmpl_cls = tmpl_cls[::-1]
+        tmpl_mod, tmpl_cls = template.rsplit('.', 1)
         kwargs = {
             'model_module': cls.__module__,
             'model_class': cls.__name__,

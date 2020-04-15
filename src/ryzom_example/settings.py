@@ -1,9 +1,17 @@
+import sys
+
 from crudlfap.settings import *  # noqa
 
+
+# Find demo app modules when running under `ryzom runserver`
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
+
 INSTALLED_APPS = [  # noqa: F405
-    'ryzom_example.ryz_ex',
-    'ryzom_example.todos',
-    'channels',
+    'ryz_ex',
+    'todos',
+    'channels',  # optional, but required for client-side interaction
     'ryzom',
     ] + INSTALLED_APPS + [  # noqa: F405
 ]
@@ -27,31 +35,30 @@ MIDDLEWARE += [  # noqa: F405
 # install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa: F405
 
 """
-AUTHENTICATION_BACKENDS += [  # noqa
+AUTHENTICATION_BACKENDS += [  # noqa: F405
     'crudlfap_example.blog.crudlfap.AuthBackend',
 ]
 """
 
-ROOT_URLCONF = 'ryzom_example.ryz_ex.urls'
+ROOT_URLCONF = 'ryz_ex.urls'
 
 # Database
 # https://docs.django.com/en/2.1/ref/settings/#databases
-""" This should be provided as ENV variables as expected by crudlfap.settings.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'django_ddp_test_project',
-        'USER': 'ryzom',
-        'PASSWORD': 'ryzom',
-        'HOST': 'localhost',
+        'ENGINE': os.getenv('DB_ENGINE',
+                            'django.db.backends.postgresql_psycopg2'),
+        'NAME': os.getenv('DB_NAME', 'django_ddp_test_project'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'USER': os.getenv('DB_USER', 'ryzom'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'ryzom'),
     }
 }
-"""
 
 STATIC_ROOT = os.getenv(
     'STATIC_ROOT', Path(os.path.dirname(__file__)) / 'static')
 
-ASGI_APPLICATION = 'ryzom_example.ryz_ex.routing.application'
+ASGI_APPLICATION = 'ryz_ex.routing.application'
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -62,14 +69,14 @@ CHANNEL_LAYERS = {
 }
 
 # ryzom settings
-RYZOM_APP = 'ryzom_example.todos'
-DDP_URLPATTERNS = 'ryzom_example.todos.routing'
+RYZOM_APP = 'todos'
+DDP_URLPATTERNS = 'todos.routing'
 SERVER_METHODS = [
-        'ryzom_example.todos.methods'
-    ]
+    'todos.methods'
+]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
-    "render_form"] = "ryzom_example.ryz_ex.jinja2_ryzom.render_form"
+    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
 # RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'
@@ -77,7 +84,7 @@ CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
 RYZOM_COMPONENTS_MODULE = 'ryzom.components.muicss'
 RYZOM_COMPONENTS_PREFIX = 'Mui'
 
-PYTEST_SKIP = True
+PYTEST_SKIP = os.getenv('PYTEST_SKIP', False)
 
 """
 CRUDLFAP_TEMPLATE_BACKEND = {

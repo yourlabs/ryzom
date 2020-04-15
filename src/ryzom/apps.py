@@ -18,7 +18,11 @@ class RyzomConfig(AppConfig):
         Finally, we create the publications that were registered
         in the to_publish list of ryzom.pusub module.
         '''
-        import ryzom.signals # noqa
+        try:
+            import ryzom.signals  # noqa
+        except (ImportError,):
+            pass
+
         from ryzom.pubsub import to_publish
 
         try:
