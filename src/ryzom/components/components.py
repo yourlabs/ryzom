@@ -3,9 +3,11 @@ Ryzom components declarations.
 There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
-import cli2
 import jsonpickle
 import uuid
+
+from django.conf import settings
+from django.utils.module_loading import import_string
 
 
 def component_html(path, *args, **kwargs):
@@ -14,18 +16,16 @@ def component_html(path, *args, **kwargs):
         from jinja2.utils import Markup
     except ImportError:
         Markup = None
-    Component = cli2.Importable.factory(path).target
-    component = Component(*args, **kwargs)
+    ComponentCls = import_string(path)
+    component = ComponentCls(*args, **kwargs)
     html = component.to_html()
 
     # DEBUG:
-    print()
-    print()
-    print()
-    print('HTML')
-    print(html)
-    print()
-    print()
+    if settings.DEBUG:
+        print()
+        print('HTML')
+        print(html)
+        print()
 
     if Markup:
         html = Markup(html)
@@ -178,7 +178,7 @@ class Component:
     def subscriptions(self, value=None):
         self.__subscriptions = value or []
 
-    def to_html(self):
+    def to_html(self, context=None):
         if self.tag == 'text':
             return f'{self.content}'
         attr = ''
@@ -198,6 +198,16 @@ class Component:
             for c in self.content:
                 html += c.to_html() if getattr(c, 'to_html', None) else str(c)
             html += f'</{self.tag}>'
+        return html
+
+    def render(self, context=None):
+        html = self.to_html(context)
+
+        # DEBUG:
+        if settings.DEBUG:
+            print('template render HTML')
+            print(html)
+
         return html
 
 

@@ -1,28 +1,23 @@
 from operator import attrgetter
 
-# from django import template
+from django.template.context import Context
+from django.template.loader import get_template
 
 from crudlfap.jinja2 import render_form as render_crudlfap
-
-from ryzom.components import component_html
-# from ryzom.components import django as ryzom
 
 
 def render_form(form):
     get_ryzom = attrgetter('Meta.model.Project.ryzom')
     try:
-        if get_ryzom(form):
-            """
-            form.renderer = ryzom.Field()
-            context = dict(form=form)
-            tpl = ['{{ form }}']
-
-            return template.Template(
-                ' '.join(tpl)
-            ).render(template.Context(context))
-            """
-            return component_html('ryzom.components.django.Form', form)
+        _ = get_ryzom(form)
     except AttributeError:
         pass
+    else:
+        context = dict(form=form)
+        tmpl = get_template(
+            'ryzom.components.django.Form',
+            using='Ryzom',
+        )
+        return tmpl.render(Context(context))
 
     return render_crudlfap(form)

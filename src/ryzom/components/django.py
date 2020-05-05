@@ -4,10 +4,10 @@ Render Django forms using ryzom components.
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.template.context import Context
 from django.utils.html import conditional_escape
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
-
-from cli2 import Importable
 
 from .components import (
     Div, Input, Label, Li,
@@ -24,8 +24,9 @@ class Factory:
             f'{settings.RYZOM_COMPONENTS_MODULE}'
             f'.{settings.RYZOM_COMPONENTS_PREFIX}{widget_type}'
         )
-        ComponentCls = Importable.factory(widget_type).target
-        if ComponentCls is None:
+        try:
+            ComponentCls = import_string(widget_type)
+        except ImportError as exc:
             raise NotImplementedError(
                 f'Widget class {widget_type} not found.'
             )
@@ -91,7 +92,7 @@ class DjangoMultiWidget(Div):
 class DjangoMultipleHiddenInput(DjangoMultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
-        super().__init(multi_widget)
+        super().__init__(multi_widget)
 
 
 class DjangoFileInput(DjangoTextInput):
@@ -434,10 +435,23 @@ class Form(Div):
     :return: An AST representing the rendered fields.
     :rtype: list
     """
-    def __init__(self, form):
-        content = []
-        if form.errors:
-            content.append(
+    def __init__(self, context=dict):
+        self.context = context
+        self.content = []
+        self.prepare()
+        super().__init__(
+            self.content,
+        )
+
+    def prepare(self, context=None):
+        if context:
+            self.context.update(context)
+        self.form = self.context.get('form', None)
+        if self.form is None:
+            return
+
+        if self.form.errors:
+            self.content.append(
                 Ul([
                     Li([Text(_("Please fix any errors in this form."))])
                     ],
@@ -445,19 +459,16 @@ class Form(Div):
                 )
             )
         # form.non_field_errors
-        content.append(NonFieldErrors(form))
-        content.append(HiddenErrors(form))
+        self.content.append(NonFieldErrors(self.form))
+        self.content.append(HiddenErrors(self.form))
         # form.visible_fields
-        content.append(VisibleFields(form))
+        self.content.append(VisibleFields(self.form))
         # form.hidden_fields
-        content.append(HiddenFields(form))
+        self.content.append(HiddenFields(self.form))
         # DEBUG: helper message
-        content.append(
+        self.content.append(
             Text(
                 f'ryzom {settings.RYZOM_COMPONENTS_PREFIX}'
-                f' Form {form.__class__.__name__}'
+                f' Form {self.form.__class__.__name__}'
             )
-        )
-        super().__init__(
-            content,
         )
