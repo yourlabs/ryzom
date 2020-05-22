@@ -2,23 +2,25 @@ import pytest
 
 from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
-from django.test import SimpleTestCase, TestCase
-
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage import default_storage
 from django.contrib.sessions.backends.base import SessionBase
+from django.core.exceptions import ImproperlyConfigured
 from django.template import TemplateDoesNotExist
 from django.template.context import Context
 from django.template.loader import get_template
+from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory as drf
 
+from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html
 from ryzom.components.django import Form
 
 from todos.crudlfap import TaskRouter
+from django.test.utils import override_settings
 
 
-pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', False),
+pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', True),
                                 reason="skip tests in this module")
 
 
@@ -98,7 +100,7 @@ def test_get_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
-        using='Ryzom',
+        using='ryzom',
     )
     assert tmpl.template == Form
 
@@ -108,7 +110,7 @@ def test_render_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
-        using='Ryzom',
+        using='ryzom',
     )
     rendered = tmpl.render(Context(context))
     assert 'User' in rendered
@@ -120,6 +122,44 @@ def test_missing_template():
         tmpl = get_template(
             'ryzom.components.non.existent',
         )
+
+
+class TestRyzomBackendSettings(SimpleTestCase):
+
+    def setUp(self):
+        # Clear functools.lru_cache.
+        Ryzom.get_default.cache_clear()
+
+    def test_engine_options(self):
+        from django.template import engines
+        ryzom_backend = engines['ryzom']
+        assert isinstance(ryzom_backend, Ryzom)
+        assert ryzom_backend.components_module == "ryzom.components.muicss"
+        assert ryzom_backend.components_prefix == "Mui"
+    
+    def test_engine_default(self):
+        ryzom_backend = Ryzom.get_default()
+        assert isinstance(ryzom_backend, Ryzom)
+    
+    @override_settings(TEMPLATES=[])
+    def test_engine_default_missing(self):
+        msg = "No Ryzom backend is configured."
+        with self.assertRaisesMessage(ImproperlyConfigured, msg):
+            ryzom_backend = Ryzom.get_default()
+
+    @override_settings(TEMPLATES=[{
+            'NAME': 'ryzom',
+            'BACKEND': 'ryzom.backends.ryzom.Ryzom',
+            'OPTIONS': {'components_prefix': 'Abc'},
+        }, {
+            'NAME': 'ryzom_2',
+            'BACKEND': 'ryzom.backends.ryzom.Ryzom',
+            'OPTIONS': {'components_prefix': 'Xyz'},
+        }])
+    def test_engine_default_multiple(self):
+        msg = "Multiple Ryzom backends are configured."
+        with self.assertRaisesMessage(ImproperlyConfigured, msg):
+            ryzom_backend = Ryzom.get_default()
 
 
 # @pytest.mark.skip

@@ -79,13 +79,12 @@ CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
     "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
-RYZOM_TEMPLATE_BACKEND ={
-    "NAME": "Ryzom",
-    "BACKEND": "ryzom.backend.Ryzom",
+RYZOM_TEMPLATE_BACKEND = {
+    "BACKEND": "ryzom.backends.ryzom.Ryzom",
     "OPTIONS": {
-        # "app_dirname": "ryzom",
-        # "components_module": "ryzom.components.muicss",
-        # "components_prefix": "Mui",
+        "app_dirname": "components",
+        "components_module": "ryzom.components.muicss",
+        "components_prefix": "Mui",
         # "context_processors": [
             # "django.template.context_processors.debug",
             # "django.template.context_processors.request",

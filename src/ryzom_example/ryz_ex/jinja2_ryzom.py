@@ -16,7 +16,7 @@ def render_form(form):
         context = dict(form=form)
         tmpl = get_template(
             'ryzom.components.django.Form',
-            using='Ryzom',
+            using='ryzom',
         )
         return tmpl.render(Context(context))
 
