@@ -63,12 +63,17 @@ class Ryzom(BaseEngine):
 class Template:
 
     def __init__(self, template):
-        try:
-            self.template = import_string(template)
-        except ImportError as exc:
-            raise TemplateDoesNotExist(template, backend=self) from exc
-        except Exception as exc:
-            raise TemplateSyntaxError(template) from exc
+        if callable(template):
+            # NOTE: Jinja2 chokes on non-string template name values, so
+            # calls in this form require the using='ryzom' keyword argument.
+            self.template = template
+        else:
+            try:
+                self.template = import_string(template)
+            except ImportError as exc:
+                raise TemplateDoesNotExist(template, backend=self) from exc
+            except Exception as exc:
+                raise TemplateSyntaxError(template) from exc
 
     def render(self, context=None, request=None):
         from django.utils.safestring import mark_safe

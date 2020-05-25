@@ -11,13 +11,13 @@ from django.template.context import Context
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory as drf
+from django.test.utils import override_settings
 
 from ryzom.backends.ryzom import Ryzom
-from ryzom.components import component_html
+from ryzom.components import component_html, Div, Text
 from ryzom.components.django import Form
 
 from todos.crudlfap import TaskRouter
-from django.test.utils import override_settings
 
 
 pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', True),
@@ -87,20 +87,11 @@ def test_render_field_select(form):
     assert 'User' in rendered  # label
 
 
-# @pytest.mark.skip
-@pytest.mark.django_db
-def test_render_form_fields(form):
-    rendered = component_html('ryzom.components.django.Form', dict(form=form))
-    assert 'User' in rendered
-    assert 'About' in rendered
-
-
 @pytest.mark.django_db
 def test_get_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
-        using='ryzom',
     )
     assert tmpl.template == Form
 
@@ -110,7 +101,6 @@ def test_render_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
-        using='ryzom',
     )
     rendered = tmpl.render(Context(context))
     assert 'User' in rendered
@@ -122,6 +112,15 @@ def test_missing_template():
         tmpl = get_template(
             'ryzom.components.non.existent',
         )
+
+def test_callable_template():
+    # Jinja2 chokes on non-string templates, so requires 'using'
+    tmpl = get_template(
+        lambda x: Div([Text('test_text')]),
+        using='ryzom',
+    )
+    rendered = tmpl.render()
+    assert 'test_text</div>' in rendered
 
 
 class TestRyzomBackendSettings(SimpleTestCase):
