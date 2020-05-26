@@ -85,6 +85,9 @@ RYZOM_TEMPLATE_BACKEND = {
         "app_dirname": "components",
         "components_module": "ryzom.components.muicss",
         "components_prefix": "Mui",
+        # "components_module": "ryzom.components.django",
+        # "components_prefix": "Django",
+
         # "context_processors": [
             # "django.template.context_processors.debug",
             # "django.template.context_processors.request",
@@ -99,11 +102,6 @@ RYZOM_TEMPLATE_BACKEND = {
     }
 }
 TEMPLATES.append(RYZOM_TEMPLATE_BACKEND)
-
-# RYZOM_COMPONENTS_MODULE = 'ryzom.components.django'
-# RYZOM_COMPONENTS_PREFIX = 'Django'
-RYZOM_COMPONENTS_MODULE = 'ryzom.components.muicss'
-RYZOM_COMPONENTS_PREFIX = 'Mui'
 
 PYTEST_SKIP = os.getenv('PYTEST_SKIP', False)
 

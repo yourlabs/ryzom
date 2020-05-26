@@ -4,6 +4,7 @@ Ryzom MUI CSS components.
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.template import engines
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
@@ -12,13 +13,6 @@ from .components import (
     Optgroup, Option, Select, Text, Textarea, Ul,
 )
 from .django import Factory, DjangoTextInput
-
-
-COMPONENTS_MODULE = getattr(
-    settings, 'RYZOM_COMPONENTS_MODULE', 'ryzom.components.django')
-COMPONENTS_PREFIX = getattr(
-    settings, 'RYZOM_COMPONENTS_PREFIX',
-    COMPONENTS_MODULE.split('.')[-1].title())
 
 
 """
@@ -581,8 +575,13 @@ class Form(Div):
         # form.hidden_fields
         content.append(HiddenFields(form))
         # DEBUG: helper message
+        ryzom_engine = engines['ryzom']
         content.append(
-            Text(f'ryzom {COMPONENTS_PREFIX} Form {form.__class__.__name__}'))
+            Text(
+                f'ryzom {ryzom_engine.components_prefix}'
+                f' Form {form.__class__.__name__}'
+            )
+        )
         super().__init__(
             content,
         )

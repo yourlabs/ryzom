@@ -4,6 +4,7 @@ Render Django forms using ryzom components.
 from collections.abc import Iterable
 
 from django.conf import settings
+from django.template import engines
 from django.template.context import Context
 from django.utils.html import conditional_escape
 from django.utils.module_loading import import_string
@@ -19,10 +20,11 @@ class Factory:
     """ Return the class required to render the ~django.forms.Widget. """
     @classmethod
     def as_component(self, widget):
+        ryzom_engine = engines['ryzom']
         widget_type = type(widget).__name__
         widget_type = (
-            f'{settings.RYZOM_COMPONENTS_MODULE}'
-            f'.{settings.RYZOM_COMPONENTS_PREFIX}{widget_type}'
+            f'{ryzom_engine.components_module}'
+            f'.{ryzom_engine.components_prefix}{widget_type}'
         )
         try:
             ComponentCls = import_string(widget_type)
@@ -466,9 +468,10 @@ class Form(Div):
         # form.hidden_fields
         self.content.append(HiddenFields(self.form))
         # DEBUG: helper message
+        ryzom_engine = engines['ryzom']
         self.content.append(
             Text(
-                f'ryzom {settings.RYZOM_COMPONENTS_PREFIX}'
+                f'ryzom {ryzom_engine.components_prefix}'
                 f' Form {self.form.__class__.__name__}'
             )
         )
