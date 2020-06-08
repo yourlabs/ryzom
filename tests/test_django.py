@@ -6,6 +6,7 @@ from django import forms
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
+from ryzom_example.settings import CRUDLFAP_TEMPLATE_BACKEND
 from ryzom.components import component_html
 
 
@@ -44,8 +45,17 @@ class NonModelForm(forms.Form):
 
 
 # @pytest.mark.skip
-@override_settings(RYZOM_COMPONENTS_MODULE='ryzom.components.django')
-@override_settings(RYZOM_COMPONENTS_PREFIX='Django')
+@override_settings(TEMPLATES=[
+    CRUDLFAP_TEMPLATE_BACKEND,
+    {
+        "BACKEND": "ryzom.backends.ryzom.Ryzom",
+        "OPTIONS": {
+            "app_dirname": "components",
+            "components_module": "ryzom.components.django",
+            "components_prefix": "Django",
+        },
+    },
+])
 class TestDjangoNonModelForm(SimpleTestCase):
     """ Test the individual fields from ExampleForm for correct HTML.
         Create fixture files to compare semantic HTML (not literal text;
@@ -71,15 +81,16 @@ class TestDjangoNonModelForm(SimpleTestCase):
         )
         cls.render = 'ryzom.components.django.Field'
         cls.maxDiff = None
+        from django.template import engines
+        cls.prefix = engines['ryzom'].components_prefix
 
     def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
         type_name = f'{type(field.field).__name__}{widget_name}'
-        prefix = settings.RYZOM_COMPONENTS_PREFIX
         rendered = component_html(self.render, field)
         rendered = self.ryzom_re.sub(self.ryzom_sub, rendered)
         with open(os.path.join(
-                self.fixture_path, f'{prefix}{type_name}.txt')) as fixture:
+                self.fixture_path, f'{self.prefix}{type_name}.txt')) as fixture:
             self.assertHTMLEqual(rendered, fixture.read())
 
     def test_char_field(self):
