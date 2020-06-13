@@ -6,7 +6,9 @@ from django import forms
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
-from ryzom_example.settings import CRUDLFAP_TEMPLATE_BACKEND
+from ryzom_example.settings import (
+    CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
+)
 from ryzom.components import component_html
 
 
@@ -47,6 +49,7 @@ class NonModelForm(forms.Form):
 # @pytest.mark.skip
 @override_settings(TEMPLATES=[
     CRUDLFAP_TEMPLATE_BACKEND,
+    DEFAULT_TEMPLATE_BACKEND,
     {
         "BACKEND": "ryzom.backends.ryzom.Ryzom",
         "OPTIONS": {

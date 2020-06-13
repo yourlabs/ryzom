@@ -25,8 +25,8 @@ pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', True),
 
 
 class RequestFactory(drf):
-    def __init__(self, user=None):
-        self.user = user or AnonymousUser()
+    def __init__(self, user_=None):
+        self.user = user_ or AnonymousUser()
         self.user = authenticate(username=self.user.username,
                                  password=self.user.username)
         super().__init__()
@@ -89,11 +89,14 @@ def test_render_field_select(form):
 
 @pytest.mark.django_db
 def test_get_template(form):
+    from django.template import engines
+    ryzom_backend = engines['ryzom']
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
     )
     assert tmpl.template == Form
+    assert tmpl.backend == ryzom_backend
 
 
 @pytest.mark.django_db
@@ -102,7 +105,7 @@ def test_render_template(form):
     tmpl = get_template(
         'ryzom.components.django.Form',
     )
-    rendered = tmpl.render(Context(context))
+    rendered = tmpl.render(context)
     assert 'User' in rendered
     assert 'About' in rendered
 
@@ -121,6 +124,27 @@ def test_callable_template():
     )
     rendered = tmpl.render()
     assert 'test_text</div>' in rendered
+
+
+@pytest.mark.django_db
+def test_context_processor_request(srf):
+    class DivUser(Div):
+        def __init__(self, context):
+            content = [Text(f"User: {context['request'].user}"),
+                       Text("|"),
+                       Text(f"Test: {context['test_key']}"),
+                       ]
+            super().__init__(content)
+            
+    tmpl = get_template(
+        DivUser,
+        using='ryzom',
+    )
+    context = {
+        'test_key': "test_value",
+    }
+    rendered = tmpl.render(context, srf)
+    assert f"User: {srf.user}|Test: {context['test_key']}" in rendered
 
 
 class TestRyzomBackendSettings(SimpleTestCase):

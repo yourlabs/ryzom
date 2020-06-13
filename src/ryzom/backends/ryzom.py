@@ -2,10 +2,13 @@ import functools
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.middleware import csrf
 from django.template import TemplateDoesNotExist, TemplateSyntaxError
 from django.template.backends.base import BaseEngine
 from django.template.backends.django import reraise
-from django.template.backends.utils import csrf_input_lazy, csrf_token_lazy
+from django.template.base import Origin
+from django.utils.encoding import smart_text
+from django.utils.functional import cached_property, SimpleLazyObject
 from django.utils.module_loading import import_string
 
 
@@ -47,7 +50,7 @@ class Ryzom(BaseEngine):
         super().__init__(params)
 
         self.debug = options.pop("debug", settings.DEBUG)
-        self.context_processors = options.pop("context_processors", [])
+        self._context_processors = options.pop("context_processors", [])
         self.components_module = options.pop("components_module",
                                              "ryzom.components.muicss")
         self.components_prefix = options.pop("components_prefix",
@@ -55,14 +58,18 @@ class Ryzom(BaseEngine):
 
     def get_template(self, template_name):
         try:
-            return Template(template_name)
+            return Template(template_name, self)
         except TemplateDoesNotExist as exc:
             reraise(exc, self)
+
+    @cached_property
+    def context_processors(self):
+        return tuple(import_string(path) for path in self._context_processors)
 
 
 class Template:
 
-    def __init__(self, template):
+    def __init__(self, template, backend):
         if callable(template):
             # NOTE: Jinja2 chokes on non-string template name values, so
             # calls in this form require the using='ryzom' keyword argument.
@@ -74,6 +81,12 @@ class Template:
                 raise TemplateDoesNotExist(template, backend=self) from exc
             except Exception as exc:
                 raise TemplateSyntaxError(template) from exc
+        self.backend = backend
+        self.name = f'{self.template.__module__}.{self.template.__name__}'
+        self.origin = Origin(
+            name=self.name,
+            template_name=self.name  # TODO: No searching of app_dirs yet.
+        )
 
     def render(self, context=None, request=None):
         from django.utils.safestring import mark_safe
@@ -85,12 +98,27 @@ class Template:
         if context is None:
             context = {}
         if request is not None:
-            context['request'] = request
-            context['csrf_input'] = csrf_input_lazy(request)
-            context['csrf_token'] = csrf_token_lazy(request)
+            def _get_val():
+                token = csrf.get_token(request)
+                if token is None:
+                    return 'NOTPROVIDED'
+                else:
+                    return smart_text(token)
 
-        # ryzom templates currently consume context in __init__ rather than
-        # render() - this should possibly change...
+            context["csrf_token"] = SimpleLazyObject(_get_val)
+
+            # Support for django context processors
+            for processor in self.backend.context_processors:
+                context.update(processor(request))
+
+        if self.backend.debug:
+            from django.test import signals
+            signals.template_rendered.send(sender=self,
+                                           template=self,
+                                           context=context)
+
+        # TODO: Ryzom templates currently consume context in __init__ rather
+        # than render() - this will possibly change...
         html = self.template(context).render()
         if Markup:
             html = Markup(html)
