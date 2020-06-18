@@ -7,6 +7,7 @@ from django.template import TemplateDoesNotExist, TemplateSyntaxError
 from django.template.backends.base import BaseEngine
 from django.template.backends.django import reraise
 from django.template.base import Origin
+from django.template.context import BaseContext
 from django.utils.encoding import smart_text
 from django.utils.functional import cached_property, SimpleLazyObject
 from django.utils.module_loading import import_string
@@ -113,6 +114,19 @@ class Template:
 
         if self.backend.debug:
             from django.test import signals
+
+            # Define a django-like context to imitate the multi-
+            # layered context object. This is mainly for apps like
+            # django-debug-toolbar that are tightly coupled to django's
+            # internal implementation of context.
+            if not isinstance(context, BaseContext):
+                class CompatibilityContext(dict):
+                    @property
+                    def dicts(self):
+                        return [self]
+
+                context = CompatibilityContext(context)
+
             signals.template_rendered.send(sender=self,
                                            template=self,
                                            context=context)

@@ -433,21 +433,31 @@ class VisibleFields(Div):
 class Form(Div):
     """Render a complete Django form using ryzom components and return an AST.
 
-    :param ~django.forms.Form: The form being rendered.
+    :param context: Dict-like object containing a ~django.forms.Form to be rendered.
     :return: An AST representing the rendered fields.
     :rtype: list
     """
-    def __init__(self, context=dict):
+    def __init__(self, context=None):
+        if context is None:
+            context = {}
         self.context = context
-        self.content = []
         self.prepare()
         super().__init__(
             self.content,
         )
 
-    def prepare(self, context=None):
-        if context:
-            self.context.update(context)
+    def hidden_errors(self):
+        for h in self.form.hidden_fields():
+            if h.errors:
+                return True
+
+    def prepare(self, extra_context=None):
+        self.content = []  # Clear any previous rendering.
+        if extra_context:
+            # TODO: Is this idempotent? Should it be?
+            # Will calling the same template instance with different extras
+            # give unspecified/cumulative results?
+            self.context.update(extra_context)
         self.form = self.context.get('form', None)
         if self.form is None:
             return
@@ -461,12 +471,16 @@ class Form(Div):
                 )
             )
         # form.non_field_errors
-        self.content.append(NonFieldErrors(self.form))
-        self.content.append(HiddenErrors(self.form))
+        if self.form.non_field_errors():
+            self.content.append(NonFieldErrors(self.form))
+        if self.hidden_errors():  # Local method.
+            self.content.append(HiddenErrors(self.form))
         # form.visible_fields
-        self.content.append(VisibleFields(self.form))
+        if self.form.visible_fields():
+            self.content.append(VisibleFields(self.form))
         # form.hidden_fields
-        self.content.append(HiddenFields(self.form))
+        if self.form.hidden_fields():
+            self.content.append(HiddenFields(self.form))
         # DEBUG: helper message
         ryzom_engine = engines['ryzom']
         self.content.append(
