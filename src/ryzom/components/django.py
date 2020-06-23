@@ -383,13 +383,17 @@ class Field(Div):
         if css_classes:
             html_class_attr = {"class": css_classes}
 
+        # For MuiCheckboxInput
+        label_chkbox = ''
         if field.label:
             label = conditional_escape(field.label)
+            label_chkbox = label
             label = field.label_tag(label) or ''
         else:
             label = ''
 
         widget_context['label_tag'] = label
+        widget_context['label'] = label_chkbox
 
         ComponentCls = Factory.as_component(widget)
         if label:

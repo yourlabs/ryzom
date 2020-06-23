@@ -223,8 +223,35 @@ class MuiTimeInput(MuiDateTimeBaseInput):
     pass
 
 
-class MuiCheckboxInput(MuiTextInput):
-    pass
+class MuiCheckboxInput(Div):
+    # Prevent default pre-element labelling
+    embed_label = True
+
+    def __init__(self, widget):
+        div_content = []
+        attrs = widget['attrs']
+        attrs.update({
+            'name': widget['name'],
+            'type': widget['type'],
+        })
+        if widget['value'] is not None:
+            attrs['value'] = widget['value']
+        div_content.append(
+            Label([
+                Input([], attrs),
+                Text(widget['label']),
+            ])
+        )
+        """
+        if 'label_tag' in widget:
+            # Radio input options won't have a label_tag.
+            div_content.append(
+                widget['label_tag'],
+            )
+        """
+        div_attrs = {'class': "mui-checkbox"}
+
+        super().__init__(div_content, attr=div_attrs)
 
 
 class MuiChoiceWidget():
