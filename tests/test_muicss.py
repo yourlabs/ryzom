@@ -2,50 +2,30 @@ import os.path
 import pytest
 import re
 
-from django import forms
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
 from ryzom.components import component_html
+from ryzom_example.settings import (
+    CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
+)
 
-
-class NonModelForm(forms.Form):
-    VINYL = 'vinyl'
-    CD = 'cd'
-    MP3 = 'mp3'
-    VHS = 'vhs'
-    DVD = 'dvd'
-    BLURAY = 'blu-ray'
-    MEDIA_CHOICES = (
-        ('Audio', (
-            (VINYL, 'Vinyl'),
-            (CD, 'CD'),
-            (MP3, 'MP3')
-            )
-         ),
-        ('Video', (
-            (VHS, 'VHS tape'),
-            (DVD, 'DVD'),
-            (BLURAY, 'Blu-ray')
-            )
-         ),
-    )
-
-    char_field = forms.CharField(label='Char field', max_length=50)
-    date_field = forms.DateField(label='Date field')
-    email_field = forms.EmailField(label='Email field')
-    boolean_field = forms.BooleanField()
-    null_boolean_field = forms.NullBooleanField()
-    choice_field = forms.ChoiceField(choices=MEDIA_CHOICES)
-    choice_radio_field = forms.ChoiceField(
-        choices=MEDIA_CHOICES,
-        widget=forms.RadioSelect()
-    )
+from tests.test_django import NonModelForm
 
 
 # @pytest.mark.skip
-@override_settings(RYZOM_COMPONENTS_MODULE='ryzom.components.muicss')
-@override_settings(RYZOM_COMPONENTS_PREFIX='Mui')
+@override_settings(TEMPLATES=[
+    CRUDLFAP_TEMPLATE_BACKEND,
+    DEFAULT_TEMPLATE_BACKEND,
+    {
+        "BACKEND": "ryzom.backends.ryzom.Ryzom",
+        "OPTIONS": {
+            "app_dirname": "components",
+            "components_module": "ryzom.components.muicss",
+            "components_prefix": "Mui",
+        },
+    },
+])
 class TestMuiNonModelForm(SimpleTestCase):
     """ Test the individual fields from ExampleForm for correct HTML.
         Create fixture files to compare semantic HTML (not literal text;
@@ -71,15 +51,16 @@ class TestMuiNonModelForm(SimpleTestCase):
         )
         cls.render = 'ryzom.components.django.Field'
         cls.maxDiff = None
+        from django.template import engines
+        cls.prefix = engines['ryzom'].components_prefix
 
     def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
         type_name = f'{type(field.field).__name__}{widget_name}'
-        prefix = settings.RYZOM_COMPONENTS_PREFIX
         rendered = component_html(self.render, field)
         rendered = self.ryzom_re.sub(self.ryzom_sub, rendered)
         with open(os.path.join(
-                self.fixture_path, f'{prefix}{type_name}.txt')) as fixture:
+                self.fixture_path, f'{self.prefix}{type_name}.txt')) as fixture:
             self.assertHTMLEqual(rendered, fixture.read())
 
     def test_char_field(self):

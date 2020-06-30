@@ -236,19 +236,16 @@ class MuiCheckboxInput(Div):
         })
         if widget['value'] is not None:
             attrs['value'] = widget['value']
+
+        # widget['label_tag'] isn't useful here.
         div_content.append(
             Label([
                 Input([], attrs),
                 Text(widget['label']),
-            ])
-        )
-        """
-        if 'label_tag' in widget:
-            # Radio input options won't have a label_tag.
-            div_content.append(
-                widget['label_tag'],
+                ],
+                attr={'for': widget['attrs']['id']}
             )
-        """
+        )
         div_attrs = {'class': "mui-checkbox"}
 
         super().__init__(div_content, attr=div_attrs)
