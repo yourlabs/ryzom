@@ -4,7 +4,7 @@ from ryzom_example.settings import (
     CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
 )
 
-from tests.test_django import NonModelFormTest
+from .test_django import NonModelFormTest
 
 
 # @pytest.mark.skip
