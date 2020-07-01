@@ -1,29 +1,13 @@
-from operator import attrgetter
-
 from django.template.loader import render_to_string
 from jinja2.utils import contextfunction
-
-from crudlfap.jinja2 import render_form as render_crudlfap
 
 
 @contextfunction
 def render_form(context, form):
-    get_ryzom = attrgetter('Meta.model.Project.ryzom')
-    try:
-        _ = get_ryzom(form)
-    except AttributeError:
-        pass
-    else:
-        """
-        context = dict(
-            form=form,
-        )
-        tmpl = get_template(
-            'ryzom.components.django.Form',
-            using='ryzom',
-        )
-        return tmpl.render(context)
-        """
-        return render_to_string('ryzom.components.django.Form', context)
-
-    return render_crudlfap(form)
+    # django-betterforms has multiple calls for different forms so
+    # using context['parent']['view'] isn't simple.
+    # Jinja2 Context is immutable, so create our own with form parameter.
+    context = dict(context=context,
+                   form=form,
+                   )
+    return render_to_string('ryzom.components.django.Form', context)

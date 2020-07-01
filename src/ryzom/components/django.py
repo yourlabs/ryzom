@@ -444,7 +444,7 @@ class Form(Div):
     def __init__(self, context=None):
         if context is None:
             context = {}
-        self.context = context
+        self.orig_context = self.context = context
         self.prepare()
         super().__init__(
             self.content,
@@ -457,11 +457,9 @@ class Form(Div):
 
     def prepare(self, extra_context=None):
         self.content = []  # Clear any previous rendering.
-        if extra_context:
-            # TODO: Is this idempotent? Should it be?
-            # Will calling the same template instance with different extras
-            # give unspecified/cumulative results?
-            self.context.update(extra_context)
+        if extra_context is not None:
+            # Reset context and apply extras.
+            self.context = self.orig_context.update(extra_context)
         self.form = self.context.get('form', None)
         if self.form is None:
             return
