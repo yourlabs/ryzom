@@ -46,20 +46,7 @@ class NonModelForm(forms.Form):
     )
 
 
-# @pytest.mark.skip
-@override_settings(TEMPLATES=[
-    CRUDLFAP_TEMPLATE_BACKEND,
-    DEFAULT_TEMPLATE_BACKEND,
-    {
-        "BACKEND": "ryzom.backends.ryzom.Ryzom",
-        "OPTIONS": {
-            "app_dirname": "components",
-            "components_module": "ryzom.components.django",
-            "components_prefix": "Django",
-        },
-    },
-])
-class TestDjangoNonModelForm(SimpleTestCase):
+class NonModelFormTest():
     """ Test the individual fields from ExampleForm for correct HTML.
         Create fixture files to compare semantic HTML (not literal text;
         convert ryzom-id uuids to 'uuid' in the fixture files).
@@ -68,7 +55,7 @@ class TestDjangoNonModelForm(SimpleTestCase):
     """
     @classmethod
     def setUpClass(cls):
-        super(TestDjangoNonModelForm, cls).setUpClass()
+        super().setUpClass()
         cls.form = NonModelForm(
             initial={'char_field': 'charfield',
                      'date_field': '20-01-2019',
@@ -123,3 +110,20 @@ class TestDjangoNonModelForm(SimpleTestCase):
     def test_choice_radio_field(self):
         field_name = 'choice_radio_field'
         self.compare_HTML(field_name, 'RadioSelect')
+
+
+# @pytest.mark.skip
+@override_settings(TEMPLATES=[
+    CRUDLFAP_TEMPLATE_BACKEND,
+    DEFAULT_TEMPLATE_BACKEND,
+    {
+        "BACKEND": "ryzom.backends.ryzom.Ryzom",
+        "OPTIONS": {
+            "app_dirname": "components",
+            "components_module": "ryzom.components.django",
+            "components_prefix": "Django",
+        },
+    },
+])
+class TestDjangoNonModelForm(NonModelFormTest, SimpleTestCase):
+    pass
