@@ -12,6 +12,7 @@ from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory as drf
 from django.test.utils import override_settings
+from django.urls import reverse
 
 from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html, Div, Text
@@ -66,7 +67,6 @@ def form(router, srf):
     return view.form
 
 
-# @pytest.mark.skip
 @pytest.mark.django_db
 def test_render_field_input(form):
     rendered = component_html(
@@ -77,7 +77,6 @@ def test_render_field_input(form):
     assert 'About' in rendered  # label
 
 
-# @pytest.mark.skip
 @pytest.mark.django_db
 def test_render_field_select(form):
     rendered = component_html(
@@ -185,14 +184,14 @@ class TestRyzomBackendSettings(SimpleTestCase):
             ryzom_backend = Ryzom.get_default()
 
 
-# @pytest.mark.skip
+@pytest.mark.latest
 class TestTaskCreateView(TestCase):
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         # Avoid 302 Redirect to the login page.
-        # 'user' is required for the Task model.
+        # `user` is required for the Task model.
         User = get_user_model()
         user = User.objects.create(username='dev',
                                    is_superuser=True)
@@ -205,12 +204,14 @@ class TestTaskCreateView(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    def test_page_display(self):
-        response = self.client.get("/task/create")
-        assert response.status_code == 200
+    def test_page_is_displayed(self):
+        response = self.client.get(reverse('crudlfap:task:create'))
+        self.assertContains(response, 'User', None, 200)
+        self.assertContains(response, 'About', None, 200)
 
-    def test_ryzom_form(self):
-        response = self.client.get("/task/create")
-        resp = response.content.decode()
-        assert 'User' in resp
-        assert 'About' in resp
+    @override_settings(DEBUG=True)
+    def test_ryzom_form_component_is_used(self):
+        # Backend only records the templates used when DEBUG=True.
+        # Testrunner always sets DEBUG=False.
+        response = self.client.get(reverse('crudlfap:task:create'))
+        self.assertTemplateUsed(response, 'ryzom.components.django.Form')

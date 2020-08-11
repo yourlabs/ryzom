@@ -484,10 +484,11 @@ class Form(Div):
         if self.form.hidden_fields():
             self.content.append(HiddenFields(self.form))
         # DEBUG: helper message
-        ryzom_engine = engines['ryzom']
-        self.content.append(
-            Text(
-                f'ryzom {ryzom_engine.components_prefix}'
-                f' Form {self.form.__class__.__name__}'
+        if settings.DEBUG:
+            ryzom_engine = engines['ryzom']
+            self.content.append(
+                Text(
+                    f'ryzom {ryzom_engine.components_prefix}'
+                    f' Form {self.form.__class__.__name__}'
+                )
             )
-        )

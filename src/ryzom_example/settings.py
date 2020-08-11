@@ -31,8 +31,9 @@ MIDDLEWARE += [  # noqa: F405
     'ryzom.middleware.RyzomMiddleware',
 ]
 
-# install_optional(OPTIONAL_APPS, INSTALLED_APPS)  # noqa: F405
-# install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa: F405
+if DEBUG:
+    install_optional(OPTIONAL_APPS, INSTALLED_APPS)  # noqa: F405
+    install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa: F405
 
 """
 AUTHENTICATION_BACKENDS += [  # noqa: F405
