@@ -2,6 +2,7 @@
 
 from .components import (
     component_html,
+    Static,
     Component,
     Html,
     Head,

@@ -37,7 +37,7 @@ crudlfap.site.urlpath = ''  # example url prefix
 crudlfap.site.views['home'] = Home
 
 urlpatterns = [
-    url('^', include('ryzom.urls')),
+    url('', include('ryzom.urls')),
     crudlfap.site.urlpattern,
     re_path(
         r'^%s(?P<path>.*)$' % settings.STATIC_URL.lstrip('/'),

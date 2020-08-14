@@ -1,4 +1,4 @@
-from ryzom.components import Html, Head, Body, Meta, Title, Link
+from ryzom.components import Html, Head, Body, Meta, Title, Link, Static
 from ryzom.components import Div, A, Nav, H1
 from ryzom.reactive import ReactiveDiv
 
@@ -8,12 +8,12 @@ from .task import TaskList, TaskForm
 
 class Document(Html):
     def __init__(self, view):
-        bs_src = '/static/ryz_ex/css/bootstrap.min.css'
+        bs_src = 'ryz_ex/css/bootstrap.min.css'
         content = [
             Head([
                 Title('TODOs'),
                 Meta(attr={'charset': 'utf-8'}),
-                Link(attr={'rel': 'stylesheet', 'href': bs_src})
+                Link(attr={'rel': 'stylesheet', 'href': Static(bs_src)})
             ]),
             Body([Base(view)])
         ]
