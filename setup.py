@@ -18,9 +18,9 @@ setup(
     include_package_data=True,
     keywords='django frontend',
     install_requires=[
-        'cli2',
         'django<3.0',
         'crudlfap',
+        'django-threadlocals',
     ],
     tests_require=[
         'tox',

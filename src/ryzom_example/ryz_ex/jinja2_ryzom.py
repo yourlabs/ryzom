@@ -10,4 +10,7 @@ def render_form(context, form):
     context = dict(context=context,
                    form=form,
                    )
-    return render_to_string('ryzom.components.django.Form', context)
+    return render_to_string('ryzom.components.django.Form',
+                            context=context,
+                            using='ryzom'  # Avoid the Jinja2 custom loader.
+                            )

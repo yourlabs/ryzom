@@ -29,6 +29,7 @@ OPTIONAL_MIDDLEWARE = [
 
 MIDDLEWARE += [  # noqa: F405
     'ryzom.middleware.RyzomMiddleware',
+    'threadlocals.middleware.ThreadLocalMiddleware',
 ]
 
 if DEBUG:
@@ -80,6 +81,9 @@ CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
     "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
 
+CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"][  # noqa: F405
+    "loader"] = "ryzom.backends.jinja2.loader"
+
 RYZOM_TEMPLATE_BACKEND = {
     "BACKEND": "ryzom.backends.ryzom.Ryzom",
     "OPTIONS": {
@@ -102,7 +106,9 @@ RYZOM_TEMPLATE_BACKEND = {
         # "debug": False,
     }
 }
-TEMPLATES.append(RYZOM_TEMPLATE_BACKEND)
+TEMPLATES = [CRUDLFAP_TEMPLATE_BACKEND,
+             RYZOM_TEMPLATE_BACKEND,
+             DEFAULT_TEMPLATE_BACKEND]
 
 PYTEST_SKIP = os.getenv('PYTEST_SKIP', False)
 

@@ -6,13 +6,15 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage import default_storage
 from django.contrib.sessions.backends.base import SessionBase
 from django.core.exceptions import ImproperlyConfigured
-from django.template import TemplateDoesNotExist
+from django.template import Template, TemplateDoesNotExist
 from django.template.context import Context
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory as drf
 from django.test.utils import override_settings
 from django.urls import reverse
+
+from threadlocals.threadlocals import get_current_request
 
 from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html, Div, Text
@@ -93,6 +95,7 @@ def test_get_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
+        using='ryzom'  # Avoid the Jinja2 custom loader.
     )
     assert tmpl.template == Form
     assert tmpl.backend == ryzom_backend
@@ -103,6 +106,7 @@ def test_render_template(form):
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
+        using='ryzom'  # Avoid the Jinja2 custom loader.
     )
     rendered = tmpl.render(context)
     assert 'User' in rendered
@@ -146,6 +150,24 @@ def test_context_processor_request(srf):
     assert f"User: {srf.user}|Test: {context['test_key']}" in rendered
 
 
+class IncludeJinja2Component(Div):
+    def __init__(self, request):
+        super().__init__([Text(f'Rendered {__class__.__name__}')])
+
+
+def test_template_include():
+    """ Use a custom Jinja2 loader to 'include' a ryzom component. """
+
+    from django.template import engines
+    jinja2_engine = engines['backend']
+
+    tmpl = jinja2_engine.from_string(
+        "{% include 'tests.test_ryzom.IncludeJinja2Component' %}"
+    )
+    rendered = tmpl.render(Context())
+    assert "Rendered IncludeJinja2Component</div>" in rendered
+
+
 class TestRyzomBackendSettings(SimpleTestCase):
 
     def setUp(self):
@@ -184,7 +206,6 @@ class TestRyzomBackendSettings(SimpleTestCase):
             ryzom_backend = Ryzom.get_default()
 
 
-@pytest.mark.latest
 class TestTaskCreateView(TestCase):
 
     @classmethod
