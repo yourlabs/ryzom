@@ -3,7 +3,6 @@ Ryzom components declarations.
 There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
-import jsonpickle
 import uuid
 
 from django.conf import settings
@@ -149,14 +148,6 @@ class Component:
         :param dict events: The dict to update events with
         '''
         self.events.update(events)
-
-    def to_json(self):
-        '''
-        No more used, subject to deletion
-
-        :returns: A serialized JSON representation of the instance
-        '''
-        return jsonpickle.encode(self)
 
     def to_obj(self):
         '''Get a serializable dict of the instance
