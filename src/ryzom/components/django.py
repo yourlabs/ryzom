@@ -45,7 +45,7 @@ class DjangoTextInput(Input):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
 
-        super().__init__(attr=attrs)
+        super().__init__(**attrs)
 
 
 class DjangoNumberInput(DjangoTextInput):
@@ -88,7 +88,7 @@ class DjangoMultiWidget(Div):
             content.extend(
                 component if isinstance(component, Iterable) else [component]
             )
-        super().__init__(content)
+        super().__init__(*content, **attrs)
 
 
 class DjangoMultipleHiddenInput(DjangoMultiWidget):
@@ -118,7 +118,7 @@ class DjangoTextarea(Textarea):
                 Text(widget['value'])
             )
 
-        super().__init__(content, attr=attrs)
+        super().__init__(*content, **attrs)
 
 
 class DjangoDateTimeBaseInput(DjangoTextInput):
@@ -153,7 +153,7 @@ class DjangoSelectOption(Option):
             'value': widget['value'],
         })
         content = [Text(widget['label'])]
-        super().__init__(content, attr=attrs)
+        super().__init__(*content, **attrs)
 
 
 class DjangoSelect(Select):
@@ -174,10 +174,10 @@ class DjangoSelect(Select):
                     'label': group_name,
                 }
                 group_content.append(
-                    Optgroup(option_content, group_attrs))
+                    Optgroup(*option_content, **group_attrs))
             else:
-                group_content.extend(option_content)
-        super().__init__(group_content, attr=attrs)
+                group_content.extend(*option_content)
+        super().__init__(*group_content, **attrs)
 
 
 class DjangoNullBooleanSelect(DjangoSelect):
@@ -201,10 +201,10 @@ class DjangoInputOption(Label):
                     'for': attrs['id']
                 }
             super().__init__(
-                [DjangoTextInput(widget),
-                 Text(widget['label'])
-                 ],
-                label_attrs
+                *[DjangoTextInput(widget),
+                  Text(widget['label'])
+                  ],
+                **label_attrs
             )
         else:
             raise NotImplementedError
@@ -229,26 +229,26 @@ class DjangoMultipleInput(Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    Li([DjangoInputOption(option) if option['wrap_label']
-                        else DjangoTextInput(option)
-                        ])
+                    Li(*[DjangoInputOption(option) if option['wrap_label']
+                         else DjangoTextInput(option)
+                         ])
                 )
             if group:
                 group_attrs = {}
                 if _id:
                     group_attrs['id'] = f'{_id}_{index}'
                 group_content.append(
-                    Li([
-                        Text(group),
-                        Ul(option_content, group_attrs),
-                    ])
+                    Li(
+                       Text(group),
+                       Ul(*option_content, **group_attrs),
+                    )
                 )
             else:
                 group_content.extend(
                     option_content
                 )
 
-        super().__init__(group_content, attr=radio_attrs)
+        super().__init__(*group_content, **radio_attrs)
 
 
 class DjangoRadioSelect(DjangoMultipleInput):
@@ -277,11 +277,11 @@ class NonFieldErrors(Ul):
         content = []
         for error in form.non_field_errors():
             content.append(
-                Li([Text(error)])
+                Li(Text(error))
             )
         super().__init__(
-            content,
-            {"class": "errorlist nonfield"}
+            *content,
+            **{"class": "errorlist nonfield"}
         )
 
 
@@ -295,11 +295,11 @@ class HiddenErrors(Ul):
                     error_text = _('(Hidden field %(name)s) %(error)s') % \
                                  {'name': field.name, 'error': str(error)}
                     content.append(
-                        Li([Text(error_text)])
+                        Li(Text(error_text))
                     )
         super().__init__(
-            content,
-            {"class": "errorlist"}
+            *content,
+            **{"class": "errorlist"}
         )
 
 
@@ -312,8 +312,8 @@ class HiddenFields(Div):
                 Field(field)
             )
         super().__init__(
-            content,
-            {"class": "hidden"}
+            *content,
+            **{"class": "hidden"}
         )
 
 
@@ -323,11 +323,11 @@ class FieldErrors(Ul):
         content = []
         for error in errors:
             content.append(
-                Li([Text(error)])
+                Li(Text(error))
             )
         super().__init__(
-            content,
-            {"class": "errorlist"}
+            *content,
+            **{"class": "errorlist"}
         )
 
 
@@ -336,11 +336,11 @@ class HelpText(Ul):
     def __init__(self, help_text):
         content = []
         content.append(
-            Li([Text(help_text)])
+            Li(Text(help_text))
         )
         super().__init__(
-            content,
-            {"class": "helptext"}
+            *content,
+            **{"class": "helptext"}
         )
 
 
@@ -377,11 +377,11 @@ class Field(Div):
         )
         widget_context = context['widget']
         content = []
-        html_class_attr = {}
+        html_class_attrs = {}
         errors = field.form.error_class(field.errors)
         css_classes = field.css_classes()
         if css_classes:
-            html_class_attr = {"class": css_classes}
+            html_class_attrs = {"class": css_classes}
 
         # For MuiCheckboxInput
         label_chkbox = ''
@@ -412,8 +412,8 @@ class Field(Div):
         if field.help_text:
             content.append(HelpText(field.help_text))
         super().__init__(
-            content,
-            attr=html_class_attr
+            *content,
+            **html_class_attrs
         )
 
 
@@ -430,7 +430,7 @@ class VisibleFields(Div):
         for field in form.visible_fields():
             content.append(Field(field))
         super().__init__(
-            content
+            *content
         )
 
 
@@ -447,7 +447,7 @@ class Form(Div):
         self.orig_context = self.context = context
         self.prepare()
         super().__init__(
-            self.content,
+            *self.content
         )
 
     def hidden_errors(self):
@@ -466,11 +466,9 @@ class Form(Div):
 
         if self.form.errors:
             self.content.append(
-                Ul([
-                    Li([Text(_("Please fix any errors in this form."))])
-                    ],
-                    attr={"class": "errorlist"}
-                )
+                Ul(Li(Text(_("Please fix any errors in this form."))),
+                   **{"class": "errorlist"}
+                   )
             )
         # form.non_field_errors
         if self.form.non_field_errors():

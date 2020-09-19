@@ -16,11 +16,10 @@ class ReactiveComponent(Component):
     :param str name: The (unique) name of the instance
     :param View view: The rizom View this instance is attached to
     '''
-    def __init__(self, name, view, tag='div', content=None, attr=None,
-                 events=None, parent='body', _id=None):
+    def __init__(self, name, view, *content, **attrs):
         self.name = name
         self.view = view
-        super().__init__(tag, content, attr, events, parent, _id)
+        super().__init__(*content, **attrs)
         self.view.addReactiveComponent(self)
 
     def setcontent(self, content):
@@ -47,7 +46,9 @@ class ReactiveComponent(Component):
 
 
 class ReactiveDiv(ReactiveComponent):
-    def __init__(self, name, view, content):
-        super().__init__(name, view, 'div',
-                         content=content,
-                         _id=f'reactive_div_{name}')
+    def __init__(self, name, view, *content):
+        attrs = {
+            'tag': 'div',
+            '_id': f'reactive_div_{name}',
+        }
+        super().__init__(name, view, *content, **attrs)

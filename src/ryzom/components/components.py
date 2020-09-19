@@ -48,7 +48,7 @@ class Static:
 class Component:
     '''Main ryzom component 'abstract' class to be inherited.
 
-    This class defines the common attributes and methods to all
+    This class defines the common attrsibutes and methods to all
     components,the main one being to_obj() that format an instance
     as a serializable dict that can be sent to the client over websocket
     the to_html() method is missing for now, it will be useful when
@@ -64,7 +64,7 @@ class Component:
     :param str tag: The HTML tag of the component
     :param list<Component> content: The component instances contained \
             by the current instance
-    :param dict attr: HTML attributes (id, class, style, ...)
+    :param dict attrs: HTML attrsibutes (id, class, style, ...)
     :param dict events: The events to add listeners to \
             (click, hover, ...)
     :param str parent: The id of the component that contains the \
@@ -74,10 +74,36 @@ class Component:
 
     __subscriptions = []
 
+    def __init__(self, *content, **attrs):
+        if 'cls' in attrs:
+            attrs['class'] = attrs.pop('cls')  # support HTML class attr
+
+        """
+        content = [
+            c  # if hasattr(c, 'to_html') else Text(str(c))
+            for c in content
+        ]
+        """
+
+        if len(content) == 1 and isinstance(content[0], str):
+            content = content[0]
+
+        self.content = (content if isinstance(content, str)
+                        else list(content)) or []
+        self._id = attrs.pop('_id', uuid.uuid1().hex)
+        self.parent = attrs.pop('parent', None)
+        self.tag = attrs.pop('tag', 'div')
+        self.events = attrs.pop('events', {})
+        self.attrs = attrs or {}
+        self.position = 0
+
+        self.preparecontent()
+
+    """
     def __init__(self,
                  tag='div',
                  content=None,
-                 attr=None,
+                 attrs=None,
                  events=None,
                  parent='body',
                  _id=None):
@@ -85,11 +111,12 @@ class Component:
         self.parent = parent
         self.position = 0
         self.tag = tag
-        self.attr = attr or {}
+        self.attrs = attrs or {}
         self.events = events or {}
         self.content = content or []
 
         self.preparecontent()
+    """
 
     def preparecontent(self):
         '''Set the parent and position of children
@@ -102,10 +129,10 @@ class Component:
         # handle text node as content
         if isinstance(self.content, list):
             for i, c in enumerate(self.content):
+                if isinstance(c, str):
+                    self.content[i] = c = Text(c)
                 c.parent = self._id
                 c.position = i
-                if isinstance(c, str):
-                    self.content[i] = Text(c)
         elif isinstance(self.content, str) and self.tag != 'text':
             if self.content:
                 self.content = [Text(self.content)]
@@ -171,7 +198,7 @@ class Component:
             'parent': self.parent,
             'position': self.position,
             'events': self.events,
-            'attr': self.attr,
+            'attrs': self.attrs,
             'subscriptions': self.subscriptions
         }
 
@@ -186,20 +213,20 @@ class Component:
     def to_html(self, context=None):
         if self.tag == 'text':
             return f'{self.content}'
-        attr = ''
-        for k, v in self.attr.items():
+        attrs = ''
+        for k, v in self.attrs.items():
             if v is True:
-                attr += f'{k} '
+                attrs += f'{k} '
             elif v is not False:
-                attr += f'{k}="{v}" '
-        attr += f'ryzom-id="{self._id}"'
+                attrs += f'{k}="{v}" '
+        attrs += f'ryzom-id="{self._id}"'
         html = ''
         if getattr(self, 'selfclose', False):
-            html = f'<{self.tag} {attr}/>'
+            html = f'<{self.tag} {attrs}/>'
         elif getattr(self, 'noclose', False):
-            html = f'<{self.tag} {attr}>'
+            html = f'<{self.tag} {attrs}>'
         else:
-            html = f'<{self.tag} {attr}>'
+            html = f'<{self.tag} {attrs}>'
             for c in self.content:
                 html += c.to_html() if getattr(c, 'to_html', None) else str(c)
             html += f'</{self.tag}>'
@@ -217,39 +244,71 @@ class Component:
 
 
 class Html(Component):
-    def __init__(self, content=None):
-        super().__init__('html', content, parent=None, _id='html')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'html'
+        attrs['parent'] = None
+        attrs['_id'] = 'html'
+        super().__init__(*content, **attrs)
 
 
 class Head(Component):
-    def __init__(self, content=None):
-        super().__init__('head', content, parent='html', _id='head')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'head'
+        attrs['parent'] = 'html'
+        attrs['_id'] = 'head'
+        super().__init__(*content, **attrs)
 
 
 class Body(Component):
-    def __init__(self, content=None):
-        super().__init__('body', content, parent='html', _id='body')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'body'
+        attrs['parent'] = 'html'
+        attrs['_id'] = 'body'
+        super().__init__(*content, **attrs)
 
 
 class Title(Component):
-    def __init__(self, content=''):
-        super().__init__('title', content, parent='head', _id='title')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'title'
+        attrs['parent'] = 'head'
+        attrs['_id'] = 'title'
+        super().__init__(*content, **attrs)
 
 
 class Meta(Component):
-    def __init__(self, attr=None):
-        super().__init__('meta', attr=attr, parent='head')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'meta'
+        attrs['parent'] = 'head'
+        super().__init__(*content, **attrs)
 
 
 class Link(Component):
-    def __init__(self, attr=None):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'link'
+        attrs['parent'] = 'head'
         self.noclose = True
-        super().__init__('link', attr=attr, parent='head')
+        super().__init__(*content, **attrs)
 
 
 class Script(Component):
-    def __init__(self, content='', attr=None):
-        super().__init__('script', content, attr, parent='head')
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'script'
+        attrs['parent'] = 'head'
+        super().__init__(*content, **attrs)
 
 
 class Div(Component):
@@ -260,15 +319,21 @@ class Div(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('div', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'div'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class A(Component):
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('a', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'a'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Ul(Component):
@@ -279,9 +344,12 @@ class Ul(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('ul', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'ul'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Ol(Component):
@@ -292,9 +360,12 @@ class Ol(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('ol', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'ol'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Li(Component):
@@ -305,9 +376,12 @@ class Li(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('li', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'ul'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Span(Component):
@@ -318,9 +392,12 @@ class Span(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('span', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'span'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Text(Component):
@@ -331,9 +408,12 @@ class Text(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None,
-                 parent='body', _id=None):
-        super().__init__('text', content, parent=parent, _id=_id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'text'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Textarea(Component):
@@ -344,9 +424,12 @@ class Textarea(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('textarea', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'textarea'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Form(Component):
@@ -357,9 +440,12 @@ class Form(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('form', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'form'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Input(Component):
@@ -370,10 +456,13 @@ class Input(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'input'
+        attrs.setdefault('parent', 'body')
         self.noclose = True
-        super().__init__('input', content, attr, events, parent, _id)
+        super().__init__(*content, **attrs)
 
 
 class Select(Component):
@@ -384,9 +473,12 @@ class Select(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('select', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'select'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Option(Component):
@@ -397,9 +489,12 @@ class Option(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('option', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'option'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Optgroup(Component):
@@ -410,9 +505,12 @@ class Optgroup(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('optgroup', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'optgroup'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Label(Component):
@@ -423,9 +521,12 @@ class Label(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('label', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'label'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Button(Component):
@@ -436,9 +537,12 @@ class Button(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('button', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'button'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class Nav(Component):
@@ -449,9 +553,12 @@ class Nav(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('nav', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'nav'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
 
 
 class H1(Component):
@@ -462,6 +569,41 @@ class H1(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None):
-        super().__init__('h1', content, attr, events, parent, _id)
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h1'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class H2(Component):
+    '''
+    H2 component
+
+    Represents a <h2> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h2'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class H3(Component):
+    '''
+    H3 component
+
+    Represents a <h3> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h3'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)

@@ -7,6 +7,6 @@ class Welcome(Div):
     def __init__(self):
         content = [
             H1('WELCOME !'),
-            A('Go to TODO list', {'href': settings.RYZOM_APP}),
+            A('Go to TODO list', **{'href': settings.RYZOM_APP}),
         ]
-        super().__init__(content)
+        super().__init__(*content)

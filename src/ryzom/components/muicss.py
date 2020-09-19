@@ -77,11 +77,9 @@ class MuiForm(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
-        attr = {'class': "mui-form"}
-        super().__init__('form', content, attr,
-                         events, parent, _id)
+    def __init__(self, *content, **attrs):
+        attrs = {'class': "mui-form"}
+        super().__init__(*content, **attrs, tag='form')
 
 
 class MuiLegend(Component):
@@ -92,10 +90,8 @@ class MuiLegend(Component):
 
     :parameters: see :class:`Component`
     '''
-    def __init__(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
-        super().__init__('legend', content,
-                         events, parent, _id)
+    def __init__(self, *content, **attrs):
+        super().__init__(*content, **attrs, tag='legend')
 
 
 class MuiTextInput(Div):
@@ -113,7 +109,7 @@ class MuiTextInput(Div):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            Input([], attrs),
+            Input(**attrs),
         )
         if 'label_tag' in widget:
             # Radio input options won't have a label_tag.
@@ -122,7 +118,7 @@ class MuiTextInput(Div):
             )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
-        super().__init__(div_content, attr=div_attrs)
+        super().__init__(*div_content, **div_attrs)
 
 
 class MuiNumberInput(MuiTextInput):
@@ -165,7 +161,7 @@ class MuiMultiWidget(Div):
             content.extend(
                 component if isinstance(component, Iterable) else [component]
             )
-        super().__init__(content)
+        super().__init__(*content, **attrs)
 
 
 class MuiMultipleHiddenInput(MuiMultiWidget):
@@ -200,11 +196,11 @@ class MuiTextarea(Textarea):
             )
         div_content = []
         div_content.append(
-            Textarea(content, attr=attrs)
+            Textarea(*content, **attrs)
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
-        super().__init__(div_content, attr=div_attrs)
+        super().__init__(*div_content, **div_attrs)
 
 
 class MuiDateTimeBaseInput(MuiTextInput):
@@ -240,15 +236,15 @@ class MuiCheckboxInput(Div):
         # widget['label_tag'] isn't useful here.
         div_content.append(
             Label([
-                Input([], attrs),
+                Input([], **attrs),
                 Text(widget['label']),
                 ],
-                attr={'for': widget['attrs']['id']}
+                **{'for': widget['attrs']['id']}
             )
         )
         div_attrs = {'class': "mui-checkbox"}
 
-        super().__init__(div_content, attr=div_attrs)
+        super().__init__(*div_content, **div_attrs)
 
 
 class MuiChoiceWidget():
@@ -263,7 +259,7 @@ class MuiSelectOption(Option):
             'value': widget['value'],
         })
         content = [Text(widget['label'])]
-        super().__init__(content, attr=attrs)
+        super().__init__(*content, **attrs)
 
 
 class MuiSelect(Div):
@@ -285,15 +281,15 @@ class MuiSelect(Div):
                     'label': group_name,
                 }
                 group_content.append(
-                    Optgroup(option_content, group_attrs))
+                    Optgroup(*option_content, **group_attrs))
             else:
                 group_content.extend(option_content)
 
         div_content.append(
-            Select(group_content, attr=attrs),
+            Select(*group_content, **attrs),
         )
         div_attrs = {"class": "mui-select"}
-        super().__init__(div_content, attr=div_attrs)
+        super().__init__(*div_content, **div_attrs)
 
 
 class MuiNullBooleanSelect(MuiSelect):
@@ -317,7 +313,7 @@ class MuiInputOption(Label):
                 [DjangoTextInput(widget),
                  Text(widget['label'])
                  ],
-                label_attrs
+                **label_attrs
             )
         else:
             raise NotImplementedError
@@ -353,7 +349,7 @@ class MuiMultipleInput(Ul):
                 group_content.append(
                     Li([
                         Text(group),
-                        Ul(option_content, group_attrs),
+                        Ul(*option_content, **group_attrs),
                     ])
                 )
             else:
@@ -361,7 +357,7 @@ class MuiMultipleInput(Ul):
                     option_content
                 )
 
-        super().__init__(group_content, attr=radio_attrs)
+        super().__init__(*group_content, **radio_attrs)
 
 
 class MuiRadioSelect(MuiMultipleInput):
@@ -420,7 +416,7 @@ class MuiButton(Button):
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
-        super().__init__(div_content, attr=div_attrs)
+        super().__init__(*div_content, **div_attrs)
 
 
 class NonFieldErrors(Ul):
@@ -429,11 +425,11 @@ class NonFieldErrors(Ul):
         content = []
         for error in form.non_field_errors():
             content.append(
-                Li([Text(error)])
+                Li(Text(error))
             )
         super().__init__(
-            content,
-            {"class": "errorlist nonfield"}
+            *content,
+            **{"class": "errorlist nonfield"}
         )
 
 
@@ -447,11 +443,11 @@ class HiddenErrors(Ul):
                     error_text = _('(Hidden field %(name)s) %(error)s') % \
                                  {'name': field.name, 'error': str(error)}
                     content.append(
-                        Li([Text(error_text)])
+                        Li(Text(error_text))
                     )
         super().__init__(
-            content,
-            {"class": "errorlist"}
+            *content,
+            **{"class": "errorlist"}
         )
 
 
@@ -464,8 +460,8 @@ class HiddenFields(Div):
                 Field(field)
             )
         super().__init__(
-            content,
-            {"class": "hidden"}
+            *content,
+            **{"class": "hidden"}
         )
 
 
@@ -478,8 +474,8 @@ class FieldErrors(Ul):
                 Li([Text(error)])
             )
         super().__init__(
-            content,
-            {"class": "errorlist"}
+            *content,
+            **{"class": "errorlist"}
         )
 
 
@@ -488,11 +484,11 @@ class HelpText(Ul):
     def __init__(self, help_text):
         content = []
         content.append(
-            Li([Text(help_text)])
+            Li(Text(help_text))
         )
         super().__init__(
-            content,
-            {"class": "helptext"}
+            *content,
+            **{"class": "helptext"}
         )
 
 
@@ -560,8 +556,8 @@ class Field(Div):
         if field.help_text:
             content.append(HelpText(field.help_text))
         super().__init__(
-            content,
-            attr=html_class_attr
+            *content,
+            **html_class_attr
         )
 
 
@@ -578,7 +574,7 @@ class VisibleFields(Div):
         for field in form.visible_fields():
             content.append(Field(field))
         super().__init__(
-            content
+            *content
         )
 
 
@@ -607,5 +603,5 @@ class Form(Div):
             )
         )
         super().__init__(
-            content,
+            *content,
         )
