@@ -18,9 +18,17 @@ from .components import (
     Li,
     Span,
     Text,
+    Textarea,
     Form,
     Input,
+    Select,
+    Option,
+    Optgroup,
+    Label,
     Button,
+    Icon,
     Nav,
     H1,
+    H2,
+    H3
 )

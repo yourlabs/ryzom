@@ -379,7 +379,7 @@ class Li(Component):
     def __init__(self, *content, **attrs):
         content = content or []
         attrs = attrs or {}
-        attrs['tag'] = 'ul'
+        attrs['tag'] = 'li'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)
 
@@ -542,6 +542,16 @@ class Button(Component):
         attrs = attrs or {}
         attrs['tag'] = 'button'
         attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Icon(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'i'
+        attrs.setdefault('parent', 'body')
+        attrs['class'] = 'material-icons'
         super().__init__(*content, **attrs)
 
 
