@@ -61,8 +61,8 @@
       elem = document.createTextNode(component.content);
     else {
       elem = document.createElement(component.tag);
-      Object.keys(component.attr).forEach(function(k) {
-        elem.setAttribute(k, component.attr[k]);
+      Object.keys(component.attrs).forEach(function(k) {
+        elem.setAttribute(k, component.attrs[k]);
       });
       Object.keys(component.events).forEach(function(k) {
         elem.addEventListener(k, function(e) {

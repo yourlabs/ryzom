@@ -18,13 +18,13 @@ INSTALLED_APPS = [  # noqa: F405
 
 # CRUDLFA+ optional dependencies
 OPTIONAL_APPS = [
-    {'debug_toolbar': {'after': 'django.contrib.staticfiles'}},
+    # {'debug_toolbar': {'after': 'django.contrib.staticfiles'}},
     {'django_extensions': {'before': 'crudlfap'}},
     {'collectdir': {'before': 'crudlfap'}},
 ]
 
 OPTIONAL_MIDDLEWARE = [
-    {'debug_toolbar.middleware.DebugToolbarMiddleware': None}
+    # {'debug_toolbar.middleware.DebugToolbarMiddleware': None}
 ]
 
 MIDDLEWARE += [  # noqa: F405
