@@ -1,0 +1,5 @@
+test:
+  image: yourlabs/python
+  script:
+  - pip install tox -e .
+  - tox -v
