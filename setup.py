@@ -29,7 +29,7 @@ setup(
         dev=[
         'channels',
         'channels-redis',
-        #'psycopg2',
+        'psycopg2-binary',
         ],
     ),
     entry_points={
