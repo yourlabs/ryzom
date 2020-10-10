@@ -24,3 +24,15 @@ test:
         - "postgres"
         - "-c"
         - "log_min_duration_statement=300"
+
+# when we pass ...
+# qa:
+#   stage: test
+#   image: yourlabs/python
+#   script: flake8 src
+
+pypi:
+  stage: deploy
+  image: yourlabs/python
+  script: pypi-release
+  only: [tags]
