@@ -2,7 +2,7 @@ test:
   image: yourlabs/python
   script:
   - pip install tox -e .
-  - tox -v
+  - tox -v --sitepackages
   variables:
     DB_URI: postgres
     DB_USER: test
