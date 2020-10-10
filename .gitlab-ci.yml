@@ -1,9 +1,12 @@
 test:
   image: yourlabs/python
   script:
-  - pip install tox -e .
-  - tox -v --sitepackages
+  - pip install tox -e .[dev]
+  - py.test -vv --cov src --strict -r fEsxXw
   variables:
+    DJANGO_SETTINGS_MODULE: ryzom_example.settings
+    DEBUG: 1
+    PIP_ALLOW_EXTERNAL: true
     DB_URI: postgres
     DB_USER: test
     DB_NAME: test
