@@ -176,7 +176,7 @@ class DjangoSelect(Select):
                 group_content.append(
                     Optgroup(*option_content, **group_attrs))
             else:
-                group_content.extend(*option_content)
+                group_content.extend(option_content)
         super().__init__(*group_content, **attrs)
 
 

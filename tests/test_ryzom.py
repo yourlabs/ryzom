@@ -118,7 +118,7 @@ def test_missing_template():
 def test_callable_template():
     # Jinja2 chokes on non-string templates, so requires 'using'
     tmpl = get_template(
-        lambda x: Div([Text('test_text')]),
+        lambda x: Div(Text('test_text')),
         using='ryzom',
     )
     rendered = tmpl.render()
@@ -133,7 +133,7 @@ def test_context_processor_request(srf):
                        Text("|"),
                        Text(f"Test: {context['test_key']}"),
                        ]
-            super().__init__(content)
+            super().__init__(*content)
             
     tmpl = get_template(
         DivUser,

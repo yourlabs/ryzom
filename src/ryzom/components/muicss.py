@@ -235,10 +235,9 @@ class MuiCheckboxInput(Div):
 
         # widget['label_tag'] isn't useful here.
         div_content.append(
-            Label([
-                Input([], **attrs),
+            Label(
+                Input(**attrs),
                 Text(widget['label']),
-                ],
                 **{'for': widget['attrs']['id']}
             )
         )
@@ -310,9 +309,8 @@ class MuiInputOption(Label):
                     'for': attrs['id']
                 }
             super().__init__(
-                [DjangoTextInput(widget),
-                 Text(widget['label'])
-                 ],
+                DjangoTextInput(widget),
+                Text(widget['label']),
                 **label_attrs
             )
         else:
@@ -338,19 +336,19 @@ class MuiMultipleInput(Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    Li([MuiInputOption(option) if option['wrap_label']
-                        else DjangoTextInput(option)
-                        ])
+                    Li(MuiInputOption(option) if option['wrap_label']
+                       else DjangoTextInput(option)
+                       )
                 )
             if group:
                 group_attrs = {}
                 if _id:
                     group_attrs['id'] = f'{_id}_{index}'
                 group_content.append(
-                    Li([
+                    Li(
                         Text(group),
                         Ul(*option_content, **group_attrs),
-                    ])
+                        )
                 )
             else:
                 group_content.extend(
@@ -411,7 +409,7 @@ class MuiButton(Button):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            Input([], attrs),
+            Input(**attrs),
             widget['label'],
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
@@ -471,7 +469,7 @@ class FieldErrors(Ul):
         content = []
         for error in errors:
             content.append(
-                Li([Text(error)])
+                Li(Text(error))
             )
         super().__init__(
             *content,

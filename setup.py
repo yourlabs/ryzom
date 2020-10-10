@@ -19,7 +19,7 @@ setup(
     keywords='django frontend',
     install_requires=[
         'cli2',
-        'django<3.0',
+        'django',
         'crudlfap',
     ],
     tests_require=[
@@ -29,7 +29,6 @@ setup(
         dev=[
         'channels',
         'channels-redis',
-        'jsonpickle',
         'psycopg2',
         ],
     ),

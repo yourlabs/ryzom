@@ -78,18 +78,8 @@ class Component:
         if 'cls' in attrs:
             attrs['class'] = attrs.pop('cls')  # support HTML class attr
 
-        """
-        content = [
-            c  # if hasattr(c, 'to_html') else Text(str(c))
-            for c in content
-        ]
-        """
+        self.content = list(content) or []
 
-        if len(content) == 1 and isinstance(content[0], str):
-            content = content[0]
-
-        self.content = (content if isinstance(content, str)
-                        else list(content)) or []
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
         self.tag = attrs.pop('tag', 'div')
@@ -98,25 +88,6 @@ class Component:
         self.position = 0
 
         self.preparecontent()
-
-    """
-    def __init__(self,
-                 tag='div',
-                 content=None,
-                 attrs=None,
-                 events=None,
-                 parent='body',
-                 _id=None):
-        self._id = _id or uuid.uuid1().hex
-        self.parent = parent
-        self.position = 0
-        self.tag = tag
-        self.attrs = attrs or {}
-        self.events = events or {}
-        self.content = content or []
-
-        self.preparecontent()
-    """
 
     def preparecontent(self):
         '''Set the parent and position of children
@@ -127,17 +98,14 @@ class Component:
         in the current component's content list
         '''
         # handle text node as content
-        if isinstance(self.content, list):
+        if self.tag == 'text':
+            self.content = self.content[0]
+        else:
             for i, c in enumerate(self.content):
-                if isinstance(c, str):
-                    self.content[i] = c = Text(c)
+                if not hasattr(c, 'to_html'):
+                    c = Text(c)
                 c.parent = self._id
                 c.position = i
-        elif isinstance(self.content, str) and self.tag != 'text':
-            if self.content:
-                self.content = [Text(self.content)]
-            else:
-                self.content = []
 
     def addchild(self, component):
         '''Add a child component
