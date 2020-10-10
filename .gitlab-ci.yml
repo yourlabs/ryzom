@@ -1,0 +1,19 @@
+test:
+  image: yourlabs/python
+  script:
+  - pip install tox -e .
+  - tox -v
+  variables:
+    DB_URI: postgres
+    DB_USER: test
+    DB_NAME: test
+    DB_PASSWORD: test
+    POSTGRES_DB: test
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+  services:
+    - name: postgres:latest
+      command:
+        - "postgres"
+        - "-c"
+        - "log_min_duration_statement=300"
