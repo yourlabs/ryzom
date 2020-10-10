@@ -1,0 +1,26 @@
+test:
+  image: yourlabs/python
+  script:
+  - pip install tox -e .[dev]
+  - py.test -vv --cov src --strict -r fEsxXw
+  cache:
+    paths:
+      - .cache/pip
+  variables:
+    DJANGO_SETTINGS_MODULE: ryzom_example.settings
+    DEBUG: '1'
+    PIP_ALLOW_EXTERNAL: 'true'
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    DB_HOST: postgres
+    DB_USER: test
+    DB_NAME: test
+    DB_PASSWORD: test
+    POSTGRES_DB: test
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+  services:
+    - name: postgres:latest
+      command:
+        - "postgres"
+        - "-c"
+        - "log_min_duration_statement=300"
