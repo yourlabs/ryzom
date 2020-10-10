@@ -5,8 +5,8 @@ test:
   - py.test -vv --cov src --strict -r fEsxXw
   variables:
     DJANGO_SETTINGS_MODULE: ryzom_example.settings
-    DEBUG: 1
-    PIP_ALLOW_EXTERNAL: true
+    DEBUG: '1'
+    PIP_ALLOW_EXTERNAL: 'true'
     DB_URI: postgres
     DB_USER: test
     DB_NAME: test
