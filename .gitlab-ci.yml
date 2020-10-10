@@ -7,7 +7,7 @@ test:
     DJANGO_SETTINGS_MODULE: ryzom_example.settings
     DEBUG: '1'
     PIP_ALLOW_EXTERNAL: 'true'
-    DB_URI: postgres
+    DB_HOST: postgres
     DB_USER: test
     DB_NAME: test
     DB_PASSWORD: test
