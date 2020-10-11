@@ -12,7 +12,7 @@ from .components import (
     Button, Component, Div, Input, Label, Li,
     Optgroup, Option, Select, Text, Textarea, Ul,
 )
-from .django import Factory, DjangoTextInput, Field, VisibleFields, Form
+from .django import Factory, DjangoTextInput
 
 
 """
@@ -487,4 +487,125 @@ class HelpText(Ul):
         super().__init__(
             *content,
             **{"class": "helptext"}
+        )
+
+
+class Field(Div):
+    """Render a MUI field using ryzom components and return an AST.
+
+    Prepare the widget attrs, field label and context then render the
+    field using ryzom components.
+    Code adapted from ~django.forms.BoundField.as_widget().
+
+    :param ~django.forms.BoundField field: The field being rendered.
+    :param widget: A widget to override the default for the field.
+    :type widget: ~django.forms.Widget or None
+    :param attrs: Optional widget attributes.
+    :type attrs: dict or None
+    :param bool only_initial: A flag to render only initial dynamic values.
+    :return: An AST representing the rendered field.
+    :rtype: list
+    """
+    def __init__(self, field, widget=None, attrs=None, only_initial=False):  # noqa: C901 E501
+        widget = widget or field.field.widget
+        if field.field.localize:
+            widget.is_localized = True
+        attrs = attrs or {}
+        attrs = field.build_widget_attrs(attrs, widget)
+        if field.auto_id and 'id' not in widget.attrs:
+            attrs.setdefault('id', field.html_initial_id
+                             if only_initial else field.auto_id)
+
+        context = widget.get_context(
+            name=field.html_initial_name if only_initial else field.html_name,
+            value=field.value(),
+            attrs=attrs,
+        )
+        widget_context = context['widget']
+        content = []
+        html_class_attrs = {}
+        errors = field.form.error_class(field.errors)
+        css_classes = field.css_classes()
+        if css_classes:
+            html_class_attrs = {"class": css_classes}
+
+        # For MuiCheckboxInput
+        label_chkbox = ''
+        if field.label:
+            label = conditional_escape(field.label)
+            label_chkbox = label
+            label = field.label_tag(label) or ''
+        else:
+            label = ''
+
+        widget_context['label_tag'] = label
+        widget_context['label'] = label_chkbox
+
+        ComponentCls = Factory.as_component(widget)
+        if label:
+            # MUICSS may embed <label> after <input> in a containing div.
+            if not getattr(ComponentCls, 'embed_label', False):
+                content.append(
+                    Text(label)
+                )
+        component = ComponentCls(widget_context)
+        content.extend(
+            component if isinstance(component, Iterable) else [component]
+        )
+
+        if errors:
+            content.append(FieldErrors(errors))
+        if field.help_text:
+            content.append(HelpText(field.help_text))
+        super().__init__(
+            *content,
+            **html_class_attrs
+        )
+
+
+class VisibleFields(Div):
+    """Render the regular Django fields of a form using ryzom components
+    and return an AST.
+
+    :param ~django.forms.Form: The form being rendered.
+    :return: An AST representing the rendered fields.
+    :rtype: list
+    """
+    def __init__(self, form):
+        content = []
+        for field in form.visible_fields():
+            content.append(Field(field))
+        super().__init__(
+            *content
+        )
+
+
+class Form(Div):
+    """Render a complete Django form using ryzom components and return an AST.
+
+    :param ~django.forms.Form: The form being rendered.
+    :return: An AST representing the rendered fields.
+    :rtype: list
+    """
+    def __init__(self, form):
+        content = []
+        # form.non_field_errors
+        content.append(NonFieldErrors(form))
+        content.append(HiddenErrors(form))
+        # form.visible_fields
+        content.append(VisibleFields(form))
+        # form.hidden_fields
+        content.append(HiddenFields(form))
+        """
+        # DEBUG: helper message
+        ryzom_engine = engines['ryzom']
+        content.append(
+            Text(
+                f'ryzom {ryzom_engine.components_prefix}'
+                f' Form {form.__class__.__name__}'
+            )
+        )
+        """
+        super().__init__(
+            *content,
         )
