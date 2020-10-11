@@ -296,8 +296,28 @@ class MuiNullBooleanSelect(MuiSelect):
     pass
 
 
-class MuiSelectMultiple(MuiSelect):
-    pass
+class MuiSelectMultiple(Div):
+    def __init__(self, widget):
+        options = []
+        for group_name, group_choices, group_index in widget['optgroups']:
+            for option in group_choices:
+                options.append(
+                    MuiSelectOption(option)
+                )
+
+        super().__init__(
+            Component(
+                Component(*options, multiple='true', name=widget['name'], tag='select', slot='select'),
+                Component(slot='deck', tag='div'),
+                Component(
+                    Component(slot='input', tag='input', type='text'),
+                    slot='input',
+                    tag='autocomplete-light',
+                ),
+                multiple='true',
+                tag='autocomplete-select'
+            )
+        )
 
 
 class MuiInputOption(Label):
