@@ -1,6 +1,7 @@
 '''
 Ryzom MUI CSS components.
 '''
+import re
 from collections.abc import Iterable
 
 from django.conf import settings
@@ -237,7 +238,7 @@ class MuiCheckboxInput(Div):
         div_content.append(
             Label(
                 Input(**attrs),
-                Text(widget['label']),
+                Text(widget.get('label', re.findall('>([^<]*)<', widget['label_tag'])[0])),
                 **{'for': widget['attrs']['id']}
             )
         )
