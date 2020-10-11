@@ -3,6 +3,9 @@ import sys
 from crudlfap.settings import *  # noqa
 
 
+DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+DATABASES['default']['NAME'] = 'ryzom'
+
 # Find demo app modules when running under `ryzom runserver`
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if APP_DIR not in sys.path:
@@ -42,19 +45,6 @@ AUTHENTICATION_BACKENDS += [  # noqa: F405
 """
 
 ROOT_URLCONF = 'ryz_ex.urls'
-
-# Database
-# https://docs.django.com/en/2.1/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE',
-                            'django.db.backends.postgresql_psycopg2'),
-        'NAME': os.getenv('DB_NAME', 'django_ddp_test_project'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'USER': os.getenv('DB_USER', 'ryzom'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'ryzom'),
-    }
-}
 
 STATIC_ROOT = os.getenv(
     'STATIC_ROOT', Path(os.path.dirname(__file__)) / 'static')
