@@ -523,23 +523,27 @@ class Field(Div):
         )
         widget_context = context['widget']
         content = []
-        html_class_attr = {}
+        html_class_attrs = {}
         errors = field.form.error_class(field.errors)
         css_classes = field.css_classes()
         if css_classes:
-            html_class_attr = {"class": css_classes}
+            html_class_attrs = {"class": css_classes}
 
+        # For MuiCheckboxInput
+        label_chkbox = ''
         if field.label:
             label = conditional_escape(field.label)
+            label_chkbox = label
             label = field.label_tag(label) or ''
         else:
             label = ''
 
         widget_context['label_tag'] = label
+        widget_context['label'] = label_chkbox
 
         ComponentCls = Factory.as_component(widget)
         if label:
-            # MUICSS embeds the label after the field in a containing div.
+            # MUICSS may embed <label> after <input> in a containing div.
             if not getattr(ComponentCls, 'embed_label', False):
                 content.append(
                     Text(label)
@@ -555,7 +559,7 @@ class Field(Div):
             content.append(HelpText(field.help_text))
         super().__init__(
             *content,
-            **html_class_attr
+            **html_class_attrs
         )
 
 
