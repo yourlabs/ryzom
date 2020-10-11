@@ -481,6 +481,7 @@ class Form(Div):
         # form.hidden_fields
         if self.form.hidden_fields():
             self.content.append(HiddenFields(self.form))
+        """
         # DEBUG: helper message
         if settings.DEBUG:
             ryzom_engine = engines['ryzom']
@@ -490,3 +491,4 @@ class Form(Div):
                     f' Form {self.form.__class__.__name__}'
                 )
             )
+        """
