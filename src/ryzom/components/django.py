@@ -18,6 +18,19 @@ from .components import (
 
 class Factory:
     """ Return the class required to render the ~django.forms.Widget. """
+    def __init__(self, module):
+        self.module = module
+
+    def __call__(self, widget):
+        cls = f'{self.module}.{type(widget).__name__}'
+        try:
+            cls = import_string(cls)
+        except ImportError as exc:
+            raise NotImplementedError(
+                f'Ryzom not found: {cls}.'
+            )
+        return ComponentCls
+
     @classmethod
     def as_component(self, widget):
         ryzom_engine = engines['ryzom']
