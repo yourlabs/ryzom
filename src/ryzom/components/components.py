@@ -82,7 +82,7 @@ class Component:
 
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
-        self.tag = attrs.pop('tag', 'div')
+        self.tag = attrs.pop('tag', getattr(self, 'tag', 'div'))
         self.events = attrs.pop('events', {})
         self.attrs = attrs or {}
         self.position = 0
