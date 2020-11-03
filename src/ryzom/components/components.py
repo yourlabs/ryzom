@@ -196,7 +196,7 @@ class Component:
         else:
             html = f'<{self.tag} {attrs}>'
             for c in self.content:
-                html += c.to_html() if getattr(c, 'to_html', None) else str(c)
+                html += c.to_html(context=context) if getattr(c, 'to_html', None) else str(c)
             html += f'</{self.tag}>'
         return html
 
