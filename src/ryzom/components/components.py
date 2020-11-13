@@ -83,6 +83,10 @@ class Component:
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
         self.tag = attrs.pop('tag', getattr(self, 'tag', 'div'))
+        self.noclose = self.tag.lower() in [
+            'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
+            'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+        ]
         self.events = attrs.pop('events', {})
         self.attrs = attrs or {}
         self.position = 0
