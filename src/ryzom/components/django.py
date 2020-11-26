@@ -4,11 +4,12 @@ Render Django forms using ryzom components.
 from collections.abc import Iterable
 
 from django.conf import settings
-from django.template import engines
 from django.template.context import Context
 from django.utils.html import conditional_escape
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
+
+from ryzom.backends.ryzom import Ryzom
 
 from .components import (
     Div, Input, Label, Li,
@@ -18,34 +19,48 @@ from .components import (
 
 class Factory:
     """ Return the class required to render the ~django.forms.Widget. """
-    def __init__(self, module):
-        self.module = module
+
+    ryzom_engine = Ryzom.get_default()
+    default_module = getattr(ryzom_engine, 'components_module', 'ryzom.components.django')
+
+    def __init__(self, module=None):
+        self.module = module or default_module
 
     def __call__(self, widget):
         cls = f'{self.module}.{type(widget).__name__}'
         try:
             cls = import_string(cls)
         except ImportError as exc:
-            raise NotImplementedError(
-                f'Ryzom not found: {cls}.'
-            )
-        return ComponentCls
+            default_cls = f'{self.default_module}.{type(widget).__name__}'
+            try:
+                default_cls = import_string(default_cls)
+                print(f'Ryzom using default widget for: {cls}')
+            except ImportError as exc:
+                print(f'Ryzom widget not found: {cls}.')
+                '''
+                raise NotImplementedError(
+                    f'Ryzom widget not found: {cls}.'
+                )
+                '''
+                cls = f'{self.module}.TextInput'
+                cls = import_string(cls)
+        return cls
 
     @classmethod
     def as_component(self, widget):
-        ryzom_engine = engines['ryzom']
+        ryzom_engine = Ryzom.get_default()
         widget_type = type(widget).__name__
         widget_type = (
             f'{ryzom_engine.components_module}'
             f'.{ryzom_engine.components_prefix}{widget_type}'
         )
         try:
-            ComponentCls = import_string(widget_type)
+            cls = import_string(widget_type)
         except ImportError as exc:
             raise NotImplementedError(
                 f'Widget class {widget_type} not found.'
             )
-        return ComponentCls
+        return cls
 
 
 class DjangoTextInput(Input):

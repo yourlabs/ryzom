@@ -9,6 +9,7 @@ from django.test import SimpleTestCase, override_settings
 from ryzom_example.settings import (
     CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
 )
+from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html
 
 
@@ -71,8 +72,10 @@ class NonModelFormTest():
         )
         cls.render = 'ryzom.components.django.Field'
         cls.maxDiff = None
-        from django.template import engines
-        cls.prefix = engines['ryzom'].components_prefix
+        # Clear functools.lru_cache.
+        Ryzom.get_default.cache_clear()
+        ryzom_engine = Ryzom.get_default()
+        cls.prefix = ryzom_engine.components_prefix
 
     def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
