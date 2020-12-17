@@ -2,6 +2,7 @@
 Ryzom MUI CSS components.
 '''
 import re
+
 from collections.abc import Iterable
 
 from django.conf import settings
@@ -9,21 +10,18 @@ from django.template import engines
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
-from .components import (
-    Button, Component, Div, Input, Label, Li,
-    Optgroup, Option, Select, Text, Textarea, Ul,
-)
-from .django import Factory, DjangoTextInput
+from . import components as ryz
+from . import django as dj
 
 
 """
-class MuiComponent(Component):
+class Component(ryz.Component):
     def __init__(self, *args, **kwargs):
         self.context = kwargs.pop('context', {})
         super().__init__(*args, **kwargs)
 
 
-class Appbar(MuiComponent):
+class Appbar(Component):
     '''
     Appbar component
 
@@ -38,7 +36,7 @@ class Appbar(MuiComponent):
                    events, parent, _id)
 
 
-class Button(MuiComponent):
+class Button(Component):
     '''
     Button component
 
@@ -54,7 +52,7 @@ class Button(MuiComponent):
         return Button(content, attr, events, parent, _id)
 
 
-class Container(Component):
+class Container(ryz.Component):
     '''
     Container component
 
@@ -70,9 +68,9 @@ class Container(Component):
 """
 
 
-class MuiForm(Component):
+class MuiForm(ryz.Component):
     '''
-    MuiForm component
+    Form component
 
     Represents a MUI CSS <form>.
 
@@ -83,7 +81,7 @@ class MuiForm(Component):
         super().__init__(*content, **attrs, tag='form')
 
 
-class MuiLegend(Component):
+class Legend(ryz.Component):
     '''
     Legend component
 
@@ -95,7 +93,7 @@ class MuiLegend(Component):
         super().__init__(*content, **attrs, tag='legend')
 
 
-class MuiTextInput(Div):
+class TextInput(ryz.Div):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -110,7 +108,7 @@ class MuiTextInput(Div):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            Input(**attrs),
+            ryz.Input(**attrs),
         )
         if 'label_tag' in widget:
             # Radio input options won't have a label_tag.
@@ -122,32 +120,33 @@ class MuiTextInput(Div):
         super().__init__(*div_content, **div_attrs)
 
 
-class MuiNumberInput(MuiTextInput):
+class NumberInput(TextInput):
     pass
 
 
-class MuiEmailInput(MuiTextInput):
+class EmailInput(TextInput):
     pass
 
 
-class MuiURLInput(MuiTextInput):
+class URLInput(TextInput):
     pass
 
 
-class MuiPasswordInput(MuiTextInput):
+class PasswordInput(TextInput):
     pass
 
 
-class MuiHiddenInput(MuiTextInput):
+class HiddenInput(TextInput):
     pass
 
 
-class MuiMultiWidget(Div):
+class MultiWidget(ryz.Div):
     """ Return a list of widgets of the correct types.
         NOTE: Adds an extra div tag as a container for the widgets.
     """
     def __init__(self, multi_widget):
         content = []
+        factory = dj.Factory()
         for widget in multi_widget.subwidgets:
             attrs = widget['attrs']
             attrs.update({
@@ -157,30 +156,30 @@ class MuiMultiWidget(Div):
                 attrs['type'] = widget['type']
             if widget['value'] is not None:
                 attrs['value'] = widget['value']
-            Component = Factory.as_component(widget)
-            component = Component(widget)
+            cls = factory(widget)
+            component = cls(widget)
             content.extend(
                 component if isinstance(component, Iterable) else [component]
             )
         super().__init__(*content, **attrs)
 
 
-class MuiMultipleHiddenInput(MuiMultiWidget):
+class MultipleHiddenInput(MultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
         super().__init(multi_widget)
 
 
-class MuiFileInput(MuiTextInput):
+class FileInput(TextInput):
     pass
 
 
-class MuiClearableFileInput():
+class ClearableFileInput():
     # TODO: Code ClearableFileInput()
     pass
 
 
-class MuiTextarea(Textarea):
+class Textarea(ryz.Textarea):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -192,35 +191,35 @@ class MuiTextarea(Textarea):
         })
         if widget['value'] is not None:
             content.append(
-                Text(widget['value']),
+                ryz.Text(widget['value']),
                 widget['label_tag'],
             )
         div_content = []
         div_content.append(
-            Textarea(*content, **attrs)
+            ryz.Textarea(*content, **attrs)
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
         super().__init__(*div_content, **div_attrs)
 
 
-class MuiDateTimeBaseInput(MuiTextInput):
+class DateTimeBaseInput(TextInput):
     pass
 
 
-class MuiDateInput(MuiDateTimeBaseInput):
+class DateInput(DateTimeBaseInput):
     pass
 
 
-class MuiDateTimeInput(MuiDateTimeBaseInput):
+class DateTimeInput(DateTimeBaseInput):
     pass
 
 
-class MuiTimeInput(MuiDateTimeBaseInput):
+class TimeInput(DateTimeBaseInput):
     pass
 
 
-class MuiCheckboxInput(Div):
+class CheckboxInput(ryz.Div):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -236,9 +235,10 @@ class MuiCheckboxInput(Div):
 
         # widget['label_tag'] isn't useful here.
         div_content.append(
-            Label(
-                Input(**attrs),
-                Text(widget.get('label', re.findall('>([^<]*)<', widget['label_tag'])[0])),
+            ryz.Label(
+                ryz.Input(**attrs),
+                ryz.Text(widget.get(
+                    'label', re.findall('>([^<]*)<', widget['label_tag'])[0])),
                 **{'for': widget['attrs']['id']}
             )
         )
@@ -247,22 +247,22 @@ class MuiCheckboxInput(Div):
         super().__init__(*div_content, **div_attrs)
 
 
-class MuiChoiceWidget():
+class ChoiceWidget():
     # not directly called
     pass
 
 
-class MuiSelectOption(Option):
+class SelectOption(ryz.Option):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
             'value': widget['value'],
         })
-        content = [Text(widget['label'])]
+        content = [ryz.Text(widget['label'])]
         super().__init__(*content, **attrs)
 
 
-class MuiSelect(Div):
+class Select(ryz.Div):
     def __init__(self, widget):
         div_content = []
         attrs = widget['attrs']
@@ -274,43 +274,46 @@ class MuiSelect(Div):
             option_content = []
             for option in group_choices:
                 option_content.append(
-                    MuiSelectOption(option)
+                    SelectOption(option)
                 )
             if group_name:
                 group_attrs = {
                     'label': group_name,
                 }
                 group_content.append(
-                    Optgroup(*option_content, **group_attrs))
+                    ryz.Optgroup(*option_content, **group_attrs))
             else:
                 group_content.extend(option_content)
 
         div_content.append(
-            Select(*group_content, **attrs),
+            ryz.Select(*group_content, **attrs),
         )
         div_attrs = {"class": "mui-select"}
         super().__init__(*div_content, **div_attrs)
 
 
-class MuiNullBooleanSelect(MuiSelect):
+class NullBooleanSelect(Select):
     pass
 
 
-class MuiSelectMultiple(Div):
+class SelectMultiple(ryz.Div):
     def __init__(self, widget):
         options = []
         for group_name, group_choices, group_index in widget['optgroups']:
             for option in group_choices:
                 options.append(
-                    MuiSelectOption(option)
+                    SelectOption(option)
                 )
 
         super().__init__(
-            Component(
-                Component(*options, multiple='true', name=widget['name'], tag='select', slot='select'),
-                Component(slot='deck', tag='div'),
-                Component(
-                    Component(slot='input', tag='input', type='text'),
+            ryz.Component(
+                ryz.Component(
+                    *options, multiple='true', name=widget['name'],
+                    tag='select', slot='select'
+                ),
+                ryz.Component(slot='deck', tag='div'),
+                ryz.Component(
+                    ryz.Component(slot='input', tag='input', type='text'),
                     slot='input',
                     tag='autocomplete-light',
                 ),
@@ -320,7 +323,7 @@ class MuiSelectMultiple(Div):
         )
 
 
-class MuiInputOption(Label):
+class InputOption(ryz.Label):
     """ Return either an input element or a label wrapped around an input. """
     def __init__(self, widget):
         attrs = widget['attrs']
@@ -330,8 +333,8 @@ class MuiInputOption(Label):
                     'for': attrs['id']
                 }
             super().__init__(
-                DjangoTextInput(widget),
-                Text(widget['label']),
+                dj.TextInput(widget),
+                ryz.Text(widget['label']),
                 **label_attrs
             )
         else:
@@ -339,7 +342,7 @@ class MuiInputOption(Label):
             # Use DjangoTextInput() if the label is not required.
 
 
-class MuiMultipleInput(Ul):
+class MultipleInput(ryz.Ul):
     def __init__(self, widget):
         attrs = widget['attrs']
         radio_attrs = {}
@@ -357,8 +360,8 @@ class MuiMultipleInput(Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    Li(MuiInputOption(option) if option['wrap_label']
-                       else DjangoTextInput(option)
+                    ryz.Li(InputOption(option) if option['wrap_label']
+                       else dj.TextInput(option)
                        )
                 )
             if group:
@@ -366,9 +369,9 @@ class MuiMultipleInput(Ul):
                 if _id:
                     group_attrs['id'] = f'{_id}_{index}'
                 group_content.append(
-                    Li(
-                        Text(group),
-                        Ul(*option_content, **group_attrs),
+                    ryz.Li(
+                        ryz.Text(group),
+                        ryz.Ul(*option_content, **group_attrs),
                         )
                 )
             else:
@@ -379,27 +382,27 @@ class MuiMultipleInput(Ul):
         super().__init__(*group_content, **radio_attrs)
 
 
-class MuiRadioSelect(MuiMultipleInput):
+class RadioSelect(MultipleInput):
     pass
 
 
-class MuiCheckboxSelectMultiple(MuiMultipleInput):
+class CheckboxSelectMultiple(MultipleInput):
     pass
 
 
-class MuiSplitDateTimeWidget(MuiMultiWidget):
+class SplitDateTimeWidget(MultiWidget):
     pass
 
 
-class MuiSplitHiddenDateTimeWidget(MuiSplitDateTimeWidget):
+class SplitHiddenDateTimeWidget(SplitDateTimeWidget):
     pass
 
 
-class MuiSelectDateWidget(MuiMultiWidget):
+class SelectDateWidget(MultiWidget):
     pass
 
 
-class MuiButton(Button):
+class Button(ryz.Button):
     """
     {{ render_button(view.title_submit, button_type="submit",
         button_class="btn-primary") }}
@@ -430,7 +433,7 @@ class MuiButton(Button):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            Input(**attrs),
+            ryz.Input(**attrs),
             widget['label'],
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
@@ -438,13 +441,13 @@ class MuiButton(Button):
         super().__init__(*div_content, **div_attrs)
 
 
-class NonFieldErrors(Ul):
+class NonFieldErrors(ryz.Ul):
     """ Render non-field errors. """
     def __init__(self, form):
         content = []
         for error in form.non_field_errors():
             content.append(
-                Li(Text(error))
+                ryz.Li(ryz.Text(error))
             )
         super().__init__(
             *content,
@@ -452,7 +455,7 @@ class NonFieldErrors(Ul):
         )
 
 
-class HiddenErrors(Ul):
+class HiddenErrors(ryz.Ul):
     """ Render hidden field errors. """
     def __init__(self, form):
         content = []
@@ -462,7 +465,7 @@ class HiddenErrors(Ul):
                     error_text = _('(Hidden field %(name)s) %(error)s') % \
                                  {'name': field.name, 'error': str(error)}
                     content.append(
-                        Li(Text(error_text))
+                        ryz.Li(ryz.Text(error_text))
                     )
         super().__init__(
             *content,
@@ -470,7 +473,7 @@ class HiddenErrors(Ul):
         )
 
 
-class HiddenFields(Div):
+class HiddenFields(ryz.Div):
     """ Render hidden fields. """
     def __init__(self, form):
         content = []
@@ -484,13 +487,13 @@ class HiddenFields(Div):
         )
 
 
-class FieldErrors(Ul):
+class FieldErrors(ryz.Ul):
     """ Render field errors. """
     def __init__(self, errors):
         content = []
         for error in errors:
             content.append(
-                Li(Text(error))
+                ryz.Li(ryz.Text(error))
             )
         super().__init__(
             *content,
@@ -498,12 +501,12 @@ class FieldErrors(Ul):
         )
 
 
-class HelpText(Ul):
+class HelpText(ryz.Ul):
     """ Render field help text. """
     def __init__(self, help_text):
         content = []
         content.append(
-            Li(Text(help_text))
+            ryz.Li(ryz.Text(help_text))
         )
         super().__init__(
             *content,
@@ -511,7 +514,7 @@ class HelpText(Ul):
         )
 
 
-class Field(Div):
+class Field(ryz.Div):
     """Render a MUI field using ryzom components and return an AST.
 
     Prepare the widget attrs, field label and context then render the
@@ -550,7 +553,7 @@ class Field(Div):
         if css_classes:
             html_class_attrs = {"class": css_classes}
 
-        # For MuiCheckboxInput
+        # For CheckboxInput
         label_chkbox = ''
         if field.label:
             label = conditional_escape(field.label)
@@ -562,12 +565,12 @@ class Field(Div):
         widget_context['label_tag'] = label
         widget_context['label'] = label_chkbox
 
-        ComponentCls = Factory.as_component(widget)
+        ComponentCls = dj.Factory()(widget)
         if label:
             # MUICSS may embed <label> after <input> in a containing div.
             if not getattr(ComponentCls, 'embed_label', False):
                 content.append(
-                    Text(label)
+                    ryz.Text(label)
                 )
         component = ComponentCls(widget_context)
         content.extend(
@@ -584,7 +587,7 @@ class Field(Div):
         )
 
 
-class VisibleFields(Div):
+class VisibleFields(ryz.Div):
     """Render the regular Django fields of a form using ryzom components
     and return an AST.
 
@@ -601,7 +604,7 @@ class VisibleFields(Div):
         )
 
 
-class Form(Div):
+class Form(ryz.Div):
     """Render a complete Django form using ryzom components and return an AST.
 
     :param ~django.forms.Form: The form being rendered.
@@ -617,16 +620,7 @@ class Form(Div):
         content.append(VisibleFields(form))
         # form.hidden_fields
         content.append(HiddenFields(form))
-        """
-        # DEBUG: helper message
-        ryzom_engine = engines['ryzom']
-        content.append(
-            Text(
-                f'ryzom {ryzom_engine.components_prefix}'
-                f' Form {form.__class__.__name__}'
-            )
-        )
-        """
+
         super().__init__(
             *content,
         )

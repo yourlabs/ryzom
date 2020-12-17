@@ -73,4 +73,4 @@ def test_pretty():
     text1
     %br
     text2
-'''
+'''.strip()

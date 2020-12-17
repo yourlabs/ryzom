@@ -69,6 +69,9 @@ SERVER_METHODS = [
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
     "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
 #     "crudlfap.jinja2.render_form"
+CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
+    "ryzom"] = "ryzom.components.component_html"
+    # "ryzom"] = "ryz_ex.jinja2_ryzom.render_ryzom"
 
 RYZOM_TEMPLATE_BACKEND = {
     "BACKEND": "ryzom.backends.ryzom.Ryzom",

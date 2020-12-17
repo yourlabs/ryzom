@@ -7,18 +7,18 @@ from ryzom_example.settings import (
 from .test_django import NonModelFormTest
 
 
-# @pytest.mark.skip
 @override_settings(TEMPLATES=[
-    CRUDLFAP_TEMPLATE_BACKEND,
-    DEFAULT_TEMPLATE_BACKEND,
+    # CRUDLFAP_TEMPLATE_BACKEND,
+    # DEFAULT_TEMPLATE_BACKEND,
     {
         "BACKEND": "ryzom.backends.ryzom.Ryzom",
         "OPTIONS": {
             "app_dirname": "components",
             "components_module": "ryzom.components.muicss",
-            "components_prefix": "Mui",
+            # "components_prefix": "Mui",
         },
     },
 ])
 class TestMuiNonModelForm(NonModelFormTest, SimpleTestCase):
+    prefix = "Mui"
     pass

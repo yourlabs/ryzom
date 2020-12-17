@@ -88,8 +88,7 @@ def test_render_field_select(form):
 
 @pytest.mark.django_db
 def test_get_template(form):
-    from django.template import engines
-    ryzom_backend = engines['ryzom']
+    ryzom_backend = Ryzom.get_default()
     context = dict(form=form)
     tmpl = get_template(
         'ryzom.components.django.Form',
@@ -152,17 +151,21 @@ class TestRyzomBackendSettings(SimpleTestCase):
         # Clear functools.lru_cache.
         Ryzom.get_default.cache_clear()
 
+    @override_settings(TEMPLATES=[{
+            'NAME': 'ryzom',
+            'BACKEND': 'ryzom.backends.ryzom.Ryzom',
+            'OPTIONS': {'components_module': 'ryzom.components.muicss'},
+        }])
     def test_engine_options(self):
         from django.template import engines
         ryzom_backend = engines['ryzom']
         assert isinstance(ryzom_backend, Ryzom)
         assert ryzom_backend.components_module == "ryzom.components.muicss"
-        assert ryzom_backend.components_prefix == "Mui"
-    
+
     def test_engine_default(self):
         ryzom_backend = Ryzom.get_default()
         assert isinstance(ryzom_backend, Ryzom)
-    
+
     @override_settings(TEMPLATES=[])
     def test_engine_default_missing(self):
         msg = "No Ryzom backend is configured."
@@ -172,11 +175,11 @@ class TestRyzomBackendSettings(SimpleTestCase):
     @override_settings(TEMPLATES=[{
             'NAME': 'ryzom',
             'BACKEND': 'ryzom.backends.ryzom.Ryzom',
-            'OPTIONS': {'components_prefix': 'Abc'},
+            'OPTIONS': {'components_module': 'ryzom.components.django'},
         }, {
             'NAME': 'ryzom_2',
             'BACKEND': 'ryzom.backends.ryzom.Ryzom',
-            'OPTIONS': {'components_prefix': 'Xyz'},
+            'OPTIONS': {'components_module': 'ryzom.components.django'},
         }])
     def test_engine_default_multiple(self):
         msg = "Multiple Ryzom backends are configured."
@@ -184,7 +187,7 @@ class TestRyzomBackendSettings(SimpleTestCase):
             ryzom_backend = Ryzom.get_default()
 
 
-@pytest.mark.latest
+# @pytest.mark.latest
 class TestTaskCreateView(TestCase):
 
     @classmethod
@@ -204,11 +207,15 @@ class TestTaskCreateView(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
+    @pytest.mark.xfail(
+        reason="CRUDLFA+ does not render using csrfmiddleware.")
     def test_page_is_displayed(self):
         response = self.client.get(reverse('crudlfap:task:create'))
         self.assertContains(response, 'User', None, 200)
         self.assertContains(response, 'About', None, 200)
 
+    @pytest.mark.xfail(
+        reason="CRUDLFA+ does not render ryzom via the Jinja2 engine.")
     @override_settings(DEBUG=True)
     def test_ryzom_form_component_is_used(self):
         # Backend only records the templates used when DEBUG=True.
