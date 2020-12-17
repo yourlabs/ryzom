@@ -1,8 +1,6 @@
 '''
 Defines the ryzom View class and the main index view
 '''
-import os
-
 from django import http
 from django.contrib.staticfiles import finders
 

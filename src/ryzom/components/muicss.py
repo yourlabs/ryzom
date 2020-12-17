@@ -5,8 +5,6 @@ import re
 
 from collections.abc import Iterable
 
-from django.conf import settings
-from django.template import engines
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
@@ -360,9 +358,10 @@ class MultipleInput(ryz.Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    ryz.Li(InputOption(option) if option['wrap_label']
-                       else dj.TextInput(option)
-                       )
+                    ryz.Li(InputOption(option)
+                           if option['wrap_label']
+                           else dj.TextInput(option)
+                           )
                 )
             if group:
                 group_attrs = {}

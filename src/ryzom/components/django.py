@@ -5,9 +5,7 @@ import logging
 
 from collections.abc import Iterable
 
-from django.conf import settings
-from django.template.context import Context
-from django.utils.html import conditional_escape, format_html
+from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 
@@ -32,13 +30,13 @@ class Factory:
         cls = f'{self.module}.{type(widget).__name__}'
         try:
             cls = import_string(cls)
-        except ImportError as exc:
+        except (ImportError,) as exc:  # noqa: F841
             default_cls = f'{self.default_module}.{type(widget).__name__}'
             try:
                 default_cls = import_string(default_cls)
                 logger.debug(f'Using ryzom default widget for: {cls}')
                 cls = default_cls
-            except ImportError as exc:
+            except (ImportError,) as exc:  # noqa: F841
                 logger.debug(f'Ryzom widget not found: {cls}.')
                 cls = f'{self.module}.TextInput'
                 cls = import_string(cls)
@@ -50,7 +48,7 @@ class Factory:
         widget_type = f'{self.default_module}.{widget_type}'
         try:
             cls = import_string(widget_type)
-        except ImportError as exc:
+        except (ImportError,) as exc:  # noqa: F841
             raise NotImplementedError(
                 f'Widget class {widget_type} not found.'
             )
@@ -409,7 +407,8 @@ class Field(Div):
         # For MuiCheckboxInput
         label = label_tag = ''
         if field.label:
-            label = format_html('{}{}',
+            label = format_html(
+                '{}{}',
                 field.label,
                 field.field.label_suffix or field.form.label_suffix
             )
@@ -460,7 +459,8 @@ class VisibleFields(Div):
 class Form(Div):
     """Render a complete Django form using ryzom components and return an AST.
 
-    :param context: Dict-like object containing a ~django.forms.Form to be rendered.
+    :param context: Dict-like object containing a ~django.forms.Form to be
+                    rendered.
     :return: An AST representing the rendered fields.
     :rtype: list
     """
