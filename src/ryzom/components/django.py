@@ -1,14 +1,15 @@
 """
 Render Django forms using ryzom components.
 """
+import logging
+
 from collections.abc import Iterable
 
-from django.conf import settings
-from django.template import engines
-from django.template.context import Context
-from django.utils.html import conditional_escape
+from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
+
+from ..backends.ryzom import Ryzom
 
 from .components import (
     Div, Input, Label, Li,
@@ -16,39 +17,45 @@ from .components import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class Factory:
     """ Return the class required to render the ~django.forms.Widget. """
-    def __init__(self, module):
-        self.module = module
+
+    def __init__(self, module=None):
+        self.module = module or Ryzom.get_default().components_module
 
     def __call__(self, widget):
         cls = f'{self.module}.{type(widget).__name__}'
         try:
             cls = import_string(cls)
-        except ImportError as exc:
-            raise NotImplementedError(
-                f'Ryzom not found: {cls}.'
-            )
-        return ComponentCls
+        except (ImportError,) as exc:  # noqa: F841
+            default_cls = f'{self.default_module}.{type(widget).__name__}'
+            try:
+                default_cls = import_string(default_cls)
+                logger.debug(f'Using ryzom default widget for: {cls}')
+                cls = default_cls
+            except (ImportError,) as exc:  # noqa: F841
+                logger.debug(f'Ryzom widget not found: {cls}.')
+                cls = f'{self.module}.TextInput'
+                cls = import_string(cls)
+        return cls
 
     @classmethod
     def as_component(self, widget):
-        ryzom_engine = engines['ryzom']
         widget_type = type(widget).__name__
-        widget_type = (
-            f'{ryzom_engine.components_module}'
-            f'.{ryzom_engine.components_prefix}{widget_type}'
-        )
+        widget_type = f'{self.default_module}.{widget_type}'
         try:
-            ComponentCls = import_string(widget_type)
-        except ImportError as exc:
+            cls = import_string(widget_type)
+        except (ImportError,) as exc:  # noqa: F841
             raise NotImplementedError(
                 f'Widget class {widget_type} not found.'
             )
-        return ComponentCls
+        return cls
 
 
-class DjangoTextInput(Input):
+class TextInput(Input):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
@@ -61,32 +68,33 @@ class DjangoTextInput(Input):
         super().__init__(**attrs)
 
 
-class DjangoNumberInput(DjangoTextInput):
+class NumberInput(TextInput):
     pass
 
 
-class DjangoEmailInput(DjangoTextInput):
+class EmailInput(TextInput):
     pass
 
 
-class DjangoURLInput(DjangoTextInput):
+class URLInput(TextInput):
     pass
 
 
-class DjangoPasswordInput(DjangoTextInput):
+class PasswordInput(TextInput):
     pass
 
 
-class DjangoHiddenInput(DjangoTextInput):
+class HiddenInput(TextInput):
     pass
 
 
-class DjangoMultiWidget(Div):
+class MultiWidget(Div):
     """ Return a list of widgets of the correct types.
         NOTE: Adds an extra div tag as a container for the widgets.
     """
     def __init__(self, multi_widget):
         content = []
+        factory = Factory()
         for widget in multi_widget.subwidgets:
             attrs = widget['attrs']
             attrs.update({
@@ -96,30 +104,30 @@ class DjangoMultiWidget(Div):
                 attrs['type'] = widget['type']
             if widget['value'] is not None:
                 attrs['value'] = widget['value']
-            ComponentCls = Factory.as_component(widget)
-            component = ComponentCls(widget)
+            cls = factory(widget)
+            component = cls(widget)
             content.extend(
                 component if isinstance(component, Iterable) else [component]
             )
         super().__init__(*content, **attrs)
 
 
-class DjangoMultipleHiddenInput(DjangoMultiWidget):
+class MultipleHiddenInput(MultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
         super().__init__(multi_widget)
 
 
-class DjangoFileInput(DjangoTextInput):
+class FileInput(TextInput):
     pass
 
 
-class DjangoClearableFileInput():
+class ClearableFileInput():
     # TODO: Code ClearableFileInput()
     pass
 
 
-class DjangoTextarea(Textarea):
+class Textarea(Textarea):
     def __init__(self, widget):
         content = []
         attrs = widget['attrs']
@@ -134,32 +142,32 @@ class DjangoTextarea(Textarea):
         super().__init__(*content, **attrs)
 
 
-class DjangoDateTimeBaseInput(DjangoTextInput):
+class DateTimeBaseInput(TextInput):
     pass
 
 
-class DjangoDateInput(DjangoDateTimeBaseInput):
+class DateInput(DateTimeBaseInput):
     pass
 
 
-class DjangoDateTimeInput(DjangoDateTimeBaseInput):
+class DateTimeInput(DateTimeBaseInput):
     pass
 
 
-class DjangoTimeInput(DjangoDateTimeBaseInput):
+class TimeInput(DateTimeBaseInput):
     pass
 
 
-class DjangoCheckboxInput(DjangoTextInput):
+class CheckboxInput(TextInput):
     pass
 
 
-class DjangoChoiceWidget():
+class ChoiceWidget():
     # not directly called
     pass
 
 
-class DjangoSelectOption(Option):
+class SelectOption(Option):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
@@ -169,7 +177,7 @@ class DjangoSelectOption(Option):
         super().__init__(*content, **attrs)
 
 
-class DjangoSelect(Select):
+class Select(Select):
     def __init__(self, widget):
         attrs = widget['attrs']
         attrs.update({
@@ -180,7 +188,7 @@ class DjangoSelect(Select):
             option_content = []
             for option in group_choices:
                 option_content.append(
-                    DjangoSelectOption(option)
+                    SelectOption(option)
                 )
             if group_name:
                 group_attrs = {
@@ -193,15 +201,15 @@ class DjangoSelect(Select):
         super().__init__(*group_content, **attrs)
 
 
-class DjangoNullBooleanSelect(DjangoSelect):
+class NullBooleanSelect(Select):
     pass
 
 
-class DjangoSelectMultiple(DjangoSelect):
+class SelectMultiple(Select):
     pass
 
 
-class DjangoInputOption(Label):
+class InputOption(Label):
     """ Return either an input element or a label wrapped around an input.
         Current style doesn't allow different element tags to be returned
         from one component so return the wrap_label version as default.
@@ -214,17 +222,17 @@ class DjangoInputOption(Label):
                     'for': attrs['id']
                 }
             super().__init__(
-                *[DjangoTextInput(widget),
+                *[TextInput(widget),
                   Text(widget['label'])
                   ],
                 **label_attrs
             )
         else:
             raise NotImplementedError
-            # Use DjangoTextInput() if the label is not required.
+            # Use TextInput() if the label is not required.
 
 
-class DjangoMultipleInput(Ul):
+class MultipleInput(Ul):
     def __init__(self, widget):
         attrs = widget['attrs']
         radio_attrs = {}
@@ -242,8 +250,8 @@ class DjangoMultipleInput(Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    Li(*[DjangoInputOption(option) if option['wrap_label']
-                         else DjangoTextInput(option)
+                    Li(*[InputOption(option) if option['wrap_label']
+                         else TextInput(option)
                          ])
                 )
             if group:
@@ -264,23 +272,23 @@ class DjangoMultipleInput(Ul):
         super().__init__(*group_content, **radio_attrs)
 
 
-class DjangoRadioSelect(DjangoMultipleInput):
+class RadioSelect(MultipleInput):
     pass
 
 
-class DjangoCheckboxSelectMultiple(DjangoMultipleInput):
+class CheckboxSelectMultiple(MultipleInput):
     pass
 
 
-class DjangoSplitDateTimeWidget(DjangoMultiWidget):
+class SplitDateTimeWidget(MultiWidget):
     pass
 
 
-class DjangoSplitHiddenDateTimeWidget(DjangoSplitDateTimeWidget):
+class SplitHiddenDateTimeWidget(SplitDateTimeWidget):
     pass
 
 
-class DjangoSelectDateWidget(DjangoMultiWidget):
+class SelectDateWidget(MultiWidget):
     pass
 
 
@@ -397,23 +405,24 @@ class Field(Div):
             html_class_attrs = {"class": css_classes}
 
         # For MuiCheckboxInput
-        label_chkbox = ''
+        label = label_tag = ''
         if field.label:
-            label = conditional_escape(field.label)
-            label_chkbox = label
-            label = field.label_tag(label) or ''
-        else:
-            label = ''
+            label = format_html(
+                '{}{}',
+                field.label,
+                field.field.label_suffix or field.form.label_suffix
+            )
+            label_tag = field.label_tag(field.label)
 
-        widget_context['label_tag'] = label
-        widget_context['label'] = label_chkbox
+        widget_context['label_tag'] = label_tag
+        widget_context['label'] = label
 
-        ComponentCls = Factory.as_component(widget)
+        ComponentCls = Factory()(widget)
         if label:
             # MUICSS may embed <label> after <input> in a containing div.
             if not getattr(ComponentCls, 'embed_label', False):
                 content.append(
-                    Text(label)
+                    Text(label_tag)
                 )
         component = ComponentCls(widget_context)
         content.extend(
@@ -450,7 +459,8 @@ class VisibleFields(Div):
 class Form(Div):
     """Render a complete Django form using ryzom components and return an AST.
 
-    :param context: Dict-like object containing a ~django.forms.Form to be rendered.
+    :param context: Dict-like object containing a ~django.forms.Form to be
+                    rendered.
     :return: An AST representing the rendered fields.
     :rtype: list
     """

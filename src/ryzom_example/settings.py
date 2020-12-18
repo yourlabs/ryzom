@@ -1,10 +1,13 @@
+import os
 import sys
+
+from pathlib import Path
 
 from crudlfap.settings import *  # noqa
 
 
-DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-DATABASES['default']['NAME'] = 'ryzom'
+DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'  # noqa: F405
+DATABASES['default']['NAME'] = 'ryzom'  # noqa: F405
 
 # Find demo app modules when running under `ryzom runserver`
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +37,7 @@ MIDDLEWARE += [  # noqa: F405
     'ryzom.middleware.RyzomMiddleware',
 ]
 
-if DEBUG:
+if DEBUG:  # noqa: F405
     install_optional(OPTIONAL_APPS, INSTALLED_APPS)  # noqa: F405
     install_optional(OPTIONAL_MIDDLEWARE, MIDDLEWARE)  # noqa: F405
 
@@ -67,8 +70,11 @@ SERVER_METHODS = [
 ]
 
 CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
-    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"
+    "render_form"] = "ryz_ex.jinja2_ryzom.render_form"  # noqa: E116
 #     "crudlfap.jinja2.render_form"
+CRUDLFAP_TEMPLATE_BACKEND["OPTIONS"]["globals"][  # noqa: F405
+    "ryzom"] = "ryzom.components.component_html"  # noqa: E116
+#     "ryzom"] = "ryz_ex.jinja2_ryzom.render_ryzom"
 
 RYZOM_TEMPLATE_BACKEND = {
     "BACKEND": "ryzom.backends.ryzom.Ryzom",
@@ -92,7 +98,7 @@ RYZOM_TEMPLATE_BACKEND = {
         # "debug": False,
     }
 }
-TEMPLATES.append(RYZOM_TEMPLATE_BACKEND)
+TEMPLATES.append(RYZOM_TEMPLATE_BACKEND)  # noqa: F405
 
 PYTEST_SKIP = os.getenv('PYTEST_SKIP', False)
 

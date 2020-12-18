@@ -89,7 +89,7 @@ class Template:
             template_name=self.name  # TODO: No searching of app_dirs yet.
         )
 
-    def render(self, context=None, request=None):
+    def render(self, context=None, request=None):  # noqa: C901
         from django.utils.safestring import mark_safe
         try:
             from jinja2.utils import Markup

@@ -27,11 +27,8 @@ Example:
 In pytest, this will display a beautiful diff in case of failure !
 """
 
+import pytest  # noqa: F401
 
-import io
-import pytest
-
-from difflib import unified_diff
 from lxml.html import fromstring, HtmlElement
 
 
@@ -73,4 +70,4 @@ def test_pretty():
     text1
     %br
     text2
-'''
+'''.strip()

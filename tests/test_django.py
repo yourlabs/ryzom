@@ -9,6 +9,7 @@ from django.test import SimpleTestCase, override_settings
 from ryzom_example.settings import (
     CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
 )
+from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html
 
 
@@ -52,10 +53,14 @@ class NonModelFormTest():
         convert ryzom-id uuids to 'uuid' in the fixture files).
         Note: pytest.mark.parametrize doesn't work in unittest.TestCase class,
         which is required for the assertHTMLEqual method.
+        Override `prefix` in a subclass to distinguish test suites.
     """
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        Ryzom.get_default.cache_clear()
+        ryzom_engine = Ryzom.get_default()
+        cls.prefix = getattr(cls, 'prefix', "Django")
         cls.form = NonModelForm(
             initial={'char_field': 'charfield',
                      'date_field': '20-01-2019',
@@ -71,8 +76,6 @@ class NonModelFormTest():
         )
         cls.render = 'ryzom.components.django.Field'
         cls.maxDiff = None
-        from django.template import engines
-        cls.prefix = engines['ryzom'].components_prefix
 
     def compare_HTML(self, field_name, widget_name=""):
         field = self.form[field_name]
@@ -113,17 +116,18 @@ class NonModelFormTest():
 
 
 # @pytest.mark.skip
+@pytest.mark.latest
 @override_settings(TEMPLATES=[
-    CRUDLFAP_TEMPLATE_BACKEND,
-    DEFAULT_TEMPLATE_BACKEND,
+    # CRUDLFAP_TEMPLATE_BACKEND,
+    # DEFAULT_TEMPLATE_BACKEND,
     {
         "BACKEND": "ryzom.backends.ryzom.Ryzom",
         "OPTIONS": {
             "app_dirname": "components",
             "components_module": "ryzom.components.django",
-            "components_prefix": "Django",
         },
     },
 ])
 class TestDjangoNonModelForm(NonModelFormTest, SimpleTestCase):
+    prefix = "Django"
     pass
