@@ -8,7 +8,7 @@ setup(
     name='ryzom',
     setup_requires='setupmeta',
     versioning='dev',
-    description='Meteorish Django responsive frontend',
+    description='Meteorish Python responsive frontend',
     author='Thomas Mignot',
     author_email='jamespic@gmail.com',
     url='https://yourlabs.io/oss/ryzom',
@@ -38,6 +38,8 @@ setup(
         ],
         psql=[
             'psycopg2-binary',
+            'lxml',
+            #'psycopg2-binary',
         ],
     ),
     entry_points={
