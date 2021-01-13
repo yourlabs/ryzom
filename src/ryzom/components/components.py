@@ -5,10 +5,6 @@ They will be added when they'll be needed
 '''
 import uuid
 
-from django.conf import settings
-from django.contrib.staticfiles.storage import staticfiles_storage
-from django.utils.module_loading import import_string
-
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -16,33 +12,13 @@ def component_html(path, *args, **kwargs):
         from jinja2.utils import Markup
     except ImportError:
         Markup = None
-    ComponentCls = import_string(path)
+    ComponentCls = cli2.Node(path).target
     component = ComponentCls(*args, **kwargs)
     html = component.to_html()
-
-    # DEBUG:
-    if settings.DEBUG:
-        print()
-        print('HTML')
-        print(html)
-        print()
 
     if Markup:
         html = Markup(html)
     return mark_safe(html)
-
-
-class Static:
-    '''Return a static url for an app asset.
-
-    :param str src: The app path of the asset.
-    '''
-    def __init__(self, src):
-        self._data = src
-        self.url = staticfiles_storage.url(src)
-
-    def __str__(self):
-        return self.url
 
 
 class Component:
@@ -202,12 +178,6 @@ class Component:
 
     def render(self, context=None):
         html = self.to_html(context)
-
-        # DEBUG:
-        if settings.DEBUG:
-            print('template render HTML')
-            print(html)
-
         return html
 
 

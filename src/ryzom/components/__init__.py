@@ -2,7 +2,6 @@
 
 from .components import (
     component_html,
-    Static,
     Component,
     Html,
     Head,
@@ -32,3 +31,8 @@ from .components import (
     H2,
     H3
 )
+
+import os
+
+if 'DJANGO_SETTINGS_MODULE' in os.environ:
+    from .contrib.django import Static

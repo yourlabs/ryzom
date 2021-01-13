@@ -17,19 +17,19 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     keywords='django frontend',
-    install_requires=[
-        'cli2',
-        'django',
-        'crudlfap',
-    ],
+    install_requires=['cli2'],
     tests_require=[
         'tox',
     ],
     extras_require=dict(
+        django=[
+            'django',
+            'crudlfap',
+        ],
         dev=[
-        'channels',
-        'channels-redis',
-        #'psycopg2-binary',
+            'channels',
+            'channels-redis',
+            #'psycopg2-binary',
         ],
     ),
     entry_points={
