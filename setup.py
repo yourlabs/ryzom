@@ -8,7 +8,7 @@ setup(
     name='ryzom',
     setup_requires='setupmeta',
     versioning='dev',
-    description='Meteorish Django responsive frontend',
+    description='Meteorish Python responsive frontend',
     author='Thomas Mignot',
     author_email='jamespic@gmail.com',
     url='https://yourlabs.io/oss/ryzom',
@@ -16,20 +16,20 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    keywords='django frontend',
-    install_requires=[
-        'django',
-        'crudlfap @ git+https://yourlabs.io/oss/crudlfap.git@newryz#egg=crudlfap',
-    ],
+    keywords='python frontend',
     tests_require=[
         'tox',
     ],
     extras_require=dict(
+        django=[
+            'django',
+            'crudlfap @ git+https://yourlabs.io/oss/crudlfap.git@newryz#egg=crudlfap',
+        ],
         dev=[
-        'channels',
-        'channels-redis',
-        'lxml',
-        # 'psycopg2-binary',
+            'channels',
+            'channels-redis',
+            'lxml',
+            #'psycopg2-binary',
         ],
     ),
     entry_points={
