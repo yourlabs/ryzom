@@ -184,9 +184,9 @@ class Component:
         attrs = ''
         for k, v in self.attrs.items():
             if v is True:
-                attrs += f'{k} '
+                attrs += f'{k.replace("_", "-")} '
             elif v is not False:
-                attrs += f'{k}="{v}" '
+                attrs += f'{k.replace("_", "-")}="{v}" '
         attrs += f'ryzom-id="{self._id}"'
         html = ''
         if getattr(self, 'selfclose', False):
