@@ -5,8 +5,6 @@ They will be added when they'll be needed
 '''
 import uuid
 
-import cli2
-
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -14,6 +12,7 @@ def component_html(path, *args, **kwargs):
         from jinja2.utils import Markup
     except ImportError:
         Markup = None
+    import cli2
     ComponentCls = cli2.Node.factory(path).target
     component = ComponentCls(*args, **kwargs)
     html = component.to_html()
