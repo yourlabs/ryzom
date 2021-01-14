@@ -7,7 +7,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from ryzom.ddp import send_insert, send_change, send_remove
-from ryzom.models import Publications, Subscriptions
+from ryzom.models import Publication, Subscription
 from ryzom.pubsub import Publishable
 
 
@@ -25,13 +25,13 @@ def _ddp_insert_change(sender, **kwargs):
         return
     created = kwargs.pop('created')
     instance = kwargs.pop('instance')
-    pubs = Publications.objects.filter(
+    pubs = Publication.objects.filter(
             model_class=sender.__name__,
             model_module=sender.__module__)
     for pub in pubs:
         tmpl_module = importlib.import_module(pub.template_module)
         tmpl_class = getattr(tmpl_module, pub.template_class)
-        subscriptions = Subscriptions.objects.filter(publication=pub)
+        subscriptions = Subscription.objects.filter(publication=pub)
         for sub in subscriptions:
             old_qs = sub.queryset
             new_qs = sub.exec_query(sender).aggregate(ids=ArrayAgg('id'))
@@ -86,13 +86,13 @@ def _ddp_delete(sender, **kwargs):
     if Publishable not in sender.mro():
         return
     instance = kwargs.pop('instance')
-    pubs = Publications.objects.filter(
+    pubs = Publication.objects.filter(
             model_module=sender.__module__,
             model_class=sender.__name__)
     for pub in pubs:
         tmpl_module = importlib.import_module(pub.template_module)
         tmpl_class = getattr(tmpl_module, pub.template_class)
-        subscriptions = Subscriptions.objects.filter(publication=pub)
+        subscriptions = Subscription.objects.filter(publication=pub)
         for sub in subscriptions:
             old_qs = sub.queryset
             # if instance not in queryset, no need to remove it

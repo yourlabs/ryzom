@@ -2,7 +2,7 @@
 Defines the Publishable class and the module level variable
 to_publish.
 '''
-from ryzom.models import Publications
+from ryzom.models import Publication
 
 to_publish = []
 '''
@@ -23,7 +23,7 @@ class Publishable():
     _prepubs = {}
 
     @classmethod
-    def publish(cls, name, template=None, query=None):
+    def publish(cls, name, template=None):
         '''
         This method permit the publication of a model
         specifying the (unique) name of the publication,
@@ -47,17 +47,16 @@ class Publishable():
                     {'offset': 3}
                 ])
         '''
-        query = query or {}
         if not cls._published:
-            cls._prepubs[name] = (template, query)
+            cls._prepubs[name] = template
             if cls not in to_publish:
                 to_publish.append(cls)
         else:
-            cls.do_publish(name, template, query)
+            cls.do_publish(name, template)
 
     @classmethod
-    def do_publish(cls, name, template, query):
-        '''
+    def do_publish(cls, name, template):
+        '''f
         This method actually created the real publication,
         called by the publish_all() method, or by publish()
         if the publishable has already been published.
@@ -72,16 +71,19 @@ class Publishable():
             'model_class': cls.__name__,
             'template_module': tmpl_mod,
             'template_class': tmpl_cls,
-            'query': query
         }
-        pub_exists = Publications.objects.filter(name=name).exists()
+        pub_exists = Publication.objects.filter(name=name).exists()
         if pub_exists:
-            pub = Publications.objects.get(name=name)
+            pub = Publication.objects.get(name=name)
+            changed = False
             for k, v in kwargs.items():
-                setattr(pub, k, v)
-            pub.save()
+                if getattr(pub, k, None) != v:
+                    setattr(pub, k, v)
+                    changed = True
+            if changed:
+                pub.save()
         else:
-            Publications.objects.create(name=name, **kwargs)
+            Publication.objects.create(name=name, **kwargs)
 
     @classmethod
     def publish_all(cls):
@@ -92,5 +94,16 @@ class Publishable():
         '''
         cls._published = True
         for k, v in cls._prepubs.items():
-            name, template, query = k, *v
-            cls.do_publish(name, template, query)
+            name, template = k, v
+            cls.do_publish(name, template)
+
+
+def publish(component):
+    def func_wrapper(func):
+        @classmethod
+        def wrapper(*args):
+            cls = args[0]
+            cls.publish(func.__name__, component)
+            return func(*args)
+        return wrapper
+    return func_wrapper

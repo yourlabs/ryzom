@@ -38,7 +38,7 @@ class Clients(models.Model):
            )
 
 
-class Publications(models.Model):
+class Publication(models.Model):
     '''
     Publications model is used to store the apps publications
     Each publication should have a unique name and define
@@ -54,10 +54,15 @@ class Publications(models.Model):
     model_class = models.CharField(max_length=255)
     template_module = models.CharField(max_length=255)
     template_class = models.CharField(max_length=255)
-    query = JSONField(blank=True, null=True)
 
 
-class Subscriptions(models.Model):
+class Subscriber(models.Model):
+    parent_id = models.CharField(max_length=255, unique=True)
+    parent_module = models.CharField(max_length=255)
+    parent_class = models.CharField(max_length=255)
+
+
+class Subscription(models.Model):
     '''
     A subscription is an object representing the relation between
     a client and a publication. It also stores the _id of the component
@@ -70,10 +75,11 @@ class Subscriptions(models.Model):
     '''
     parent = models.CharField(max_length=255)
     client = models.ForeignKey(Clients, models.CASCADE)
-    publication = models.ForeignKey(Publications, models.CASCADE)
+    publication = models.ForeignKey(Publication, models.CASCADE)
     queryset = ArrayField(models.IntegerField(), default=list)
+    options = JSONField(blank=True, null=True)
 
-    def init(self):
+    def init(self, opts):
         '''
         This method is used to populate the component which made
         the current subsription with its content, and to compute
@@ -82,17 +88,24 @@ class Subscriptions(models.Model):
         implemented
         '''
         from ryzom.ddp import send_insert
+        self.options = opts
+        self.save()
         pub = self.publication
         model_mod = importlib.import_module(pub.model_module)
         model_cls = getattr(model_mod, pub.model_class)
         tmpl_mod = importlib.import_module(pub.template_module)
         tmpl_cls = getattr(tmpl_mod, pub.template_class)
-        qs = self.exec_query(model_cls).aggregate(ids=ArrayAgg('id'))
+        func = getattr(model_cls, pub.name)
+        subscriber = Subscriber.objects.get(parent_id=self.parent)
+        sub_mod = importlib.import_module(subscriber.parent_module)
+        sub_cls = getattr(sub_mod, subscriber.parent_class)
+        qs = sub_cls.subscribe(self, func(), opts)
+        qs = func().aggregate(ids=ArrayAgg('id'))
         self.queryset = qs['ids']
         for _id in self.queryset:
             send_insert(self, model_cls, tmpl_cls, _id)
 
-    def exec_query(self, model):  # noqa: C901
+    def exec_query(self, model=None, opts=None):  # noqa: C901
         '''
         This method computes the publication query and create/update the
         queryset for the current subscription.
@@ -102,29 +115,18 @@ class Subscriptions(models.Model):
         More will come with special variables and function. Such as an $add
         to replace that ugly tupple i'm using for now.. to be discussed
         '''
-        # such an ugly code!
-        # I really have to makes this clearer...and more robust!
-        # but it works for now
         pub = self.publication
-        qs = model.objects.all()
-        for q in pub.query:
-            for k, v in q.items():
-                if isinstance(v, list):
-                    if v[0] == '$count':
-                        v[0] = qs.count()
-                        v = max(v[0] + v[1], 0)
-                    elif v[0] == '$user':
-                        v[0] = self.client.user.id
-                elif isinstance(v, dict):
-                    for _k, _v in v.values():
-                        if _v == '$user':
-                            v[_k] = self.client.user.id
-                if k == 'filter':
-                    qs = qs.filter(**v)
-                elif k == 'order_by':
-                    qs = qs.order_by(v)
-                elif k == 'limit':
-                    qs = qs[:v]
-                elif k == 'offset':
-                    qs = qs[v:]
+
+        if opts:
+            self.options = opts
+            self.save()
+        if not model:
+            model_mod = importlib.import_module(pub.model_module)
+            model = getattr(model_mod, pub.model_class)
+
+        func = getattr(model, pub.name)
+        subscriber = Subscriber.objects.get(parent_id=self.parent)
+        sub_mod = importlib.import_module(subscriber.parent_module)
+        sub_cls = getattr(sub_mod, subscriber.parent_class)
+        qs = sub_cls.subscribe(self, func(), self.options)
         return qs

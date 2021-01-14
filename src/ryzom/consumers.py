@@ -15,7 +15,7 @@ from asgiref.sync import async_to_sync
 
 from django.conf import settings
 from ryzom.methods import Methods
-from ryzom.models import Clients, Subscriptions, Publications, Tokens
+from ryzom.models import Clients, Subscription, Publication, Tokens
 
 
 class Consumer(JsonWebsocketConsumer):
@@ -300,13 +300,21 @@ class Consumer(JsonWebsocketConsumer):
                 }
             })
         else:
-            pub = Publications.objects.get(name=params['name'])
-            sub = Subscriptions(
-                    publication=pub,
-                    parent=params['_id'],
-                    client=client)
-            sub.init()
-            sub.save()
+            pub = Publication.objects.get(name=params['name'])
+            sub = Subscription.objects.filter(
+                publication=pub,
+                parent=params['_id'],
+                client=client).first()
+            if not sub:
+                sub = Subscription(
+                        publication=pub,
+                        parent=params['_id'],
+                        client=client)
+                sub.init(params['opts'])
+                sub.save()
+            else:
+                sub.exec_query(params['opts'])
+
             to_send.update({
                 'type': 'Success',
                 'params': {

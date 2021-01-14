@@ -18,16 +18,16 @@ class RyzomConfig(AppConfig):
         Finally, we create the publications that were registered
         in the to_publish list of ryzom.pusub module.
         '''
-        try:
-            import ryzom.signals  # noqa
-        except (ImportError,):
-            pass
+        import ryzom.signals
 
         from ryzom.pubsub import to_publish
 
         try:
             Clients = self.get_model('Clients')
             Clients.objects.all().delete()
+            Subscriber = self.get_model('Subscriber')
+            Subscriber.objects.all().delete()
+
             for publication in to_publish:
                 publication.publish_all()
         except (OperationalError, ProgrammingError):

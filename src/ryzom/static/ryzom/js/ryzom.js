@@ -59,6 +59,8 @@
     var elem;
     if (component.tag == 'text')
       elem = document.createTextNode(component.content);
+    else if (typeof(component) == 'string')
+      elem = document.createTextNode(component);
     else {
       elem = document.createElement(component.tag);
       Object.keys(component.attrs).forEach(function(k) {
@@ -71,13 +73,13 @@
       });
     }
 
-    component.subscriptions.forEach(function(sub) {
-      ryzom.subscribe(sub, component._id, function(r, e) {
+    if (component.publication) {
+      ryzom.subscribe(component.publication, component._id, function(r, e) {
         if (e) { console.log(e); }
       });
-    });
+    };
 
-    if (typeof(component.content) != 'string' && component.content.length) {
+    if (component.content && typeof(component.content) != 'string' && component.content.length) {
       component.content.forEach(function(child) {
         var c = createDOMelement(child);
         var prev = elem.childNodes[c.position]
@@ -274,7 +276,8 @@
         type: 'subscribe',
         params: {
           name: name,
-          _id: id
+          _id: id,
+          opts: []
         }
       }, cb);
     }
