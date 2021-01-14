@@ -4,6 +4,8 @@ There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
 import uuid
+import cli2
+from ..models import Subscriber
 
 import cli2
 
@@ -50,7 +52,7 @@ class Component:
     :param str _id: The _id of the current instance (must be unique)
     '''
 
-    __subscriptions = []
+    __publication = None
 
     def __init__(self, *content, **attrs):
         if 'cls' in attrs:
@@ -138,27 +140,33 @@ class Component:
 
         :returns: A serializable representation of the instance
         '''
+        if self.publication:
+            Subscriber.objects.get_or_create(
+                parent_id=self._id,
+                parent_module=self.__module__,
+                parent_class=self.__class__.__name__
+            )
         return {
             '_id': self._id,
             'tag': self.tag,
             'content': [
-                c.to_obj()
+                c if isinstance(c, str) else c.to_obj()
                 for c in self.content
             ] if self.tag != 'text' else self.content,
             'parent': self.parent,
             'position': self.position,
             'events': self.events,
             'attrs': self.attrs,
-            'subscriptions': self.subscriptions
+            'publication': self.publication
         }
 
     @property
-    def subscriptions(self):
-        return self.__subscriptions
+    def publication(self):
+        return self.__publication
 
-    @subscriptions.setter
-    def subscriptions(self, value=None):
-        self.__subscriptions = value or []
+    @publication.setter
+    def publication(self, value=None):
+        self.__publication = value
 
     def to_html(self, context=None):
         if self.tag == 'text':
