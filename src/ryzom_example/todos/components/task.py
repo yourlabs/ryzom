@@ -14,9 +14,16 @@ class Task(Li):
 
 
 class TaskList(Ul):
+
+    publication = 'all_tasks'
+
     def __init__(self):
-        self.subscriptions = ['task']
         super().__init__(**{'class': 'list-group'}, _id='tasklist')
+
+    @classmethod
+    def subscribe(cls, sub, qs, opts):
+        # handle data: filter, order, offset or limit as you wish
+        return qs
 
 
 class TaskForm(Div):

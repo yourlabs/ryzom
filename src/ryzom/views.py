@@ -85,7 +85,7 @@ class View():
             if c.tag == t:
                 return c
             for children in c.content:
-                if c.tag != 'text':
+                if c.tag != 'text' and not isinstance(children, str):
                     tag = find_tag(children, t)
                     if tag:
                         return tag
@@ -103,8 +103,11 @@ class View():
         script = '(function() {' if set_tag else ''
         content = content if isinstance(content, list) else [content]
         for component in content:
-            for sub in component.subscriptions:
-                script += f'ryzom.subscribe("{sub}","{component._id}",'
+            if isinstance(component, str):
+                continue
+            if component.publication:
+                pub = component.publication
+                script += f'ryzom.subscribe("{pub}","{component._id}",'
                 script += 'function(r,e){if (e) {console.log(e);}});\n'
             for event, cb in component.events.items():
                 script += f'getElementByUuid("{component._id}").'

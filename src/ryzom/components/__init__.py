@@ -35,4 +35,4 @@ from .components import (
 import os
 
 if 'DJANGO_SETTINGS_MODULE' in os.environ:
-    from .contrib.django import Static
+    from ..contrib.django import Static

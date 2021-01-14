@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from ryzom.pubsub import Publishable
+from ryzom.pubsub import Publishable, publish
 
 
 class Task(Publishable, models.Model):
@@ -16,13 +16,14 @@ class Task(Publishable, models.Model):
     def __str__(self):
         return self.about
 
+    @publish('todos.components.task.Task')
+    def all_tasks(cls):
+        return cls.objects.all()
 
-Task.publish(
-        name='task',
-        template='todos.components.task.Task',
-        query=[
-            {'order_by': 'about'},
-            {'offset': ('$count', -5)},
-            {'limit': 5},
-        ]
-)
+    @publish('todos.components.task.Task')
+    def first_tasks(cls):
+        return cls.objects.all().order_by('about')[0:5]
+
+
+Task.all_tasks()
+Task.first_tasks()
