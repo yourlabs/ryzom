@@ -6,7 +6,7 @@ They will be added when they'll be needed
 import uuid
 import importlib
 from django.contrib.postgres.aggregates import ArrayAgg
-from ..models import Subscriber, Subscription, Publication
+import cli2
 
 
 def component_html(path, *args, **kwargs):
@@ -143,6 +143,7 @@ class Component:
         '''
         sub = None
         if self.publication:
+            from ..models import Subscriber, Subscription, Publication
             pub = Publication.objects.get(name=self.publication)
             Subscriber.objects.get_or_create(
                 parent_id=self._id,
