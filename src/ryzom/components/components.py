@@ -287,6 +287,7 @@ class Script(Component):
         attrs = attrs or {}
         attrs['tag'] = 'script'
         attrs['parent'] = 'head'
+        attrs.setdefault('type', 'text/javascript')
         super().__init__(*content, **attrs)
 
 
