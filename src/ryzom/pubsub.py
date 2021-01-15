@@ -2,8 +2,6 @@
 Defines the Publishable class and the module level variable
 to_publish.
 '''
-from ryzom.models import Publication
-
 to_publish = []
 '''
 This variable is intented to be used only in the ryzom.apps
@@ -12,7 +10,7 @@ at server startup.
 '''
 
 
-class Publishable():
+class Publishable:
     '''
     The publishable class is meant to be inherited from
     by end user models. It defines a publish class method
@@ -65,6 +63,8 @@ class Publishable():
 
         :parameters: see :meth:`publish`
         '''
+        from ryzom.models import Publication
+
         tmpl_mod, tmpl_cls = template.rsplit('.', 1)
         kwargs = {
             'model_module': cls.__module__,
