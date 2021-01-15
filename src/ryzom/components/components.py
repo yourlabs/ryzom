@@ -4,8 +4,9 @@ There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
 import uuid
-import cli2
-from ..models import Subscriber
+import importlib
+from django.contrib.postgres.aggregates import ArrayAgg
+from ..models import Subscriber, Subscription, Publication
 
 import cli2
 
@@ -67,6 +68,7 @@ class Component:
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
         ]
+
         self.events = attrs.pop('events', {})
         self.attrs = attrs or {}
         self.position = 0
@@ -128,7 +130,7 @@ class Component:
         '''
         self.events.update(events)
 
-    def to_obj(self):
+    def to_obj(self, context=None):
         '''Get a serializable dict of the instance
 
         This methods returns a dict representation of the current
@@ -140,12 +142,32 @@ class Component:
 
         :returns: A serializable representation of the instance
         '''
+        sub = None
         if self.publication:
+            pub = Publication.objects.get(name=self.publication)
             Subscriber.objects.get_or_create(
                 parent_id=self._id,
                 parent_module=self.__module__,
                 parent_class=self.__class__.__name__
             )
+            model_mod = importlib.import_module(pub.model_module)
+            model = getattr(model_mod, pub.model_class)
+            func = getattr(model, pub.name)
+            qs = self.subscribe(None, func(), None)
+            self.content = []
+            tmpl_module = importlib.import_module(pub.template_module)
+            tmpl_class = getattr(tmpl_module, pub.template_class)
+            for c in qs:
+                self.content.append(tmpl_class(c))
+
+            sub = Subscription.objects.create(
+                parent=self._id,
+                publication=pub,
+                queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
+                options=None,
+                client=None
+            )
+
         return {
             '_id': self._id,
             'tag': self.tag,
@@ -157,7 +179,8 @@ class Component:
             'position': self.position,
             'events': self.events,
             'attrs': self.attrs,
-            'publication': self.publication
+            'publication': self.publication,
+            'subscription': f"{sub.id}" if sub else None
         }
 
     @property
@@ -186,9 +209,10 @@ class Component:
         else:
             html = f'<{self.tag} {attrs}>'
             for c in self.content:
-                html += (c.to_html(context=context)
-                         if getattr(c, 'to_html', None) else str(c)
-                         )
+                html += (
+                    c.to_html(context=context)
+                    if getattr(c, 'to_html', None) else str(c)
+                )
             html += f'</{self.tag}>'
         return html
 
