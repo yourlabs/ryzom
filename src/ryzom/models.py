@@ -4,6 +4,7 @@ They're not intended to be used by end-user.
 '''
 import importlib
 import secrets
+import uuid
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -73,8 +74,9 @@ class Subscription(models.Model):
     it's init() method so that it fills the component asking for it
     by its content via ryzom.ddp send_insert.
     '''
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     parent = models.CharField(max_length=255)
-    client = models.ForeignKey(Clients, models.CASCADE)
+    client = models.ForeignKey(Clients, models.CASCADE, blank=True, null=True)
     publication = models.ForeignKey(Publication, models.CASCADE)
     queryset = ArrayField(models.IntegerField(), default=list)
     options = JSONField(blank=True, null=True)

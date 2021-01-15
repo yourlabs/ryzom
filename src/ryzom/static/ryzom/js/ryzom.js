@@ -74,7 +74,7 @@
     }
 
     if (component.publication) {
-      ryzom.subscribe(component.publication, component._id, function(r, e) {
+      ryzom.subscribe(component.publication, component.subscription, component._id, function(r, e) {
         if (e) { console.log(e); }
       });
     };
@@ -271,12 +271,13 @@
       });
     },
 
-    subscribe: function(name, id, cb) {
+    subscribe: function(name, id, pid, cb) {
       ws_send({
         type: 'subscribe',
         params: {
           name: name,
-          _id: id,
+          parent_id: pid,
+          sub_id: id,
           opts: []
         }
       }, cb);

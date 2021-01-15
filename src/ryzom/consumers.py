@@ -280,7 +280,7 @@ class Consumer(JsonWebsocketConsumer):
         params = data['params']
         to_send = {'_id': data['_id']}
         client = Clients.objects.get(channel=self.channel_name)
-        for key in ['name', '_id']:
+        for key in ['name', 'sub_id']:
             if key not in params:
                 to_send.update({
                     'type': 'Error',
@@ -303,8 +303,8 @@ class Consumer(JsonWebsocketConsumer):
             pub = Publication.objects.get(name=params['name'])
             sub = Subscription.objects.filter(
                 publication=pub,
-                parent=params['_id'],
-                client=client).first()
+                parent=params['parent_id'],
+                id=params['sub_id']).first()
             if not sub:
                 sub = Subscription(
                         publication=pub,
@@ -312,6 +312,10 @@ class Consumer(JsonWebsocketConsumer):
                         client=client)
                 sub.init(params['opts'])
                 sub.save()
+            elif not sub.client:
+                sub.client = client
+                sub.save()
+                sub.exec_query(params['opts'])
             else:
                 sub.exec_query(params['opts'])
 
@@ -319,7 +323,7 @@ class Consumer(JsonWebsocketConsumer):
                 'type': 'Success',
                 'params': {
                     'name': params['name'],
-                    'sub_id': sub.id,
+                    'sub_id': f"{sub.id}",
                     'length': len(sub.queryset)
                 }
             })
