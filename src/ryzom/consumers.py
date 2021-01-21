@@ -18,7 +18,7 @@ from ryzom.methods import Methods
 from ryzom.models import Clients, Subscriptions, Publications, Tokens
 
 
-class Consumer(JsonWebsocketConsumer, object):
+class Consumer(JsonWebsocketConsumer):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
