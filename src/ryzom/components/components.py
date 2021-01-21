@@ -106,8 +106,8 @@ class Component:
             self.content = self.content[0]
         else:
             for i, c in enumerate(self.content):
-                if not hasattr(c, 'to_html'):
-                    c = Text(c)
+                if isinstance(c, str):
+                    self.content[i] = c = Text(c)
                 c.parent = self._id
                 c.position = i
 
