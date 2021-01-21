@@ -1,5 +1,6 @@
-from ryzom.components import Html, Head, Body, Meta, Title, Link, Static
+from ryzom.components import Html, Head, Body, Meta, Title, Link
 from ryzom.components import Div, A, Nav, H1
+from ryzom.components.django import Static
 from ryzom.reactive import ReactiveDiv
 
 from .home import Welcome

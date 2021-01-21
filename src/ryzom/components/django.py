@@ -5,6 +5,7 @@ import logging
 
 from collections.abc import Iterable
 
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.html import format_html
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
@@ -53,6 +54,19 @@ class Factory:
                 f'Widget class {widget_type} not found.'
             )
         return cls
+
+
+class Static:
+    '''Return a static url for an app asset.
+
+    :param str src: The app path of the asset.
+    '''
+    def __init__(self, src):
+        self._data = src
+        self.url = staticfiles_storage.url(src)
+
+    def __str__(self):
+        return self.url
 
 
 class TextInput(Input):

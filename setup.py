@@ -18,18 +18,26 @@ setup(
     include_package_data=True,
     keywords='django frontend',
     install_requires=[
-        'django',
-        'crudlfap @ git+https://yourlabs.io/oss/crudlfap.git@newryz#egg=crudlfap',
+        'cli2'
     ],
     tests_require=[
         'tox',
     ],
     extras_require=dict(
+        django=[
+            'django',
+            'crudlfap @ git+https://yourlabs.io/oss/crudlfap.git@newryz#egg=crudlfap',
+            # 'crudlfap',
+        ],
         dev=[
-        'channels',
-        'channels-redis',
-        'lxml',
-        # 'psycopg2-binary',
+            'channels',
+            'channels-redis',
+        ],
+        test=[
+            'lxml',
+        ],
+        psql=[
+            'psycopg2-binary',
         ],
     ),
     entry_points={
