@@ -1,7 +1,7 @@
 test:
   image: yourlabs/python
   script:
-  - pip install tox -e .[dev,django,psql,test]
+  - pip install tox -e .[dev,django,test]
   - py.test -vv --cov src --strict -r fEsxXw
   cache:
     paths:
