@@ -102,6 +102,31 @@ TEMPLATES.append(RYZOM_TEMPLATE_BACKEND)  # noqa: F405
 
 PYTEST_SKIP = os.getenv('PYTEST_SKIP', False)
 
+# Output ryzom messages.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+    },
+    'formatters': {
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'loggers': {
+        'ryzom': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 """
 CRUDLFAP_TEMPLATE_BACKEND = {
     "BACKEND": "django_jinja.backend.Jinja2",
