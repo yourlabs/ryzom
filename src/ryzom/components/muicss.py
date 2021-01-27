@@ -8,12 +8,14 @@ from collections.abc import Iterable
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
-from . import components as ryz
-from . import django as dj
+from .components import *  # noqa
+from .components import Select as RyzSelect
+from .django import Factory, InputOption, SelectOption
+from .django import TextInput as DjangoTextInput
 
 
 """
-class Component(ryz.Component):
+class Component(Component):
     def __init__(self, *args, **kwargs):
         self.context = kwargs.pop('context', {})
         super().__init__(*args, **kwargs)
@@ -50,7 +52,7 @@ class Button(Component):
         return Button(content, attr, events, parent, _id)
 
 
-class Container(ryz.Component):
+class Container(Component):
     '''
     Container component
 
@@ -66,7 +68,7 @@ class Container(ryz.Component):
 """
 
 
-class MuiForm(ryz.Component):
+class MuiForm(Component):
     '''
     Form component
 
@@ -79,7 +81,7 @@ class MuiForm(ryz.Component):
         super().__init__(*content, **attrs, tag='form')
 
 
-class Legend(ryz.Component):
+class Legend(Component):
     '''
     Legend component
 
@@ -91,7 +93,7 @@ class Legend(ryz.Component):
         super().__init__(*content, **attrs, tag='legend')
 
 
-class TextInput(ryz.Div):
+class TextInput(Div):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -106,7 +108,7 @@ class TextInput(ryz.Div):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            ryz.Input(**attrs),
+            Input(**attrs),
         )
         if 'label_tag' in widget:
             # Radio input options won't have a label_tag.
@@ -138,13 +140,13 @@ class HiddenInput(TextInput):
     pass
 
 
-class MultiWidget(ryz.Div):
+class MultiWidget(Div):
     """ Return a list of widgets of the correct types.
         NOTE: Adds an extra div tag as a container for the widgets.
     """
     def __init__(self, multi_widget):
         content = []
-        factory = dj.Factory()
+        factory = Factory()
         for widget in multi_widget.subwidgets:
             attrs = widget['attrs']
             attrs.update({
@@ -165,19 +167,19 @@ class MultiWidget(ryz.Div):
 class MultipleHiddenInput(MultiWidget):
     """ Return a list of hidden widgets. """
     def __init__(self, multi_widget):
-        super().__init(multi_widget)
+        super().__init__(multi_widget)
 
 
 class FileInput(TextInput):
     pass
 
 
-class ClearableFileInput():
-    # TODO: Code ClearableFileInput()
-    pass
+# TODO: Code ClearableFileInput()
+# class ClearableFileInput():
+#     pass
 
 
-class Textarea(ryz.Textarea):
+class Textarea(Textarea):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -189,12 +191,12 @@ class Textarea(ryz.Textarea):
         })
         if widget['value'] is not None:
             content.append(
-                ryz.Text(widget['value']),
+                Text(widget['value']),
                 widget['label_tag'],
             )
         div_content = []
         div_content.append(
-            ryz.Textarea(*content, **attrs)
+            Textarea(*content, **attrs)
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
 
@@ -217,7 +219,7 @@ class TimeInput(DateTimeBaseInput):
     pass
 
 
-class CheckboxInput(ryz.Div):
+class CheckboxInput(Div):
     # Prevent default pre-element labelling
     embed_label = True
 
@@ -233,9 +235,9 @@ class CheckboxInput(ryz.Div):
 
         # widget['label_tag'] isn't useful here.
         div_content.append(
-            ryz.Label(
-                ryz.Input(**attrs),
-                ryz.Text(widget.get(
+            Label(
+                Input(**attrs),
+                Text(widget.get(
                     'label', re.findall('>([^<]*)<', widget['label_tag'])[0])),
                 **{'for': widget['attrs']['id']}
             )
@@ -250,17 +252,7 @@ class ChoiceWidget():
     pass
 
 
-class SelectOption(ryz.Option):
-    def __init__(self, widget):
-        attrs = widget['attrs']
-        attrs.update({
-            'value': widget['value'],
-        })
-        content = [ryz.Text(widget['label'])]
-        super().__init__(*content, **attrs)
-
-
-class Select(ryz.Div):
+class Select(Div):
     def __init__(self, widget):
         div_content = []
         attrs = widget['attrs']
@@ -279,12 +271,12 @@ class Select(ryz.Div):
                     'label': group_name,
                 }
                 group_content.append(
-                    ryz.Optgroup(*option_content, **group_attrs))
+                    Optgroup(*option_content, **group_attrs))
             else:
                 group_content.extend(option_content)
 
         div_content.append(
-            ryz.Select(*group_content, **attrs),
+            RyzSelect(*group_content, **attrs),
         )
         div_attrs = {"class": "mui-select"}
         super().__init__(*div_content, **div_attrs)
@@ -294,7 +286,7 @@ class NullBooleanSelect(Select):
     pass
 
 
-class SelectMultiple(ryz.Div):
+class SelectMultiple(Div):
     def __init__(self, widget):
         options = []
         for group_name, group_choices, group_index in widget['optgroups']:
@@ -304,14 +296,14 @@ class SelectMultiple(ryz.Div):
                 )
 
         super().__init__(
-            ryz.Component(
-                ryz.Component(
+            Component(
+                Component(
                     *options, multiple='true', name=widget['name'],
                     tag='select', slot='select'
                 ),
-                ryz.Component(slot='deck', tag='div'),
-                ryz.Component(
-                    ryz.Component(slot='input', tag='input', type='text'),
+                Component(slot='deck', tag='div'),
+                Component(
+                    Component(slot='input', tag='input', type='text'),
                     slot='input',
                     tag='autocomplete-light',
                 ),
@@ -321,26 +313,7 @@ class SelectMultiple(ryz.Div):
         )
 
 
-class InputOption(ryz.Label):
-    """ Return either an input element or a label wrapped around an input. """
-    def __init__(self, widget):
-        attrs = widget['attrs']
-        if widget['wrap_label']:
-            if attrs['id']:
-                label_attrs = {
-                    'for': attrs['id']
-                }
-            super().__init__(
-                dj.TextInput(widget),
-                ryz.Text(widget['label']),
-                **label_attrs
-            )
-        else:
-            raise NotImplementedError
-            # Use DjangoTextInput() if the label is not required.
-
-
-class MultipleInput(ryz.Ul):
+class MultipleInput(Ul):
     def __init__(self, widget):
         attrs = widget['attrs']
         radio_attrs = {}
@@ -358,9 +331,9 @@ class MultipleInput(ryz.Ul):
             option_content = []
             for option in options:
                 option_content.append(
-                    ryz.Li(InputOption(option)
+                    Li(InputOption(option)
                            if option['wrap_label']
-                           else dj.TextInput(option)
+                           else DjangoTextInput(option)
                            )
                 )
             if group:
@@ -368,9 +341,9 @@ class MultipleInput(ryz.Ul):
                 if _id:
                     group_attrs['id'] = f'{_id}_{index}'
                 group_content.append(
-                    ryz.Li(
-                        ryz.Text(group),
-                        ryz.Ul(*option_content, **group_attrs),
+                    Li(
+                        Text(group),
+                        Ul(*option_content, **group_attrs),
                         )
                 )
             else:
@@ -401,7 +374,7 @@ class SelectDateWidget(MultiWidget):
     pass
 
 
-class Button(ryz.Button):
+class Button(Button):
     """
     {{ render_button(view.title_submit, button_type="submit",
         button_class="btn-primary") }}
@@ -432,7 +405,7 @@ class Button(ryz.Button):
         if widget['value'] is not None:
             attrs['value'] = widget['value']
         div_content.append(
-            ryz.Input(**attrs),
+            Input(**attrs),
             widget['label'],
         )
         div_attrs = {'class': "mui-textfield mui-textfield--float-label"}
@@ -440,13 +413,13 @@ class Button(ryz.Button):
         super().__init__(*div_content, **div_attrs)
 
 
-class NonFieldErrors(ryz.Ul):
+class NonFieldErrors(Ul):
     """ Render non-field errors. """
     def __init__(self, form):
         content = []
         for error in form.non_field_errors():
             content.append(
-                ryz.Li(ryz.Text(error))
+                Li(Text(error))
             )
         super().__init__(
             *content,
@@ -454,7 +427,7 @@ class NonFieldErrors(ryz.Ul):
         )
 
 
-class HiddenErrors(ryz.Ul):
+class HiddenErrors(Ul):
     """ Render hidden field errors. """
     def __init__(self, form):
         content = []
@@ -464,7 +437,7 @@ class HiddenErrors(ryz.Ul):
                     error_text = _('(Hidden field %(name)s) %(error)s') % \
                                  {'name': field.name, 'error': str(error)}
                     content.append(
-                        ryz.Li(ryz.Text(error_text))
+                        Li(Text(error_text))
                     )
         super().__init__(
             *content,
@@ -472,7 +445,7 @@ class HiddenErrors(ryz.Ul):
         )
 
 
-class HiddenFields(ryz.Div):
+class HiddenFields(Div):
     """ Render hidden fields. """
     def __init__(self, form):
         content = []
@@ -486,13 +459,13 @@ class HiddenFields(ryz.Div):
         )
 
 
-class FieldErrors(ryz.Ul):
+class FieldErrors(Ul):
     """ Render field errors. """
     def __init__(self, errors):
         content = []
         for error in errors:
             content.append(
-                ryz.Li(ryz.Text(error))
+                Li(Text(error))
             )
         super().__init__(
             *content,
@@ -500,12 +473,12 @@ class FieldErrors(ryz.Ul):
         )
 
 
-class HelpText(ryz.Ul):
+class HelpText(Ul):
     """ Render field help text. """
     def __init__(self, help_text):
         content = []
         content.append(
-            ryz.Li(ryz.Text(help_text))
+            Li(Text(help_text))
         )
         super().__init__(
             *content,
@@ -513,7 +486,7 @@ class HelpText(ryz.Ul):
         )
 
 
-class Field(ryz.Div):
+class Field(Div):
     """Render a MUI field using ryzom components and return an AST.
 
     Prepare the widget attrs, field label and context then render the
@@ -564,12 +537,12 @@ class Field(ryz.Div):
         widget_context['label_tag'] = label
         widget_context['label'] = label_chkbox
 
-        ComponentCls = dj.Factory()(widget)
+        ComponentCls = Factory()(widget)
         if label:
             # MUICSS may embed <label> after <input> in a containing div.
             if not getattr(ComponentCls, 'embed_label', False):
                 content.append(
-                    ryz.Text(label)
+                    Text(label)
                 )
         component = ComponentCls(widget_context)
         content.extend(
@@ -586,7 +559,7 @@ class Field(ryz.Div):
         )
 
 
-class VisibleFields(ryz.Div):
+class VisibleFields(Div):
     """Render the regular Django fields of a form using ryzom components
     and return an AST.
 
@@ -603,7 +576,7 @@ class VisibleFields(ryz.Div):
         )
 
 
-class Form(ryz.Div):
+class Form(Div):
     """Render a complete Django form using ryzom components and return an AST.
 
     :param ~django.forms.Form: The form being rendered.

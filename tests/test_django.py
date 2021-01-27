@@ -4,13 +4,13 @@ import re
 
 from django import forms
 from django.conf import settings
+from django.forms.widgets import PasswordInput
 from django.test import SimpleTestCase, override_settings
 
-from ryzom_example.settings import (
-    CRUDLFAP_TEMPLATE_BACKEND, DEFAULT_TEMPLATE_BACKEND
-)
 from ryzom.backends.ryzom import Ryzom
 from ryzom.components import component_html
+from ryzom.components.django import Factory, TextInput
+from ryzom.components.django import PasswordInput as RyzDjPasswordInput
 
 
 class NonModelForm(forms.Form):
@@ -118,8 +118,6 @@ class NonModelFormTest():
 # @pytest.mark.skip
 @pytest.mark.latest
 @override_settings(TEMPLATES=[
-    # CRUDLFAP_TEMPLATE_BACKEND,
-    # DEFAULT_TEMPLATE_BACKEND,
     {
         "BACKEND": "ryzom.backends.ryzom.Ryzom",
         "OPTIONS": {
@@ -131,3 +129,34 @@ class NonModelFormTest():
 class TestDjangoNonModelForm(NonModelFormTest, SimpleTestCase):
     prefix = "Django"
     pass
+
+
+@pytest.mark.latest
+@override_settings(TEMPLATES=[
+    {
+        "BACKEND": "ryzom.backends.ryzom.Ryzom",
+        "OPTIONS": {
+            "app_dirname": "components",
+            "components_module": "ryzom.components.django",
+        },
+    },
+])
+class TestDjangoFactory(SimpleTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Ryzom.get_default.cache_clear()
+
+    def test_django_widget_factory(self):
+        factory = Factory()
+        widget = factory(PasswordInput())
+        assert widget is RyzDjPasswordInput
+
+    def test_django_widget_not_found(self):
+        class FakeWidget():
+            pass
+
+
+        factory = Factory()
+        widget = factory(FakeWidget())
+        assert widget is TextInput

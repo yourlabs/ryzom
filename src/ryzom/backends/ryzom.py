@@ -53,9 +53,7 @@ class Ryzom(BaseEngine):
         self.debug = options.pop("debug", settings.DEBUG)
         self._context_processors = options.pop("context_processors", [])
         self.components_module = options.pop("components_module",
-                                             "ryzom.components.muicss")
-        self.components_prefix = options.pop("components_prefix",
-                                             "Mui")
+                                             "ryzom.components.django")
 
     def get_template(self, template_name):
         try:

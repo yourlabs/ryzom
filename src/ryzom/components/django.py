@@ -22,23 +22,36 @@ logger = logging.getLogger(__name__)
 
 
 class Factory:
-    """ Return the class required to render the ~django.forms.Widget. """
+    """ Return the ryzom class required to render the ~django.forms.Widget.
+        Initialise with a dotted module path or the template engine
+        settings are used by default.
+        The fallback to defaults can be disabled to force full override.
 
-    def __init__(self, module=None):
-        self.module = module or Ryzom.get_default().components_module
+    :param str module: A dotted module path to custom components.
+    :param bool fallback: Use default components, if available.
+    :return: A Factory instance that will import the required Component.
+    """
+    def __init__(self, module=None, fallback=True):
+        self.default_module = Ryzom.get_default().components_module
+        self.module = module or self.default_module
+        self.fallback = fallback
 
     def __call__(self, widget):
         cls = f'{self.module}.{type(widget).__name__}'
         try:
             cls = import_string(cls)
         except (ImportError,) as exc:  # noqa: F841
-            default_cls = f'{self.default_module}.{type(widget).__name__}'
-            try:
-                default_cls = import_string(default_cls)
-                logger.debug(f'Using ryzom default widget for: {cls}')
-                cls = default_cls
-            except (ImportError,) as exc:  # noqa: F841
-                logger.debug(f'Ryzom widget not found: {cls}.')
+            if self.fallback and (self.module != self.default_module):
+                default_cls = f'{self.default_module}.{type(widget).__name__}'
+                try:
+                    default_cls = import_string(default_cls)
+                    logger.debug(f'Ryzom - using default widget for: {cls}')
+                    cls = default_cls
+                except (ImportError,) as exc:  # noqa: F841
+                    pass
+            # If requested widget is not found, use a basic custom widget.
+            if isinstance(cls, str):
+                logger.debug(f'Ryzom - widget not found: {cls}.')
                 cls = f'{self.module}.TextInput'
                 cls = import_string(cls)
         return cls
