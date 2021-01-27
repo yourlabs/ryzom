@@ -408,7 +408,8 @@ class Field(Div):
     :return: An AST representing the rendered field.
     :rtype: list
     """
-    def __init__(self, field, widget=None, attrs=None, only_initial=False):  # noqa: C901 E501
+    def __init__(self, field, widget=None, attrs=None, only_initial=False,  # noqa: C901 E501
+                 label_suffix=None):
         widget = widget or field.field.widget
         if field.field.localize:
             widget.is_localized = True
@@ -434,15 +435,18 @@ class Field(Div):
         # For MuiCheckboxInput
         label = label_tag = ''
         if field.label:
-            label = format_html(
-                '{}{}',
-                field.label,
-                field.field.label_suffix or field.form.label_suffix
-            )
+            label = field.label
+            label_suffix = (label_suffix if label_suffix is not None
+                            else field.field.label_suffix
+                            if field.field.label_suffix is not None
+                            else field.form.label_suffix)
+            if label_suffix and label[-1] not in _(':?.!'):
+                label_with_suffix = format_html('{}{}', label, label_suffix)
             label_tag = field.label_tag(field.label)
 
         widget_context['label_tag'] = label_tag
-        widget_context['label'] = label
+        widget_context['label'] = label_with_suffix
+        widget_context['label_no_suffix'] = label
 
         ComponentCls = Factory()(widget)
         if label:
