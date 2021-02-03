@@ -15,7 +15,8 @@ from asgiref.sync import async_to_sync
 
 from django.conf import settings
 from ryzom.methods import Methods
-from ryzom.models import Clients, Subscription, Publication, Tokens
+from ryzom.models import Clients, Subscription, Publication
+from ryzom.request import Request
 
 
 class Consumer(JsonWebsocketConsumer):
@@ -40,20 +41,29 @@ class Consumer(JsonWebsocketConsumer):
         sends back a 'Connected' message to the client
         '''
         user = async_to_sync(get_user)(self.scope)
-        token = self.scope['query_string']
+        token = self.scope['query_string'].decode()
+        print(f"consumer-connect Token: {token}")
+        print(f"consumer-connect Channel: {self.channel_name}")
         if token:
-            user_token = Tokens.objects.filter(token=token.decode()).last()
+            user_token = Clients.objects.filter(token=token).last()
             if user_token:
                 user = user_token.user
-                async_to_sync(login)(self.scope, user)
-                self.scope['session'].save()
+                if user:
+                    async_to_sync(login)(self.scope, user)
+                    self.scope['session'].save()
 
-        Clients.objects.create(
-                channel=self.channel_name,
-                user=user if isinstance(user, User) else None
-        )
         self.accept()
-        self.send(json.dumps({'type': 'Connected'}))
+        client = Clients.objects.filter(token=token).first()
+        if client and client.channel != self.channel_name:
+            print("CLIENT FOUND")
+            print(f"new channel: {self.channel_name}")
+            client.channel = self.channel_name
+            client.user = user if isinstance(user, User) else None
+            client.save()
+            self.send(json.dumps({'type': 'Connected'}))
+        else:
+            print("CLIENT DISCONNECTED - Reloading")
+            self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
         '''
@@ -63,7 +73,13 @@ class Consumer(JsonWebsocketConsumer):
         Zombies that may stay in our DB on server reboots are removed in
         the ryzom.apps Appconfig.ready() function
         '''
-        Clients.objects.filter(channel=self.channel_name).delete()
+        client = Clients.objects.filter(channel=self.channel_name).first()
+        if client:
+            print(f'STARTING DISCONNECT')
+            print(f'Token: {client.token}, Channel: {client.channel}')
+            Subscription.objects.filter(client=client).delete()
+            client.delete()
+            print(f'DISCONNECTED')
 
     def receive(self, text_data):
         '''
@@ -81,6 +97,10 @@ class Consumer(JsonWebsocketConsumer):
         - a 'params' key, which is used as a parameter, specific to
         each message type.
         '''
+        if not Clients.objects.filter(channel=self.channel_name).count():
+            self.send(json.dumps({'type': 'Reload'}))
+            return
+
         data = json.loads(text_data)
         msg_type = None
         if not data.get('_id', None):
@@ -134,12 +154,11 @@ class Consumer(JsonWebsocketConsumer):
             client = Clients.objects.get(channel=self.channel_name)
             client.user = user
             client.save()
-            token, created = Tokens.objects.get_or_create(user=user)
             self.send(json.dumps({
                 '_id': data['_id'],
                 'type': 'Success',
                 'params': {
-                    'token': f'{token.token}'
+                    'token': f'{client.token}'
                 }
             }))
         else:
@@ -165,13 +184,16 @@ class Consumer(JsonWebsocketConsumer):
         view's callback (oncreate, ondestroy) are called here
         '''
         to_url = data['params'].get('url', '/')
+        to_query = data['params'].get('query', '')
         for url in Consumer.ddp_urlpatterns:
             if url.pattern.match(to_url):
                 cview = getattr(self, 'view', None)
                 if not cview or not isinstance(cview, url.callback):
                     if cview:
                         cview.ondestroy()
-                    cview = self.view = url.callback(self.channel_name)
+                    client = Clients.objects.filter(channel=self.channel_name).last()
+                    req = Request(client, url.callback)
+                    cview = self.view = url.callback(req)
                     cview.oncreate(to_url)
                 if (cview.onurl(to_url)):
                     self.send(json.dumps({
@@ -280,6 +302,7 @@ class Consumer(JsonWebsocketConsumer):
         params = data['params']
         to_send = {'_id': data['_id']}
         client = Clients.objects.get(channel=self.channel_name)
+        print(f'GOT SUBSCRIBE FOR CLIENT {client}')
         for key in ['name', 'sub_id']:
             if key not in params:
                 to_send.update({
@@ -304,20 +327,17 @@ class Consumer(JsonWebsocketConsumer):
             sub = Subscription.objects.filter(
                 publication=pub,
                 parent=params['parent_id'],
-                id=params['sub_id']).first()
+                client=client).first()
             if not sub:
                 sub = Subscription(
                         publication=pub,
-                        parent=params['_id'],
+                        parent=params['parent_id'],
                         client=client)
-                sub.init(params['opts'])
                 sub.save()
-            elif not sub.client:
-                sub.client = client
-                sub.save()
-                sub.exec_query(params['opts'])
             else:
+                print('SUBSCRIPTION FOUND')
                 sub.exec_query(params['opts'])
+            print(sub.client, sub)
 
             to_send.update({
                 'type': 'Success',

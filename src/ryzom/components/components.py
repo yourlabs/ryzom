@@ -209,6 +209,8 @@ class Component:
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
+            if self.publication:
+                self.create_subscription(context)
             for c in self.content:
                 html += (
                     c.to_html(context=context)
@@ -216,6 +218,43 @@ class Component:
                 )
             html += f'</{self.tag}>'
         return html
+
+    def create_subscription(self, context=None):
+        from ..models import Subscriber, Subscription, Publication
+        pub = Publication.objects.get(name=self.publication)
+        if getattr(self, 'subscription', None):
+            return
+        else:
+            sub = Subscription.objects.filter(
+                client=context.request.client,
+                publication=pub,
+                parent=self._id
+            ).first()
+            if sub:
+                self.subscription = sub
+                return
+        Subscriber.objects.get_or_create(
+            parent_id=self._id,
+            parent_module=self.__module__,
+            parent_class=self.__class__.__name__
+        )
+        model_mod = importlib.import_module(pub.model_module)
+        model = getattr(model_mod, pub.model_class)
+        func = getattr(model, pub.name)
+        qs = self.subscribe(None, func(), None)
+        self.content = []
+        tmpl_module = importlib.import_module(pub.template_module)
+        tmpl_class = getattr(tmpl_module, pub.template_class)
+        for c in qs:
+            self.content.append(tmpl_class(c))
+
+        self.subscription = Subscription.objects.create(
+            parent=self._id,
+            publication=pub,
+            queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
+            options=None,
+            client=context.request.client
+        )
 
     def render(self, context=None):
         html = self.to_html(context)

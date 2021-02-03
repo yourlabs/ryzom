@@ -12,14 +12,6 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.postgres.aggregates import ArrayAgg
 
 
-class Tokens(models.Model):
-    '''
-    '''
-    token = models.CharField(default=secrets.token_urlsafe,
-                             max_length=255, unique=True)
-    user = models.OneToOneField(User, models.CASCADE)
-
-
 class Clients(models.Model):
     '''
     Clients are the representation of connected Clients
@@ -29,6 +21,8 @@ class Clients(models.Model):
     it will be used to store the user using this channel
     once it's connected
     '''
+    token = models.CharField(default=secrets.token_urlsafe,
+                             max_length=255, unique=True)
     channel = models.CharField(max_length=255)
     user = models.ForeignKey(
                 User,

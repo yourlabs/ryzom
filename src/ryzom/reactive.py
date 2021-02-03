@@ -33,7 +33,7 @@ class ReactiveComponent(Component):
         '''
         self.content = content
         self.preparecontent()
-        channel_name = self.view.channel_name
+        channel_name = self.view.request.client.channel
         if channel_name:
             channel = get_channel_layer()
             async_to_sync(channel.send)(channel_name, {

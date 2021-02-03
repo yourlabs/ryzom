@@ -1,6 +1,8 @@
 import importlib
 from django.conf import settings
 
+from ryzom.request import Request
+
 
 class RyzomMiddleware:
     def __init__(self, get_response):
@@ -16,9 +18,7 @@ class RyzomMiddleware:
         url = request.path_info.lstrip('/')
         for u in urls:
             if u.pattern.match(url):
-                request.ryzom = u.callback('')
-                request.ryzom.oncreate(url)
-                request.ryzom.onurl(url)
+                request.ryzom = Request(None, u.callback)
                 break
 
         response = self.get_response(request)

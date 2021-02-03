@@ -8,7 +8,7 @@ from django.conf import settings
 from . import views
 
 urlpatterns = [
-    path(f'{settings.RYZOM_APP}/', views.index, name='index'),
+    path(f'{settings.RYZOM_APP}', views.index, name='index'),
     path('ws/ddp', views.index, name='index'),
-    # path('<path:url>', views.index, name='index')
+    path('<path:url>', views.index, name='index')
 ]

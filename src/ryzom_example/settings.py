@@ -63,7 +63,7 @@ CHANNEL_LAYERS = {
 }
 
 # ryzom settings
-RYZOM_APP = 'todos'
+RYZOM_APP = ''
 DDP_URLPATTERNS = 'todos.routing'
 SERVER_METHODS = [
     'todos.methods'
