@@ -184,8 +184,7 @@
 
   ws_connect = function(reconnecting) {
     ws_path = 'ws://' + window.location.host + '/ws/ddp/'
-    if (token = localStorage.getItem('auth_token'))
-      ws_path += '?' + token
+    ws_path += '?' + token
     ws = new WebSocket(ws_path);
 
     if (reconnecting) {
@@ -198,6 +197,7 @@
       var data = JSON.parse(e.data);
       var result, error;
       switch (data.type) {
+        case 'Reload': document.location.reload(); break;
         case 'Connected': init(); break;
         case 'DDP': handleDDP(data.params); break;
         default:
@@ -272,6 +272,7 @@
     },
 
     subscribe: function(name, id, pid, cb) {
+      console.log(pid)
       ws_send({
         type: 'subscribe',
         params: {

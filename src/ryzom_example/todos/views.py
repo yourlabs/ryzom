@@ -11,12 +11,12 @@ class Layout(View):
         self.content = Document(self)
 
     def onurl(self, url):
-        self.url = url
-        if url == 'todos':
+        self.url = url.strip('/')
+        if self.url == 'todos':
             self.reactive('main-container', [TaskList(), TaskForm()])
         else:
             self.reactive('main-container', [Welcome()])
         return True
 
-    def render(self):
+    def render(self, request):
         return self.content

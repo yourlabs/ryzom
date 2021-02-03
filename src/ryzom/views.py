@@ -5,7 +5,7 @@ from django import http
 from django.contrib.staticfiles import finders
 
 from ryzom.components import Script
-
+from ryzom.models import Subscriber, Subscription, Publication, Clients
 
 ryzom_js_file = finders.find('ryzom/js/ryzom.js')
 ryzom_js_fd = open(ryzom_js_file, 'r')
@@ -25,8 +25,8 @@ class View():
     :param str channel_name: The name of the channel this instance \
             is attached to
     '''
-    def __init__(self, channel_name):
-        self.channel_name = channel_name
+    def __init__(self, request):
+        self.request = request
         self.reactive_components = {}
 
     def addReactiveComponent(self, component):
@@ -65,7 +65,7 @@ class View():
         '''
         raise NotImplementedError
 
-    def render(self):
+    def render(self, request):
         '''
         To be overloaded.
         This method will be called whenever a websocket url is required
@@ -79,7 +79,7 @@ class View():
 
     def renderHTML(self, url, qs):
 
-        content = self.render()
+        content = self.render(self.request)
 
         def find_tag(c, t):
             if c.tag == t:
@@ -90,14 +90,17 @@ class View():
                     if tag:
                         return tag
 
-        script = f'current_url = "{url}";\nquery_string = "{qs}";\n'
+        script = '\n'
+        script += f'token = "{self.request.client.token}";\n'
+        script += f'current_url = "{url}";\n'
+        script += f'query_string = "{qs}";\n'
         script += ryzom_js
         script += self.renderScript(content)
 
         body = find_tag(content, 'body')
         body.addchild(Script(script))
 
-        return content.to_html()
+        return content.to_html(self)
 
     def renderScript(self, content, set_tag=True):
         script = '(function() {' if set_tag else ''
@@ -106,8 +109,10 @@ class View():
             if isinstance(component, str):
                 continue
             if component.publication:
+                component.create_subscription(self)
                 pub = component.publication
-                script += f'ryzom.subscribe("{pub}","{component._id}",'
+                sub = component.subscription
+                script += f'ryzom.subscribe("{pub}", "{sub.id}", "{component._id}",'
                 script += 'function(r,e){if (e) {console.log(e);}});\n'
             for event, cb in component.events.items():
                 script += f'getElementByUuid("{component._id}").'
@@ -148,7 +153,14 @@ def index(request, url=''):
     it defines the 'url' and 'query_string' variable, templated in the document
     to allow the JS router to know where it is.
     '''
+    if request.ryzom.client is None:
+        request.ryzom.client = Clients.objects.create()
+
+    view = request.ryzom.view(request.ryzom)
+    view.oncreate(url)
+    view.onurl(url)
+
     return http.HttpResponse(
         '<!DOCTYPE html>' +
-        request.ryzom.renderHTML(url, request.GET.urlencode())
+        view.renderHTML(url, request.GET.urlencode())
     )

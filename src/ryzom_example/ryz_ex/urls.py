@@ -25,25 +25,27 @@ urlpatterns = [
 from crudlfap import shortcuts as crudlfap
 
 from django.conf import settings
-from django.urls import include, re_path
-from django.utils.translation import gettext_lazy as _
+from django.conf.urls import include, url, re_path
+from django.utils.translation import ugettext_lazy as _
+from django.views.generic import RedirectView
 from django.views.static import serve
 
 from .views import Home
 
 
 crudlfap.site.title = _('Ryzom - Demo')  # used by base.html
-crudlfap.site.urlpath = ''  # example url prefix
+crudlfap.site.urlpath = 'admin'  # example url prefix
 crudlfap.site.views['home'] = Home
 
 urlpatterns = [
-    re_path('', include('ryzom.urls')),
     crudlfap.site.urlpattern,
+    url(r'^favicon\.ico$', RedirectView.as_view(url='/static/images/favicon.ico')),
     re_path(
         r'^%s(?P<path>.*)$' % settings.STATIC_URL.lstrip('/'),
         serve,
         kwargs=dict(document_root=settings.STATIC_ROOT)
     ),
+    url('', include('ryzom.urls')),
 ]
 if 'debug_toolbar' in settings.INSTALLED_APPS and settings.DEBUG:
     import debug_toolbar
