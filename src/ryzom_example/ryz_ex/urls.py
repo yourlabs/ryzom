@@ -25,8 +25,8 @@ urlpatterns = [
 from crudlfap import shortcuts as crudlfap
 
 from django.conf import settings
-from django.conf.urls import include, url, re_path
-from django.utils.translation import ugettext_lazy as _
+from django.urls import include, re_path
+from django.utils.translation import gettext_lazy as _
 from django.views.static import serve
 
 from .views import Home
@@ -37,7 +37,7 @@ crudlfap.site.urlpath = ''  # example url prefix
 crudlfap.site.views['home'] = Home
 
 urlpatterns = [
-    url('', include('ryzom.urls')),
+    re_path('', include('ryzom.urls')),
     crudlfap.site.urlpattern,
     re_path(
         r'^%s(?P<path>.*)$' % settings.STATIC_URL.lstrip('/'),

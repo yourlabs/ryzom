@@ -7,8 +7,9 @@ import secrets
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import JSONField
 
 
 class Tokens(models.Model):

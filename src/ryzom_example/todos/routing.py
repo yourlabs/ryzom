@@ -1,9 +1,9 @@
 from django.conf import settings
-from django.conf.urls import url
+from django.urls import re_path
 
 from .views import Layout
 
 urlpatterns = [
-    url(settings.RYZOM_APP, Layout),
-    url(r'', Layout),
+    re_path(settings.RYZOM_APP, Layout),
+    re_path(r'', Layout),
 ]

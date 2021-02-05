@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('model_class', models.CharField(max_length=255)),
                 ('template_module', models.CharField(max_length=255)),
                 ('template_class', models.CharField(max_length=255)),
-                ('query', django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True)),
+                ('query', models.JSONField(blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
