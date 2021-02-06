@@ -75,6 +75,9 @@ class Component:
 
         self.preparecontent()
 
+    def __eq__(self, other):
+        return self.attrs == other.attrs and self.content == other.content
+
     def preparecontent(self):
         '''Set the parent and position of children
 
