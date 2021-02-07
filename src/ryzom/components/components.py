@@ -5,9 +5,6 @@ They will be added when they'll be needed
 '''
 import uuid
 import importlib
-from django.contrib.postgres.aggregates import ArrayAgg
-import cli2
-
 import cli2
 
 
@@ -164,6 +161,7 @@ class Component:
             for c in qs:
                 self.content.append(tmpl_class(c))
 
+            from django.contrib.postgres.aggregates import ArrayAgg
             sub = Subscription.objects.create(
                 parent=self._id,
                 publication=pub,
@@ -251,6 +249,7 @@ class Component:
         for c in qs:
             self.content.append(tmpl_class(c))
 
+        from django.contrib.postgres.aggregates import ArrayAgg
         self.subscription = Subscription.objects.create(
             parent=self._id,
             publication=pub,
