@@ -166,9 +166,9 @@ class Component:
         attrs = ''
         for k, v in self.attrs.items():
             if v is True:
-                attrs += f'{k} '
+                attrs += f'{k.replace("_", "-")} '
             elif v is not False:
-                attrs += f'{k}="{v}" '
+                attrs += f'{k.replace("_", "-")}="{v}" '
         attrs += f'ryzom-id="{self._id}"'
         html = ''
         if getattr(self, 'selfclose', False):
@@ -561,5 +561,69 @@ class H3(Component):
         content = content or []
         attrs = attrs or {}
         attrs['tag'] = 'h3'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class H4(Component):
+    '''
+    H4 component
+
+    Represents a <h4> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h4'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class H5(Component):
+    '''
+    H5 component
+
+    Represents a <h5> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h5'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class H6(Component):
+    '''
+    H6 component
+
+    Represents a <h6> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'h6'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Hr(Component):
+    '''
+    HR component
+
+    Represents a <hr> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'hr'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)

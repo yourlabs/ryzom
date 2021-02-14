@@ -1,6 +1,6 @@
-from ryzom.components import Html, Head, Body, Meta, Title, Link
-from ryzom.components import Div, A, Nav, H1
+from ryzom.components import *
 from ryzom.components.django import Static
+from ryzom.components.mdc import *
 from ryzom.reactive import ReactiveDiv
 
 from .home import Welcome
@@ -10,13 +10,48 @@ from .task import TaskList, TaskForm
 class Document(Html):
     def __init__(self, view):
         bs_src = 'ryz_ex/css/bootstrap.min.css'
+        mdc_js = 'todos/mdc.js'
+        mdc_css = 'todos/mdc.css'
         content = [
             Head(
                 Title('TODOs'),
                 Meta(**{'charset': 'utf-8'}),
-                Link(**{'rel': 'stylesheet', 'href': Static(bs_src)})
+                Link(**{
+                    'rel': "stylesheet",
+                    'href': "https://fonts.googleapis.com/icon?family=Material+Icons",
+                }),
+                Link(**{'rel': 'stylesheet', 'href': Static(bs_src)}),
+                Script(**{
+                    'type': 'module',
+                    'src': Static(mdc_js)
+                }),
+                Link(**{
+                    'rel': 'stylesheet',
+                    'href': Static(mdc_css)
+                }),
             ),
-            Body(Base(view))
+            # Body(Base(view))
+            Body(
+                MdcTopAppBar('Ryzom Demo'),
+                MdcDrawer(
+                    MdcNavList(
+                        MdcListItem(
+                            Text("Home"),
+                            icon='home',
+                            href='/',
+                            active=True,
+                        ),
+                        MdcListItem(
+                            Text("Todos"),
+                            icon='task',
+                            href='/todos',
+                        ),
+                    )
+                ),
+                MdcAppContent(
+                    Base(view),
+                ),
+            )
         ]
         super().__init__(*content)
 
