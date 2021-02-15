@@ -8,7 +8,8 @@ import uuid
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import JSONField
 
@@ -26,7 +27,7 @@ class Clients(models.Model):
                              max_length=255, unique=True)
     channel = models.CharField(max_length=255)
     user = models.ForeignKey(
-                User,
+                settings.AUTH_USER_MODEL,
                 models.SET_NULL,
                 blank=True,
                 null=True

@@ -38,7 +38,7 @@
       if (elem.origin == window.location.origin)
         event.preventDefault();
         if (elem.href != window.location.href)
-          route(elem.pathname.substr(1), elem.search.substr(1));
+          route(elem.pathname, elem.search);
     });
   };
 
@@ -144,6 +144,12 @@
   };
 
   route = function(url, q, backward=false) {
+    if (!('token' in window)) {
+      if (q)
+        url += '?' + q
+      window.location.href = url
+      return;
+    }
     ws_send({
       type: 'geturl',
       params: {
@@ -220,7 +226,8 @@
     ws.callbacks = [];
   };
 
-  ws_connect();
+  if ('token' in window)
+    ws_connect();
 
   ws_send = function(data, cb) {
     var _id = ID();

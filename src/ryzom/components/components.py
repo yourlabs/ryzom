@@ -216,6 +216,13 @@ class Component:
                     if getattr(c, 'to_html', None) else str(c)
                 )
             html += f'</{self.tag}>'
+
+        js_str = str(self.render_js())
+        if js_str:
+            js_str = js_str[0:-2]
+            js_str += '();'
+            context.scripts += js_str
+
         return html
 
     def create_subscription(self, context=None):
@@ -258,6 +265,31 @@ class Component:
     def render(self, context=None):
         html = self.to_html(context)
         return html
+
+    def render_js(self):
+        return ''
+
+
+class CList(Component):
+    def to_html(self, context=None):
+        html_str = ''
+        for c in self.content:
+            html_str += c.to_html(context)
+
+        js_str = str(self.render_js())
+        if js_str:
+            js_str = js_str[0:-2]
+            js_str += '();'
+            context.scripts += js_str
+
+        return html_str
+
+    def to_obj(self, context=None):
+        content = [
+            c.to_obj(context)
+            for c in self.content
+        ]
+        return content
 
 
 class Html(Component):
@@ -345,6 +377,22 @@ class Div(Component):
         super().__init__(*content, **attrs)
 
 
+class P(Component):
+    '''
+    Div component
+
+    Represents a <div> HTML tag
+
+    :parameters: see :class:`Component`
+    '''
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'p'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
 class A(Component):
     def __init__(self, *content, **attrs):
         content = content or []
@@ -384,6 +432,22 @@ class Ol(Component):
         attrs['tag'] = 'ol'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)
+
+
+class Hr(Component):
+    def __init__(self, **attrs):
+        attrs['tag'] = 'hr'
+        attrs.setdefault('parent', 'body')
+        self.noclose = True
+        super().__init__(**attrs)
+
+
+class Br(Component):
+    def __init__(self, **attrs):
+        attrs['tag'] = 'br'
+        attrs.setdefault('parent', 'body')
+        self.noclose = True
+        super().__init__(**attrs)
 
 
 class Li(Component):
@@ -569,7 +633,15 @@ class Icon(Component):
         attrs = attrs or {}
         attrs['tag'] = 'i'
         attrs.setdefault('parent', 'body')
-        attrs['class'] = 'material-icons'
+        super().__init__(*content, **attrs)
+
+
+class Img(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'img'
+        attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)
 
 
@@ -690,12 +762,69 @@ class Hr(Component):
     HR component
 
     Represents a <hr> HTML tag
-
-    :parameters: see :class:`Component`
     '''
     def __init__(self, *content, **attrs):
         content = content or []
         attrs = attrs or {}
         attrs['tag'] = 'hr'
+        attrs['tag'] = 'caption'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Caption(Component):
+    tag = 'caption'
+
+
+class Table(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'table'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Thead(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'thead'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Tbody(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'tbody'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Tr(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'tr'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Th(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'th'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class Td(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'td'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)

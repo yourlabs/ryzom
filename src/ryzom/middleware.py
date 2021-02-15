@@ -14,12 +14,13 @@ class RyzomMiddleware:
         # the view (and later middleware) are called.
 
         request.ryzom = None
-        urls = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
-        url = request.path_info.lstrip('/')
-        for u in urls:
-            if u.pattern.match(url):
-                request.ryzom = Request(None, u.callback)
-                break
+        if getattr(settings, 'DDP_URLPATTERNS', None):
+            urls = importlib.import_module(settings.DDP_URLPATTERNS).urlpatterns
+            url = request.path_info.lstrip('/')
+            for u in urls:
+                if u.pattern.match(url):
+                    request.ryzom_view = u.callback
+                    break
 
         response = self.get_response(request)
 

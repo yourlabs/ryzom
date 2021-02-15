@@ -56,7 +56,6 @@ class Factory:
                 cls = import_string(cls)
         return cls
 
-    @classmethod
     def as_component(self, widget):
         widget_type = type(widget).__name__
         widget_type = f'{self.default_module}.{widget_type}'

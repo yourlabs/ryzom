@@ -40,6 +40,7 @@ class Consumer(JsonWebsocketConsumer):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
+        print('CONNECTING')
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
         print(f"consumer-connect Token: {token}")
