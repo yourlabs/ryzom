@@ -32,8 +32,22 @@ class Document(Html):
             ),
             # Body(Base(view))
             Body(
-                MdcTopAppBar('Ryzom Demo'),
+                MdcTopAppBar(
+                    'Ryzom Todos',
+                    action_items=[
+                        ('search', 'Search', 'url', 'events',),
+                        ('more_vert', 'Options', None, [
+                                ('favorite', 'Favourite', 'url', 'events',),
+                                ('favorite', 'Favourite', 'url', 'events',),
+                            ],
+                        ),
+                    ],
+                ),
                 MdcDrawer(
+                    MdcDrawerHeader(
+                        drawer_title="Title",
+                        drawer_subtitle="subtitle",
+                    ),
                     MdcNavList(
                         MdcListItem(
                             Text("Home"),

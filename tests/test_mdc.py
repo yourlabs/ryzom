@@ -8,7 +8,12 @@ from ryzom.test import pretty
 class TestMdc(object):
 
     def test_mdc_top_app_bar(self):
-        c = MdcTopAppBar(Text("Page title"))
+        c = MdcTopAppBar(
+            Text("Page title"),
+            action_items=[
+                ('more_vert', 'Options', '#'),
+            ],
+        )
         assert pretty(c.to_html()) == '''%header
   class=mdc-top-app-bar app-bar
   data-mdc-auto-init=MDCTopAppBar
@@ -24,10 +29,22 @@ class TestMdc(object):
       %span
         class=mdc-top-app-bar__title
         Page title
+    %section
+      class=mdc-top-app-bar__section mdc-top-app-bar__section--align-end
+      role=toolbar
+      %button
+        aria-label=Options
+        class=material-icons mdc-top-app-bar__action-item mdc-icon-button
+        href=#
+        more_vert
         '''.strip()
 
     def test_mdc_drawer(self):
         c = MdcDrawer(
+                MdcDrawerHeader(
+                    drawer_title="Title",
+                    drawer_subtitle="subtitle",
+                ),
                 MdcNavList(
                     MdcListItem(
                         Text("Home"),
@@ -42,6 +59,16 @@ class TestMdc(object):
   data-mdc-auto-init=MDCDrawer
   %div
     class=mdc-drawer__content
+    %div
+      class=mdc-drawer__header
+      %h3
+        class=mdc-drawer__title
+        id=drawer-title
+        Title
+      %h6
+        class=mdc-drawer__subtitle
+        id=drawer-subtitle
+        subtitle
     %nav
       class=mdc-list
       %a

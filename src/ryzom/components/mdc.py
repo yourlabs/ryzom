@@ -24,8 +24,10 @@ class MdcTopAppBar(Component):
     tag = 'header'
 
     def __init__(self, *content, **context):
+        action_items = context.pop('action_items', None)
         super().__init__(
             Div(
+                # Navigation menu icon and page title.
                 Component(
                     Button(
                         'menu',
@@ -39,9 +41,9 @@ class MdcTopAppBar(Component):
                     cls='mdc-top-app-bar__section mdc-top-app-bar__section--align-start',
                     tag='section',
                 ),
+                # Actions items and menu.
+                MdcAppBarActions(action_items=action_items),
                 cls='mdc-top-app-bar__row',
-                # TODO: Action item icons and menu.
-                # [(action_name, action_icon), ...]
             ),
             cls='mdc-top-app-bar app-bar',
             id='app-bar',
@@ -126,6 +128,32 @@ class MdcAppContent(Div):
         )
 
 
+class MdcDrawerHeader(Div):
+    """
+    <div class="mdc-drawer__header">
+      <h3 id="drawer-title" class="mdc-drawer__title">Title</h3>
+      <h6 id="drawer-subtitle" class="mdc-drawer__subtitle">subtitle</h6>
+    </div>
+    """
+    def __init__(self, *content, **context):
+        title = context.pop('drawer_title', '')
+        subtitle = context.pop('drawer_subtitle', '')
+        super().__init__(
+            *content,
+            H3(
+                title,
+                cls='mdc-drawer__title',
+                id='drawer-title',
+            ),
+            H6(
+                subtitle,
+                cls='mdc-drawer__subtitle',
+                id='drawer-subtitle',
+            ),
+            cls='mdc-drawer__header',
+        )
+
+
 class MdcListDivider(Text):
     """
     <hr class="mdc-list-divider">
@@ -159,10 +187,10 @@ class MdcList(Component):
         
     """
     def __init__(self, *content, **context):
+        context.setdefault('tag', 'ul')
         context.setdefault('cls', '')
         context['cls'] = (' '.join((context['cls'], 'mdc-list'))
                           if context['cls'] else 'mdc-list')
-        context.setdefault('tag', 'ul')
         super().__init__(*content, **context)
 
 
@@ -193,6 +221,25 @@ class MdcListItem(Component):
             Span(cls='mdc-list-item__ripple'),
             MdcIcon(icon) if icon else '',
             Span(*content, cls='mdc-list-item__text'),
+            **context,
+        )
+
+
+class MdcAppBarActions(Component):
+    def __init__(self, *content, **context):
+        action_items = context.pop('action_items', None)
+        if not action_items:
+            return ''
+        context['tag'] = 'section'
+        super().__init__(
+            *[Button(
+                item[0],  # icon
+                aria_label=item[1],  # label
+                href=item[2],
+                cls='material-icons mdc-top-app-bar__action-item mdc-icon-button',
+            ) for item in action_items],
+            cls='mdc-top-app-bar__section mdc-top-app-bar__section--align-end',
+            role='toolbar',
             **context,
         )
 
