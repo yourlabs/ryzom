@@ -63,6 +63,7 @@ class Component:
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
         self.tag = attrs.pop('tag', getattr(self, 'tag', 'div'))
+        self.selfclose = attrs.pop('selfclose', getattr(self, 'selfclose', False))
         self.noclose = self.tag.lower() in [
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
@@ -826,5 +827,14 @@ class Td(Component):
         content = content or []
         attrs = attrs or {}
         attrs['tag'] = 'td'
+        attrs.setdefault('parent', 'body')
+        super().__init__(*content, **attrs)
+
+
+class B(Component):
+    def __init__(self, *content, **attrs):
+        content = content or []
+        attrs = attrs or {}
+        attrs['tag'] = 'b'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)

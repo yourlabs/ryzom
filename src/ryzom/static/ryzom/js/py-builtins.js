@@ -50,8 +50,8 @@ function copy(iterator) {
     return items;
 }
 
-function _new(cls, arg) {
-    return new cls(arg);
+function _new(cls, ...arg) {
+    return new cls(...arg);
 }
 
 function js(obj) {
@@ -1270,7 +1270,7 @@ Copyright 2010 Jared Forsyth <jared@jareforsyth.com>
         // arguments will be captured.
         console.log([a, b, c, d, args, kwargs]);
     });
-    
+
     and in use...
 
     > foo(1);
@@ -1316,7 +1316,7 @@ function get_fn_args(func) {
         throw "ParseError: didn't parse the right number of arguments: "+args.length+' vs '+func.length;
     return args;
 }
-    
+
 function check_defaults(func_args, defaults, argnum) {
     var dflag = false;
     for (var i=0;i<argnum;i++) {
@@ -1706,7 +1706,7 @@ var mro = function(cls, base_list) {
     }else if(base_list.length === 1 && base_list[0]===object) {
         return [cls, object];
     }
-    
+
     var orderlists = [];
     for (var i = 0; i < base_list.length; i++){
         orderlists[i] = base_list[i].prototype.__mro__.slice(0);
@@ -2800,7 +2800,7 @@ module('<builtin>/__builtin__.py', function builting_module(_) {
                     if (item.__class__)
                         name = item.__class__.__name__ + '.' + name;
                     if (!item.__module__)
-                        
+
                         self._data = '<function '+ name +'>';
                     else
                         self._data = '<function '+ name +' from module '+item.__module__+'>';
@@ -3244,7 +3244,7 @@ module('<builtin>/__builtin__.py', function builting_module(_) {
     _.iter = $m({'sentinel':null}, function iter(ible, sentinel) {
         if (sentinel)
             return callable_iterator(ible, sentinel);
-        if (ible instanceof Array) 
+        if (ible instanceof Array)
             return _.tuple(ible).__iter__();
         if (!defined(ible.__iter__))
             _.raise('item not iterable');
