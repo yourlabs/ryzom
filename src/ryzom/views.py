@@ -74,11 +74,11 @@ class View:
 
     def renderJS(self):
         return (
-            '<script type="text/javascript">' +
-            ryzom_js +
-            py2js_js +
-            self.scripts +
-            '</script>'
+            '<script type="text/javascript">'
+            + ryzom_js
+            + py2js_js
+            + self.scripts
+            + '</script>'
         )
 
     def oncreate(self, url):

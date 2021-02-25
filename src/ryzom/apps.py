@@ -1,12 +1,19 @@
 from django.apps import AppConfig
 from django.db import OperationalError, ProgrammingError
+from django.utils.module_loading import autodiscover_modules
 
 
-class RyzomConfig(AppConfig):
+class BaseConfig(AppConfig):
+    name = 'ryzom'
+
+    def ready(self):
+        autodiscover_modules('components')
+
+
+class ReactiveConfig(BaseConfig):
     '''
     Ryzom application configuration
     '''
-    name = 'ryzom'
 
     def ready(self):
         '''

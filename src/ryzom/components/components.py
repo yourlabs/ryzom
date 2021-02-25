@@ -192,7 +192,7 @@ class Component:
     def publication(self, value=None):
         self.__publication = value
 
-    def to_html(self, context=None):
+    def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
         attrs = ''
@@ -210,10 +210,10 @@ class Component:
         else:
             html = f'<{self.tag} {attrs}>'
             if self.publication:
-                self.create_subscription(context)
+                self.create_subscription(kwargs)
             for c in self.content:
                 html += (
-                    c.to_html(context=context)
+                    c.to_html(**kwargs)
                     if getattr(c, 'to_html', None) else str(c)
                 )
             html += f'</{self.tag}>'
@@ -222,7 +222,7 @@ class Component:
         if js_str:
             js_str = js_str[0:-2]
             js_str += '();'
-            context.scripts += js_str
+            #context.scripts += js_str
 
         return html
 
@@ -263,12 +263,25 @@ class Component:
             client=context.request.client
         )
 
-    def render(self, context=None):
-        html = self.to_html(context)
-        return html
+    def render(self, **kwargs):
+        return self.to_html(**kwargs)
 
     def render_js(self):
         return ''
+
+
+class CTree(Component):
+    def __init__(self, *components):
+        self.components = components
+        self.__name__ = components[-1].__name__
+
+    def __call__(self, **kwargs):
+        print(self.components[-1])
+        component = self.components[-1](**kwargs)
+        for wrapper in reversed(self.components[:-1]):
+            print(wrapper)
+            component = wrapper(component, **kwargs)
+        return component
 
 
 class CList(Component):

@@ -12,6 +12,8 @@ from django.utils.encoding import smart_text
 from django.utils.functional import cached_property, SimpleLazyObject
 from django.utils.module_loading import import_string
 
+import ryzom
+
 
 class Ryzom(BaseEngine):
 
@@ -56,6 +58,8 @@ class Ryzom(BaseEngine):
                                              "ryzom.components.django")
 
     def get_template(self, template_name):
+        if template_name in ryzom.templates:
+            return Template(ryzom.templates[template_name], self)
         try:
             return Template(template_name, self)
         except TemplateDoesNotExist as exc:
@@ -131,7 +135,7 @@ class Template:
 
         # TODO: Ryzom templates currently consume context in __init__ rather
         # than render() - this will possibly change...
-        html = self.template(context).render()
+        html = self.template(**context).render()
         if Markup:
             html = Markup(html)
         return mark_safe(html)
