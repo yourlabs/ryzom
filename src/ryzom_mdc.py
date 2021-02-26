@@ -354,28 +354,24 @@ class MDCCheckboxInput(Div):
     def __init__(self, **kwargs):
         kwargs.setdefault('type', 'checkbox')
         super().__init__(
-            Div(
-                Input(
-                    cls='mdc-checkbox__native-control',
-                    **kwargs
-                ),
-                Div(
-                    Component(
-                        Component(
-                            tag='path', fill='none',
-                            d="M1.73,12.91 8.1,19.28 22.79,4.59",
-                            cls='mdc-checkbox__checkmark-path'),
-                        tag='svg', viewBox='0 0 24 24',
-                        cls='mdc-checkbox__checkmark'
-                    ),
-                    Div(cls='mdc-checkbox__mixedmark'),
-                    cls='mdc-checkbox__background',
-                ),
-                cls='mdc-checkbox',
+            Input(
+                cls='mdc-checkbox__native-control',
+                **kwargs
             ),
-            cls='mdc-list-item__graphic'
+            Div(
+                Component(
+                    Component(
+                        tag='path', fill='none',
+                        d="M1.73,12.91 8.1,19.28 22.79,4.59",
+                        cls='mdc-checkbox__checkmark-path'),
+                    tag='svg', viewBox='0 0 24 24',
+                    cls='mdc-checkbox__checkmark'
+                ),
+                Div(cls='mdc-checkbox__mixedmark'),
+                cls='mdc-checkbox__background',
+            ),
+            cls='mdc-checkbox',
         )
-
 
 class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
