@@ -1,21 +1,62 @@
-"""ryzom_django_example2 URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin
+from django import forms
 from django.urls import path
+from django.views import generic
+
+from ryzom import html
+
+
+# in general, you wouldn't go through a template_name, but since this is useful
+# to design views that you import from external packages, we have this example
+# here
+@html.template('home.html')
+class ExampleFormViewComponent(html.Html):
+    stylesheets = [
+        'https://fonts.googleapis.com/icon?family=Material+Icons',
+        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    ]
+    scripts = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+    ]
+
+    def __init__(self, *content, **context):
+        links = [
+            html.Link(href=src, rel='stylesheet')
+            for src in self.stylesheets
+        ]
+        scripts = [
+            html.Script(src=src, type='text/javascript')
+            for src in self.scripts
+        ]
+        scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
+
+        super().__init__(
+            html.Head(
+                html.Meta(charset='utf-8'),
+                html.Meta(
+                    name='viewport',
+                    content='width=device-width, initial-scale=1.0',
+                ),
+                html.Title('Secure elections with homomorphic encryption'),
+                *links,
+            ),
+            html.Body(context['form'], *scripts),
+        )
+
+
+class ExampleForm(forms.Form):
+    char = forms.CharField()
+    boolean = forms.BooleanField()
+    #checkboxes = forms.MultipleChoiceField(
+    #    choices=(('a', 'a'), ('b', 'b')),
+    #    widget=forms.CheckboxSelectMultiple,
+    #)
+
+class ExampleFormView(generic.FormView):
+    template_name = 'home.html'
+    form_class = ExampleForm
+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', ExampleFormView.as_view())
 ]

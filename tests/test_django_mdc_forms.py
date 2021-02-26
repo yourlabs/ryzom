@@ -31,24 +31,22 @@ def assert_equals_fixture(name, result):
     assert_equals(expected, result)
 
 
-def test_charfield():
+@pytest.mark.parametrize(
+    'field,value',
+    [
+        (forms.CharField(label='L'), 'V'),
+        (forms.BooleanField(label='L'), True),
+        (forms.BooleanField(label='L'), False),
+    ]
+)
+def test_widget_rendering(field, value):
     class TestForm(forms.Form):
-        test = forms.CharField(label='test2')
-
-    expected = '''
-    <input
-        class="mdc-text-field__input"
-        type="text"
-        required
-        id="id_test"
-        name="test"
-        value="val"
-        input-id="id_test"
-        label-id="id_test_label"
-        ryzom-id=""
-    >
-    '''
-    assert_equals(expected, TestForm(dict(test='val'))['test'])
+        test = field
+    result = TestForm(dict(test=value))['test']
+    assert_equals_fixture(
+        f'test_widget_{type(field).__name__}_{value}',
+        result,
+    )
 
 
 def test_form():

@@ -166,42 +166,6 @@ class MDCFieldOutlined(Div):
         self.content.append(helper)
 
 
-class MDCTextFieldOutlined(Div):
-    def __init__(self, name, **kwargs):
-        input_id = f'id_{name}'
-        label_id = f'id_{name}_label'
-        label = kwargs.pop('label', name.capitalize())
-        super().__init__(
-            Label(
-                MDCNotchOutline(
-                    Span(
-                        label,
-                        id=label_id,
-                        cls='mdc-floating-label',
-                    ),
-                ),
-                MDCTextInput(
-                    name=name,
-                    aria_labelledby=label_id,
-                    id=input_id,
-                    **kwargs,
-                ),
-                cls='mdc-text-field mdc-text-field--outlined',
-                data_mdc_auto_init='MDCTextField',
-            ),
-            cls='form-group'
-        )
-
-    def set_error(self, error):
-        helper = MDCTextFieldHelperLine(error, 'alert')
-        label = self.content[0]
-        label.attrs['class'] += ' mdc-text-field--invalid'
-        label.attrs['aria-describedby'] = helper._id
-        label.attrs['aria-controls'] = helper._id
-
-        self.content.append(helper)
-
-
 class MDCTextareaFieldOutlined(Label):
     def __init__(self, value='', label='', input_id='', label_id='', **kwargs):
         name = kwargs.get('name', '')
@@ -385,6 +349,29 @@ class MDCSnackBar(Div):
             '\n}; '
         )
 
+
+class MDCCheckboxInput(Div):
+    def __init__(self, **kwargs):
+        kwargs.setdefault('type', 'checkbox')
+        super().__init__(
+            Input(
+                cls='mdc-checkbox__native-control',
+                **kwargs
+            ),
+            Div(
+                Component(
+                    Component(
+                        tag='path', fill='none',
+                        d="M1.73,12.91 8.1,19.28 22.79,4.59",
+                        cls='mdc-checkbox__checkmark-path'),
+                    tag='svg', viewBox='0 0 24 24',
+                    cls='mdc-checkbox__checkmark'
+                ),
+                Div(cls='mdc-checkbox__mixedmark'),
+                cls='mdc-checkbox__background',
+            ),
+            cls='mdc-checkbox',
+        )
 
 class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
