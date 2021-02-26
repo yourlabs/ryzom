@@ -4,10 +4,11 @@ from django.utils.module_loading import autodiscover_modules
 
 
 class BaseConfig(AppConfig):
-    name = 'ryzom'
+    name = 'ryzom_django'
 
     def ready(self):
         autodiscover_modules('components')
+        super().ready()
 
 
 class ReactiveConfig(BaseConfig):
@@ -25,9 +26,9 @@ class ReactiveConfig(BaseConfig):
         Finally, we create the publications that were registered
         in the to_publish list of ryzom.pusub module.
         '''
-        import ryzom.signals
+        import ryzom_django.signals
 
-        from ryzom.pubsub import to_publish
+        from ryzom_django.pubsub import to_publish
 
         try:
             Clients = self.get_model('Clients')
@@ -39,3 +40,5 @@ class ReactiveConfig(BaseConfig):
                 publication.publish_all()
         except (OperationalError, ProgrammingError):
             pass
+
+        super().ready()

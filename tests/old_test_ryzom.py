@@ -14,9 +14,10 @@ from django.test.client import RequestFactory as drf
 from django.test.utils import override_settings
 from django.urls import reverse
 
-from ryzom.backends.ryzom import Ryzom
-from ryzom.components import component_html, Div, Text
-from ryzom.components.django import Form
+from ryzom.html import Div, Text
+from ryzom_django.muicss import Form
+from ryzom_django.html import component_html
+from ryzom_django.template_backend import Ryzom
 
 from todos.crudlfap import TaskRouter
 
@@ -133,7 +134,7 @@ def test_context_processor_request(srf):
                        Text(f"Test: {context['test_key']}"),
                        ]
             super().__init__(*content)
-            
+
     tmpl = get_template(
         DivUser,
         using='ryzom',

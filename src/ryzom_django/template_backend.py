@@ -12,7 +12,7 @@ from django.utils.encoding import smart_text
 from django.utils.functional import cached_property, SimpleLazyObject
 from django.utils.module_loading import import_string
 
-import ryzom
+from ryzom import html
 
 
 class Ryzom(BaseEngine):
@@ -58,8 +58,8 @@ class Ryzom(BaseEngine):
                                              "ryzom.components.django")
 
     def get_template(self, template_name):
-        if template_name in ryzom.templates:
-            return Template(ryzom.templates[template_name], self)
+        if template_name in html.templates:
+            return Template(html.templates[template_name], self)
         try:
             return Template(template_name, self)
         except TemplateDoesNotExist as exc:
