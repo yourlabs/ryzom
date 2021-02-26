@@ -6,7 +6,10 @@ templates = dict()
 def template(name, *wrappers):
     global templates
     def decorator(component):
-        templates[name] = CTree(*wrappers + (component,))
+        if wrappers:
+            templates[name] = CTree(*wrappers + (component,))
+        else:
+            templates[name] = component
         return component
     return decorator
 
