@@ -15,14 +15,9 @@ def form_to_components(form):
     #     form.content.append(HiddenErrors(form.form))
 
     for bf in form.visible_fields():
-        bf.field.widget.attrs['aria-labelledby'] = f'id_{bf.name}_label'
-        content.append(ryzom_mdc.MDCFieldOutlined(
-            str(bf),
-            name=bf.name,
-            label=bf.field.label or bf.name.capitalize(),
-            help_text=bf.help_text,
-            errors=bf.form.error_class(bf.errors),
-        ))
+        component = html.templates[bf.field.widget.template_name]
+        content.append(component.factory(bf))
+
     return html.CList(*content)
 
 

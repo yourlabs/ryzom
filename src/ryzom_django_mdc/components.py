@@ -22,9 +22,29 @@ class MDCInputWidget(Input):
         )
         super().__init__(**attrs)
 
+    @classmethod
+    def factory(cls, bf):
+        bf.field.widget.attrs['aria-labelledby'] = f'id_{bf.name}_label'
+        return MDCFieldOutlined(
+            str(bf),
+            name=bf.name,
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.form.error_class(bf.errors),
+        )
+
 
 @template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxInput):
     def __init__(self, **context):
         attrs = context_attrs(context, type='checkbox')
         super().__init__(**attrs)
+
+    @classmethod
+    def factory(cls, bf):
+        return Div(str(bf), Label(bf.label), cls='mdc-form-field')
+
+#
+#@template('django/forms/widgets/checkbox_select.html')
+#class MDCCheckboxSelectMultipleWidget(Div):
+#
