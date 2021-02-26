@@ -1,12 +1,11 @@
 import pytest
 
-from ryzom.components import component_html, Div, Text
-from ryzom.components.mdc import *
+from ryzom.html import Div, Text
+from ryzom_mdc import *
 from ryzom.test import pretty
 
 
 class TestMdc(object):
-
     def test_mdc_top_app_bar(self):
         c = MdcTopAppBar(
             Text("Page title"),
@@ -115,4 +114,3 @@ class TestMdc(object):
             %span
                 class=mdc-line-ripple
         '''.strip()
-

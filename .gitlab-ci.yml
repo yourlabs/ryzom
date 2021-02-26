@@ -1,13 +1,13 @@
 test:
   image: yourlabs/python
   script:
-  - pip install tox -e .[dev,django,test]
+  - pip install django -e .
   - py.test -vv --cov src --strict -r fEsxXw
   cache:
     paths:
       - .cache/pip
   variables:
-    DJANGO_SETTINGS_MODULE: ryzom_example.settings
+    DJANGO_SETTINGS_MODULE: ryzom_django_example.settings
     DEBUG: '1'
     PIP_ALLOW_EXTERNAL: 'true'
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"

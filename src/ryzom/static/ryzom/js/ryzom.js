@@ -38,7 +38,7 @@
       if (elem.origin == window.location.origin)
         event.preventDefault();
         if (elem.href != window.location.href)
-          route(elem.pathname.substr(1), elem.search.substr(1));
+          route(elem.pathname, elem.search);
     });
   };
 
@@ -59,6 +59,8 @@
     var elem;
     if (component.tag == 'text')
       elem = document.createTextNode(component.content);
+    else if (typeof(component) == 'string')
+      elem = document.createTextNode(component);
     else {
       elem = document.createElement(component.tag);
       Object.keys(component.attrs).forEach(function(k) {
@@ -71,13 +73,13 @@
       });
     }
 
-    component.subscriptions.forEach(function(sub) {
-      ryzom.subscribe(sub, component._id, function(r, e) {
+    if (component.publication) {
+      ryzom.subscribe(component.publication, component.subscription, component._id, function(r, e) {
         if (e) { console.log(e); }
       });
-    });
+    };
 
-    if (typeof(component.content) != 'string' && component.content.length) {
+    if (component.content && typeof(component.content) != 'string' && component.content.length) {
       component.content.forEach(function(child) {
         var c = createDOMelement(child);
         var prev = elem.childNodes[c.position]
@@ -142,6 +144,12 @@
   };
 
   route = function(url, q, backward=false) {
+    if (!('token' in window)) {
+      if (q)
+        url += '?' + q
+      window.location.href = url
+      return;
+    }
     ws_send({
       type: 'geturl',
       params: {
@@ -182,8 +190,7 @@
 
   ws_connect = function(reconnecting) {
     ws_path = 'ws://' + window.location.host + '/ws/ddp/'
-    if (token = localStorage.getItem('auth_token'))
-      ws_path += '?' + token
+    ws_path += '?' + token
     ws = new WebSocket(ws_path);
 
     if (reconnecting) {
@@ -196,6 +203,7 @@
       var data = JSON.parse(e.data);
       var result, error;
       switch (data.type) {
+        case 'Reload': document.location.reload(); break;
         case 'Connected': init(); break;
         case 'DDP': handleDDP(data.params); break;
         default:
@@ -218,7 +226,8 @@
     ws.callbacks = [];
   };
 
-  ws_connect();
+  if ('token' in window)
+    ws_connect();
 
   ws_send = function(data, cb) {
     var _id = ID();
@@ -269,12 +278,15 @@
       });
     },
 
-    subscribe: function(name, id, cb) {
+    subscribe: function(name, id, pid, cb) {
+      console.log(pid)
       ws_send({
         type: 'subscribe',
         params: {
           name: name,
-          _id: id
+          parent_id: pid,
+          sub_id: id,
+          opts: []
         }
       }, cb);
     }

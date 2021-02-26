@@ -6,4 +6,3 @@ JavaScript and don't know it, please give it a try!
 
 Ryzom will always stay open source.
 '''
-default_app_config = 'ryzom.apps.RyzomConfig'
