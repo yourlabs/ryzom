@@ -23,7 +23,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     # Enable Reactive middleware
-    'ryzom.middleware.RyzomMiddleware',
+    'ryzom_django.middleware.RyzomMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
