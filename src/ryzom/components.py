@@ -60,13 +60,17 @@ class Component:
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
+        self.__dict__['tag'] = getattr(self, 'tag', None)
         if 'tag' in attrs:
             self.tag = attrs.pop('tag')
         elif not getattr(self, 'tag', None):
             s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', type(self).__name__)
             self.tag = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
 
-        self.selfclose = attrs.pop('selfclose', getattr(self, 'selfclose', False))
+        self.__dict__['selfclose'] = attrs.pop(
+            'selfclose',
+            getattr(self, 'selfclose', False),
+        )
         self.noclose = self.tag.lower() in [
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
