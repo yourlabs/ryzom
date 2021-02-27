@@ -1,3 +1,4 @@
+from ryzom_django.html import *
 from ryzom_mdc import *
 
 
@@ -42,9 +43,39 @@ class MDCCheckboxWidget(MDCCheckboxInput):
 
     @classmethod
     def factory(cls, bf):
-        return Div(str(bf), Label(bf.label), cls='mdc-form-field')
+        return MDCCheckboxField(str(bf), label=bf.label)
 
-#
-#@template('django/forms/widgets/checkbox_select.html')
-#class MDCCheckboxSelectMultipleWidget(Div):
-#
+
+@template('django/forms/widgets/checkbox_select.html')
+class MDCCheckboxSelectMultipleWidget(MDCList):
+    def __init__(self, **context):
+        group_content = []
+        for group, options, index in context['widget']['optgroups']:
+            option_content = []
+            for option in options:
+                option_content.append(
+                    MDCListItem(
+                        MDCCheckboxField(**option),
+                    )
+                    if option['wrap_label']
+                    else MDCTextInput(**option)
+                )
+            if group:
+                group_attrs = {}
+                if _id:
+                    group_attrs['id'] = f'{_id}_{index}'
+                group_content.append(
+                    Li(
+                       Text(group),
+                       Ul(*option_content, **group_attrs),
+                    )
+                )
+            else:
+                group_content.extend(
+                    option_content
+                )
+        super().__init__(*group_content)
+
+    @classmethod
+    def factory(cls, bf):
+        return Div(Div(Label(bf.label), str(bf), cls='mdc-form-field'), cls='form-group')

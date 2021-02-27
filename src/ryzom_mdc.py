@@ -303,6 +303,13 @@ class MDCTextFieldHelperLine(Div):
         self.attrs['aria-hidden'] = 'true'
 
 
+class MDCList(Div):
+    def __init__(self, *content, **attrs):
+        attrs.setdefault('data-mdc-auto-init', 'MDCList')
+        attrs.setdefault('cls', 'mdc-list')
+        super().__init__(*content, **attrs)
+
+
 class MDCListItem(Li):
     def __init__(self, *content, **kwargs):
         cls = kwargs.pop('cls', '')
@@ -351,6 +358,7 @@ class MDCSnackBar(Div):
 
 
 class MDCCheckboxInput(Div):
+    """The actual input HTML element (widget)."""
     def __init__(self, **kwargs):
         kwargs.setdefault('type', 'checkbox')
         super().__init__(
@@ -372,6 +380,19 @@ class MDCCheckboxInput(Div):
             ),
             cls='mdc-checkbox',
         )
+
+
+class MDCCheckboxField(Div):
+    def __init__(self, *content, **kwargs):
+        if not content:
+            content = [MDCCheckboxInput(**kwargs)]
+
+        super().__init__(
+            *content,
+            Label(kwargs.get('label', kwargs.get('name'))),
+            cls='mdc-form-field',
+        )
+
 
 class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
