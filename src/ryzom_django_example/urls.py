@@ -88,11 +88,12 @@ class ExampleFormViewComponent(html.Html):
 
 
 class ExampleForm(forms.Form):
-    char = forms.CharField()
-    boolean = forms.BooleanField()
+    char = forms.CharField(required=False)
+    boolean = forms.BooleanField(required=False)
     checkboxes = forms.MultipleChoiceField(
         choices=(('a', 'a'), ('b', 'b')),
         widget=forms.CheckboxSelectMultiple,
+        required=False,
     )
 
     # Let's override the default rendering to add a submit button
@@ -117,7 +118,7 @@ class ExampleFormView(generic.FormView):
     form_class = ExampleForm
 
     def form_valid(self, form):
-        print('FORM DATA', form.cleaned_data)
+        # we don't have a success url, render again on form_valid
         return super().get(self.request)
 
 
