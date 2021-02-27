@@ -22,7 +22,8 @@ def form_to_components(form):
 
 
 def form_to_html(form):
-    return form_to_components(form).to_html()
+    return form.to_components().to_html()
 
 
+forms.Form.to_components = form_to_components
 forms.Form.to_html = form_to_html
