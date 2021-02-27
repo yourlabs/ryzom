@@ -14,6 +14,8 @@ def context_attrs(context, **extra):
 
 
 @template('django/forms/widgets/input.html')
+@template('django/forms/widgets/date.html')
+@template('django/forms/widgets/time.html')
 @template('django/forms/widgets/text.html')
 class MDCInputWidget(Input):
     def __init__(self, **context):
@@ -78,4 +80,45 @@ class MDCCheckboxSelectMultipleWidget(MDCList):
 
     @classmethod
     def factory(cls, bf):
+        return Div(Div(Label(bf.label), str(bf)), cls='form-group')
+
+
+@template('django/forms/widgets/multiwidget.html')
+class MultiWidget(CList):
+    def __init__(self, **context):
+        super().__init__(*[
+            templates[widget['template_name']](widget=widget)
+            for widget in context['widget']['subwidgets']
+        ])
+
+    @classmethod
+    def factory(cls, bf):
         return Div(Div(Label(bf.label), str(bf), cls='mdc-form-field'), cls='form-group')
+
+
+@template('django/forms/widgets/splitdatetime.html')
+class SplitDateTimeWidget(CList):
+    def __init__(self, **context):
+        date_widget = context['widget']['subwidgets'][0]
+        time_widget = context['widget']['subwidgets'][1]
+        super().__init__(
+            Section(
+                MDCFieldOutlined(
+                    templates[date_widget['template_name']](widget=date_widget),
+                    name=date_widget['name'],
+                    label='Date',
+                ),
+                cls='form-group',
+            ),
+            Section(
+                MDCFieldOutlined(
+                    templates[time_widget['template_name']](widget=time_widget),
+                    name=time_widget['name'],
+                    label='Time',
+                ),
+            ),
+        )
+
+    @classmethod
+    def factory(cls, bf):
+        return Div(Div(Label(bf.label), str(bf)), cls='form-group')

@@ -91,9 +91,16 @@ class ExampleForm(forms.Form):
     char = forms.CharField(required=False)
     boolean = forms.BooleanField(required=False)
     checkboxes = forms.MultipleChoiceField(
+        required=False,
         choices=(('a', 'a'), ('b', 'b')),
         widget=forms.CheckboxSelectMultiple,
+    )
+    datetime = forms.SplitDateTimeField(
         required=False,
+        widget=forms.SplitDateTimeWidget(
+            date_attrs=dict(type='date'),
+            time_attrs=dict(type='time'),
+        ),
     )
 
     # Let's override the default rendering to add a submit button

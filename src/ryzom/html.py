@@ -539,3 +539,7 @@ class B(Component):
         attrs['tag'] = 'b'
         attrs.setdefault('parent', 'body')
         super().__init__(*content, **attrs)
+
+
+class Section(Component):
+    pass
