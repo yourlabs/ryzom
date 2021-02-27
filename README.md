@@ -28,3 +28,17 @@ after all, this project has been under R&D sponsored by YourLabs for years now.
 
 See the supported usage patterns in `src/ryzom_django_example/urls.py` which
 provides commented code using supported Ryzom APIs.
+
+## Demo
+
+```
+git clone https://yourlabs.io/oss/ryzom.git
+sudo -u postgres createdb -O $UTF -E UTF8 ryzom_django_example
+cd ryzom
+pip install -e .
+./manage.py migrate
+./manage.py runserver
+
+# to run tests:
+py.test
+```
