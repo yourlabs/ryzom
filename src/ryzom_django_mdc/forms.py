@@ -15,8 +15,12 @@ def form_to_components(form):
     #     form.content.append(HiddenErrors(form.form))
 
     for bf in form.visible_fields():
-        component = html.templates[bf.field.widget.template_name]
-        content.append(component.factory(bf))
+        try:
+            component = html.templates[bf.field.widget.template_name]
+        except KeyError:
+            content.append(str(bf))
+        else:
+            content.append(component.factory(bf))
 
     return html.CList(*content)
 

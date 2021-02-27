@@ -19,6 +19,9 @@ INSTALLED_APPS = [
 
     # Enable form rendering with MDC components
     'ryzom_django_mdc',
+
+    # Enable default templates too, until we implement them all
+    'django.forms',
 ]
 
 MIDDLEWARE = [
