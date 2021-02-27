@@ -303,6 +303,13 @@ class MDCTextFieldHelperLine(Div):
         self.attrs['aria-hidden'] = 'true'
 
 
+class MDCList(Div):
+    def __init__(self, *content, **attrs):
+        attrs.setdefault('data-mdc-auto-init', 'MDCList')
+        attrs.setdefault('cls', 'mdc-list')
+        super().__init__(*content, **attrs)
+
+
 class MDCListItem(Li):
     def __init__(self, *content, **kwargs):
         cls = kwargs.pop('cls', '')
@@ -351,6 +358,7 @@ class MDCSnackBar(Div):
 
 
 class MDCCheckboxInput(Div):
+    """The actual input HTML element (widget)."""
     def __init__(self, **kwargs):
         kwargs.setdefault('type', 'checkbox')
         super().__init__(
@@ -372,6 +380,19 @@ class MDCCheckboxInput(Div):
             ),
             cls='mdc-checkbox',
         )
+
+
+class MDCCheckboxField(Div):
+    def __init__(self, *content, **kwargs):
+        if not content:
+            content = [MDCCheckboxInput(**kwargs)]
+
+        super().__init__(
+            *content,
+            Label(kwargs.get('label', kwargs.get('name'))),
+            cls='mdc-form-field',
+        )
+
 
 class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
@@ -761,83 +782,3 @@ class MdcTextField(Label):
             cls='mdc-text-field mdc-text-field--filled',
             data_mdc_auto_init='MDCTextField',
         )
-
-
-"""
-class Component(Component):
-    def __init_(self, *args, **kwargs):
-        self.context = kwargs.pop('context', {})
-        super().__init_(*args, **kwargs)
-
-
-class Appbar(Component):
-    '''
-    Appbar component
-
-    Represents a MUI CSS <appbar>.
-
-    :parameters: see :class:`Component`
-    '''
-    def __init_(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
-        return Div(content,
-                   attr={'class': "mui-appbar"},
-                   events, parent, _id)
-
-
-class Button(Component):
-    '''
-    Button component
-
-    Represents a MUI CSS <button>.
-
-    :parameters: see :class:`Component`
-    '''
-    def __init_(self, content=None, attr=None,
-                 events=None, parent='body', _id=None, context=None):
-        attr = attr or {}
-        cls = attr.setdefault('class', '')
-        attr['class'] = f"mui-btn {cls}"
-        return Button(content, attr, events, parent, _id)
-
-
-class Container(Component):
-    '''
-    Container component
-
-    Represents a MUI <container>.
-
-    :parameters: see :class:`Component`
-    '''
-    def __init_(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
-        return Div(content,
-                   attr={'class': "mui-container"},
-                   events, parent, _id)
-"""
-
-
-class MdcForm(Component):
-    '''
-    Form component
-
-    Represents a MUI CSS <form>.
-
-    :parameters: see :class:`Component`
-    '''
-    def __init_(self, *content, **attrs):
-        attrs = {'class': "mui-form"}
-        super().__init_(*content, **attrs, tag='form')
-
-
-class MdcLegend(Component):
-    '''
-    Legend component
-
-    Represents a MUI CSS <legend>.
-
-    :parameters: see :class:`Component`
-    '''
-    def __init_(self, *content, **attrs):
-        super().__init_(*content, **attrs, tag='legend')
-

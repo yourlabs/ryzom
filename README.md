@@ -1,46 +1,30 @@
-# ryzom
+# Ryzom: Replace HTML Templates with Python Components
 
-Meteor-ish Django responsive front-end
+## Why?
 
-Dependencies:
-  * django 2.1
-  * django_channels
-  * channels_redis
-  * redis-server (up and running)
-  * psycopg2 (up and running with database and user)
+Because while frameworks like Django claim that "templates include a restricted
+language to avoid for the HTML coder to shoot themself in the foot", the GoF on
+the other hand states that Decorator is the pattern that is most efficient for
+designing GUIs, which is actually a big part of the success encountered by
+frameworks such as React.
 
-Install `ryzom`:
+## What?
 
-    pip install git+https://yourlabs.io/oss/ryzom.git
+Ryzom basically offers Python Components, with extra sauce of bleeding edge
+features such as "compiling Python code to JS", and "data binding" (DOM
+refreshes itself when data changes in the DB) if you enable websockets.
 
-Run the example project server:
+## State
 
-    ryzom runserver
+Currently in Beta stage, we are brushing up for a production release in an Open
+Source project for an NGO defending democracy, with an online voting platform
+secured with homomorphic encryption, basically a Django project built on top of
+microsoft/electionguard-python.
 
-What next?
+It's **not** ready for general use, but should hopefully be pretty soon...
+after all, this project has been under R&D sponsored by YourLabs for years now.
 
-OK/ Documentation for sure.
-OK/ Automatic websocket reconnection and page reloading on success
-Attach javascript events into forms and formfields with basic AST thanks to transcrypt
+## Usage
 
-A tutorial
-
-OK/ Authentication:
-  - Without authentication and user specific filtering, it will remain a toy, a nice toy, but just a toy
-  - With authentication, publishing can filter output by user and that will be great!
-  - With authentication AND roles, it will become something really usable
-
-OK/ Server Side Rendering:
-  - the first HTTP request should return a full HTML page
-  - all links should be 'a' tag that have no effect on current location
-
-OK/ Change the way methods works, maybe by importing a dict and assigning funcptr to method name
-
-Error handling: It won't ever be stable enough without good error reporting.
-
-Pagination: Very important too (maybe it could be implemented through subscriptions queries?)
-
-Transcrypt: Would be nice to avoid switching to JS.
-
-(S)CSS components?
-  - We could make an SCSS-like class to be inherited in components? Seems like a good idea.
+See the supported usage patterns in `src/ryzom_django_example/urls.py` which
+provides commented code using supported Ryzom APIs.

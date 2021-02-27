@@ -279,7 +279,6 @@ class CTree(Component):
         print(self.components[-1])
         component = self.components[-1](**kwargs)
         for wrapper in reversed(self.components[:-1]):
-            print(wrapper)
             component = wrapper(component, **kwargs)
         return component
 

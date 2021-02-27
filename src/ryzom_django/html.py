@@ -1,4 +1,5 @@
 from django.utils.safestring import mark_safe
+from ryzom.html import *
 
 
 def component_html(path, *args, **kwargs):

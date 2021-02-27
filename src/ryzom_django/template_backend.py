@@ -60,6 +60,7 @@ class Ryzom(BaseEngine):
     def get_template(self, template_name):
         if template_name in html.templates:
             return Template(html.templates[template_name], self)
+
         try:
             return Template(template_name, self)
         except TemplateDoesNotExist as exc:
