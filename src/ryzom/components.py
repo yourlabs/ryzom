@@ -3,8 +3,10 @@ Ryzom components declarations.
 There's still a lot of tags missing.
 They will be added when they'll be needed
 '''
-import uuid
+import copy
 import importlib
+import re
+import uuid
 
 
 def component_html(path, *args, **kwargs):
@@ -53,14 +55,17 @@ class Component:
     __publication = None
 
     def __init__(self, *content, **attrs):
-        if 'cls' in attrs:
-            attrs['class'] = attrs.pop('cls')  # support HTML class attr
-
         self.content = list(content) or []
 
         self._id = attrs.pop('_id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
-        self.tag = attrs.pop('tag', getattr(self, 'tag', 'div'))
+
+        if 'tag' in attrs:
+            self.tag = attrs.pop('tag')
+        elif not getattr(self, 'tag', None):
+            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', type(self).__name__)
+            self.tag = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+
         self.selfclose = attrs.pop('selfclose', getattr(self, 'selfclose', False))
         self.noclose = self.tag.lower() in [
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
@@ -68,7 +73,35 @@ class Component:
         ]
 
         self.events = attrs.pop('events', {})
-        self.attrs = attrs or {}
+
+        # create an instance attribute from the class attribute
+        # temp hack until someone hacks up a metaclass
+        self.__dict__['attrs'] = copy.deepcopy(getattr(self, 'attrs', {}))
+
+        if 'cls' in attrs:
+            cls = attrs.pop('cls')
+        elif 'class' in attrs:
+            cls = attrs.pop('class')
+        elif 'cls' in self.attrs:
+            cls = self.attrs.pop('cls')
+        elif 'class' in self.attrs:
+            cls = self.attrs.pop('class')
+        else:
+            cls = ''
+
+        if 'addcls' in attrs:
+            cls += ' ' + attrs.pop('addcls')
+
+        if 'rmcls' in attrs:
+            for rmcls in attrs.pop('rmcls').split(' '):
+                cls = cls.replace(rmcls, '')
+
+        cls = cls.strip()
+        if cls:
+            attrs['class'] = cls
+
+        self.attrs.update(attrs)
+
         self.position = 0
 
         self.preparecontent()
