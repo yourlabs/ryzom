@@ -22,28 +22,28 @@ def context_attrs(context, **extra):
 @template('django/forms/widgets/password.html')
 class MDCInputWidget(Input):
     def __init__(self, **context):
-        attrs = context_attrs(
+        super().__init__(**context_attrs(
             context,
             cls='mdc-text-field__input'
-        )
-        super().__init__(**attrs)
+        ))
 
     @classmethod
     def factory(cls, bf):
         bf.field.widget.attrs['aria-labelledby'] = f'id_{bf.name}_label'
-        field =  MDCFieldOutlined(
+
+        helper_id = f'id_{bf.name}_helper'
+        if bf.errors or bf.help_text:
+            bf.field.widget.attrs['aria-controls'] = helper_id
+            bf.field.widget.attrs['aria-describedby'] = helper_id
+
+        return MDCFieldOutlined(
             str(bf),
             name=bf.name,
             label=bf.label,
+            value=bf.value(),
             help_text=bf.help_text,
             errors=bf.form.error_class(bf.errors),
         )
-        if bf.errors:
-            for e in bf.errors:
-                field.set_error(e)
-        elif bf.help_text:
-            field.set_helper(bf.help_text)
-        return field
 
 
 @template('django/forms/widgets/checkbox.html')
@@ -89,7 +89,7 @@ class MDCCheckboxSelectMultipleWidget(MDCList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Div(Label(bf.label), str(bf)), cls='form-group')
+        return Div(Label(bf.label), str(bf))
 
 
 @template('django/forms/widgets/multiwidget.html')
@@ -102,7 +102,7 @@ class MultiWidget(CList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Div(Label(bf.label), str(bf), cls='mdc-form-field'), cls='form-group')
+        return Div(Label(bf.label), str(bf), cls='mdc-form-field')
 
 
 @template('django/forms/widgets/splitdatetime.html')
@@ -117,7 +117,6 @@ class SplitDateTimeWidget(CList):
                     name=date_widget['name'],
                     label='Date',
                 ),
-                cls='form-group',
             ),
             MDCVerticalMargin(
                 MDCFieldOutlined(
@@ -130,4 +129,4 @@ class SplitDateTimeWidget(CList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Div(Label(bf.label), str(bf)), cls='form-group')
+        return Div(Label(bf.label), str(bf))

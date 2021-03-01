@@ -118,60 +118,67 @@ class MDCTextFieldFilled(Label):
 
 
 class MDCNotchOutline(Span):
-    def __init__(self, *content):
-        attrs = {'class': 'mdc-notched-outline'}
-        content = [
+    attrs = {'class': 'mdc-notched-outline'}
+
+    def __init__(self, *content, **attrs):
+        super().__init__(
             Span(cls='mdc-notched-outline__leading'),
             Span(
                 *content,
                 cls='mdc-notched-outline__notch',
             ),
             Span(cls='mdc-notched-outline__trailing'),
-        ]
-        super().__init__(*content, **attrs)
+            **attrs,
+        )
 
 
 class MDCFieldOutlined(Div):
-    def __init__(self, *content, **kwargs):
-        name = kwargs['name']
+    def __init__(self, *content, name, label=None, help_text=None, value=None,
+                 errors=None):
+
+        label = label or name.capitalize()
         input_id = f'id_{name}'
         label_id = f'id_{name}_label'
-        label = kwargs.pop('label', name.capitalize())
-        help_text = kwargs.pop('help_text', '')
-        super().__init__(
-            Label(
-                MDCNotchOutline(
-                    Span(
-                        label,
-                        id=label_id,
-                        cls='mdc-floating-label',
-                    ),
-                ),
-                *content,
-                cls='mdc-text-field mdc-text-field--outlined',
-                data_mdc_auto_init='MDCTextField',
-            ),
-            cls='form-group'
+        helper_id = f'id_{name}_helper'
+
+        floating_label = Span(label, id=label_id, cls='mdc-floating-label')
+        notch_outline = MDCNotchOutline(floating_label)
+        label = Label(
+            notch_outline,
+            *content,
+            id=label_id,
+            cls='mdc-text-field mdc-text-field--outlined',
+            data_mdc_auto_init='MDCTextField',
         )
 
-    def _attach_helper_line(self, helper):
-        self.content.append(helper)
+        if value not in ('', None):
+            # float label because there is a value
+            label.attrs.addcls = 'mdc-text-field--label-floating'
+            floating_label.attrs.addcls = 'mdc-floating-label--float-above'
+            notch_outline.attrs.addcls = 'mdc-notched-outline--notched'
 
-        label = self.content[0]
-        label.attrs['aria-describedby'] = helper._id
-        label.attrs['aria-controls'] = helper._id
+        if errors:
+            label.attrs.addcls = 'mdc-text-field--invalid'
+            helper = MDCTextFieldHelperText(
+                '. '.join(errors),
+                id=helper_id,
+                help_text=help_text,
+                addcls='mdc-text-field-helper-text--validation-msg',
+            )
+        elif help_text:
+            helper = MDCTextFieldHelperText(
+                help_text,
+                id=helper_id,
+            )
+        else:
+            helper = ''
 
-    def set_helper(self, help_text):
-        helper = MDCTextFieldHelperLine(help_text)
-        self._attach_helper_line(helper)
+        if helper:
+            helper = MDCTextFieldHelperLine(helper)
+            label.attrs.aria_describedby = helper_id
+            label.attrs.aria_controls = helper_id
 
-    def set_error(self, error):
-        label = self.content[0]
-        label.attrs['class'] += ' mdc-text-field--invalid'
-
-        helper = MDCTextFieldHelperLine(error, role='alert')
-        self._attach_helper_line(helper)
-
+        super().__init__(label, helper)
 
 
 class MDCTextareaFieldOutlined(Label):
@@ -297,20 +304,19 @@ class MDCSplitDateTime(Div):
         self.content.append(helper)
 
 
-class MDCTextFieldHelperLine(Div):
-    def __init__(self, text, role='', **kwargs):
-        cls = 'mdc-text-field-helper-text mdc-text-field-helper-text--persistent'
-        if role == 'alert':
-            cls += ' mdc-text-field-helper-text--validation-msg'
+class MDCTextFieldHelperText(Div):
+    attrs = {
+        'class': ' '.join([
+            'mdc-text-field-helper-text',
+            'mdc-text-field-helper-text--persitent',
+        ]),
+    }
 
-        super().__init__(
-            Div(
-                text,
-                cls=cls,
-                role=role
-            ),
-            cls='mdc-text-field-helper-line',
-        )
+class MDCTextFieldHelperLine(Div):
+    attrs = {
+        'aria-hidden': 'true',
+        'cls': 'mdc-text-field-helper-line',
+    }
 
 
 class MDCVerticalMargin(Div):
