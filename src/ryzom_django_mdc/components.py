@@ -8,6 +8,7 @@ def context_attrs(context, **extra):
     attrs.update(dict(
         name=context['widget']['name'],
         value=context['widget']['value'],
+        type=context['widget']['type']
     ))
     attrs.update(extra)
     return attrs
@@ -20,6 +21,7 @@ def context_attrs(context, **extra):
 @template('django/forms/widgets/email.html')
 class MDCInputWidget(Input):
     def __init__(self, **context):
+        import ipdb; ipdb.set_trace()
         attrs = context_attrs(
             context,
             cls='mdc-text-field__input'
