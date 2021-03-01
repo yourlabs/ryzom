@@ -472,12 +472,5 @@ class Text(Component):
     Text component
 
     Represents a text node
-
-    :parameters: see :class:`Component`
     '''
-    def __init__(self, *content, **attrs):
-        content = content or []
-        attrs = attrs or {}
-        attrs['tag'] = 'text'
-        attrs.setdefault('parent', 'body')
-        super().__init__(*content, **attrs)
+    tag = 'text'
