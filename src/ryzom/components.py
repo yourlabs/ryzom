@@ -63,22 +63,7 @@ class CStyle(HTMLPayload):
         return result
 
 
-class CStyleDescriptor:
-    def __get__(self, obj, value):
-        if 'style' not in obj:
-            obj.style = CStyle()
-        return obj.attrs.style
-
-    def __set__(self, obj, value):
-        if isinstance(value, str):
-            for rule in value.split(';'):
-                key, value = rule.split(':')
-                obj.style[key.strip()] = value.strip()
-
-
 class CAttrs(HTMLPayload):
-    #style = CStyleDescriptor()
-
     def __getitem__(self, name):
         if name == 'style' and 'style' not in self:
             # Create CStyle on the fly
@@ -131,6 +116,21 @@ class CAttrs(HTMLPayload):
                 self['style'].update(value)
             else:
                 self[key] = value
+
+    def to_html(self):
+        result = []
+        for key, value in self.items():
+            if key == 'style':
+                new_value = []
+                for style_key, style_value in value.items():
+                    new_value.append(f'{style_key}: {style_value}')
+                value = '; '.join(new_value)
+
+            if value is True:
+                result.append(key)
+            elif value is not False:
+                result.append(f'{key}="{value}"')
+        return ' '.join(result)
 
 
 class ComponentMetaclass(type):
@@ -346,13 +346,7 @@ class Component(metaclass=ComponentMetaclass):
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = ''
-        for k, v in self.attrs.items():
-            if v is True:
-                attrs += f'{k.replace("_", "-")} '
-            elif v is not False:
-                attrs += f'{k.replace("_", "-")}="{v}" '
-        attrs += f'ryzom-id="{self._id}"'
+        attrs = self.attrs.to_html() + f'ryzom-id="{self._id}"'
         html = ''
         if getattr(self, 'selfclose', False):
             html = f'<{self.tag} {attrs}/>'

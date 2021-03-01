@@ -116,6 +116,7 @@ def test_attr_class():
     assert C3.attrs['class'] == 'bar'
     assert C3().attrs['class'] == 'bar'
 
+
 def test_html_payload():
     test = html.HTMLPayload(background_color='white')
     assert [*test.keys()] == ['background-color']
@@ -126,6 +127,19 @@ def test_html_payload():
     assert test['background-position'] == 'top'
     assert test.background_position == 'top'
     assert [*test.keys()] == ['background-color', 'background-position']
+
+
+def test_attrs_to_html():
+    comp = Test1()
+    comp.attrs['foo'] = True
+    comp.attrs.y = False
+    comp.attrs.z = None
+    comp.attrs['test'] = ''
+    comp.attrs.lol_bar = 'ok'
+    comp.attrs.style.x_y = 0
+    comp.attrs.style.color = 'red'
+    comp.attrs.style.o = None
+    assert comp.attrs.to_html() == 'x="x" foo test="" lol-bar="ok" style="x-y: 0; color: red"'
 
 
 class BlueWhite(html.Div):
