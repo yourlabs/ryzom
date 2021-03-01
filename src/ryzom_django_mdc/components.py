@@ -17,6 +17,7 @@ def context_attrs(context, **extra):
 @template('django/forms/widgets/date.html')
 @template('django/forms/widgets/time.html')
 @template('django/forms/widgets/text.html')
+@template('django/forms/widgets/email.html')
 class MDCInputWidget(Input):
     def __init__(self, **context):
         attrs = context_attrs(
@@ -102,7 +103,7 @@ class SplitDateTimeWidget(CList):
         date_widget = context['widget']['subwidgets'][0]
         time_widget = context['widget']['subwidgets'][1]
         super().__init__(
-            Section(
+            MDCVerticalMargin(
                 MDCFieldOutlined(
                     templates[date_widget['template_name']](widget=date_widget),
                     name=date_widget['name'],
@@ -110,7 +111,7 @@ class SplitDateTimeWidget(CList):
                 ),
                 cls='form-group',
             ),
-            Section(
+            MDCVerticalMargin(
                 MDCFieldOutlined(
                     templates[time_widget['template_name']](widget=time_widget),
                     name=time_widget['name'],

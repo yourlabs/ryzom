@@ -81,14 +81,14 @@ class ExampleFormViewComponent(html.Html):
                 html.CSRFInput(view.request),
                 form,
                 method="post",
-            )
+            ),
         )
-
         super().__init__(*content)
 
 
 class ExampleForm(forms.Form):
     char = forms.CharField(required=False)
+    email = forms.EmailField(required=False)
     boolean = forms.BooleanField(required=False)
     checkboxes = forms.MultipleChoiceField(
         required=False,
