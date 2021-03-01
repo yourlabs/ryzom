@@ -25,7 +25,132 @@ def component_html(path, *args, **kwargs):
     return mark_safe(html)
 
 
-class Component:
+class HTMLPayload(dict):
+    def __init__(self, **kwargs):
+        super().__init__(**{
+            k.replace('_', '-'): v for k, v in kwargs.items()
+        })
+
+    def __getattr__(self, name):
+        html_name = name.replace('_', '-')
+        if html_name in self:
+            return self[html_name]
+        raise AttributeError(f'{self} object has no attribute {name}')
+
+    def __setattr__(self, name, value):
+        self.__setitem__(name, value)
+
+    def __setitem__(self, name, value):
+        name = name.replace('_', '-')
+        if value is None:
+            if name in self:
+                del self[name]
+        else:
+            super().__setitem__(name, value)
+
+    def update(self, other):
+        for key, value in other.items():
+            self[key] = value
+
+
+class CStyle(HTMLPayload):
+    @classmethod
+    def to_dict(cls, value):
+        result = {}
+        for rule in value.split(';'):
+            key, value = rule.split(':')
+            result[key.strip()] = value.strip()
+        return result
+
+
+class CStyleDescriptor:
+    def __get__(self, obj, value):
+        if 'style' not in obj:
+            obj.style = CStyle()
+        return obj.attrs.style
+
+    def __set__(self, obj, value):
+        if isinstance(value, str):
+            for rule in value.split(';'):
+                key, value = rule.split(':')
+                obj.style[key.strip()] = value.strip()
+
+
+class CAttrs(HTMLPayload):
+    #style = CStyleDescriptor()
+
+    def __getitem__(self, name):
+        if name == 'style' and 'style' not in self:
+            # Create CStyle on the fly
+            self['style'] = CStyle()
+
+        if name == 'cls':
+            # Translate 'cls' into class
+            name = 'class'
+
+        return super().__getitem__(name)
+
+    def __getattr__(self, name):
+        if name == 'style' and 'style' not in self:
+            self['style'] = CStyle()
+
+        if name == 'cls':
+            name = 'class'
+
+        return super().__getattr__(name)
+
+    def __setitem__(self, name, value):
+        if name == 'cls':
+            # Maintain the "class" attribute
+            name = 'class'
+        elif name == 'addcls':
+            if 'class' not in self:
+                self['class'] = value
+            elif self['class']:
+                self['class'] += ' ' + value
+            else:
+                self['class'] = value
+            return
+        elif name == 'rmcls':
+            if 'class' in self:
+                self['class'] = self['class'].replace(
+                    value, ''
+                ).replace('  ', ' ').strip()
+            return
+
+        if name == 'style' and isinstance(value, str):
+            self.style = CStyle.to_dict(value)
+        else:
+            super().__setitem__(name, value)
+
+    def update(self, other):
+        for key, value in other.items():
+            if key == 'style':
+                if isinstance(value, str):
+                    value = CStyle.to_dict(value)
+                self['style'].update(value)
+            else:
+                self[key] = value
+
+
+class ComponentMetaclass(type):
+    def __new__(cls, name, bases, class_attrs):
+        attrs = CAttrs()
+        for base in bases:
+            if base_attrs := getattr(base, 'attrs', None):
+                attrs.update(base_attrs)
+        if class_attrs.get('attrs', None):
+            attrs.update(class_attrs['attrs'])
+
+        if 'style' in class_attrs:
+            attrs.update(dict(style=class_attrs['style']))
+
+        class_attrs['attrs'] = attrs
+
+        return super().__new__(cls, name, bases, class_attrs)
+
+
+class Component(metaclass=ComponentMetaclass):
     '''Main ryzom component 'abstract' class to be inherited.
 
     This class defines the common attrsibutes and methods to all
@@ -54,7 +179,18 @@ class Component:
 
     __publication = None
 
+    def __getattr__(self, name):
+        '''Instanciate attrs and/or style on the fly.'''
+        if name == 'attrs':
+            self.attrs = CAttrs()
+            return self.attrs
+        elif name == 'style':
+            self.style = self.attrs.style = CStyle()
+            return self.style
+        return super().__getattr__(name)
+
     def __init__(self, *content, **attrs):
+        cls = type(self)
         self.content = list(content) or []
 
         self._id = attrs.pop('_id', uuid.uuid1().hex)
@@ -71,6 +207,7 @@ class Component:
             'selfclose',
             getattr(self, 'selfclose', False),
         )
+
         self.noclose = self.tag.lower() in [
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
@@ -79,31 +216,9 @@ class Component:
         self.events = attrs.pop('events', {})
 
         # create an instance attribute from the class attribute
-        # temp hack until someone hacks up a metaclass
         self.__dict__['attrs'] = copy.deepcopy(getattr(self, 'attrs', {}))
 
-        if 'cls' in attrs:
-            cls = attrs.pop('cls')
-        elif 'class' in attrs:
-            cls = attrs.pop('class')
-        elif 'cls' in self.attrs:
-            cls = self.attrs.pop('cls')
-        elif 'class' in self.attrs:
-            cls = self.attrs.pop('class')
-        else:
-            cls = ''
-
-        if 'addcls' in attrs:
-            cls += ' ' + attrs.pop('addcls')
-
-        if 'rmcls' in attrs:
-            for rmcls in attrs.pop('rmcls').split(' '):
-                cls = cls.replace(rmcls, '')
-
-        cls = cls.strip()
-        if cls:
-            attrs['class'] = cls
-
+        # update with kwargs
         self.attrs.update(attrs)
 
         self.position = 0

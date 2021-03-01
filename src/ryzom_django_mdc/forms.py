@@ -1,6 +1,5 @@
 from django import forms
-from ryzom import html
-import ryzom_mdc
+import ryzom_mdc as html
 
 
 def form_to_components(form):
