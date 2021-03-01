@@ -33,7 +33,7 @@ class MDCTextButton(Button):
 
 
 class MDCButtonOutlined(Button):
-    def __init__(self, text, p=True, icon=None):
+    def __init__(self, text, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
         content = [Span(cls='mdc-button__ripple')]
         if icon and isinstance(icon, str):
@@ -43,16 +43,14 @@ class MDCButtonOutlined(Button):
         content.append(Span(text, cls='mdc-button__label'))
         super().__init__(
             *content,
-            cls=f'mdc-button mdc-button--outlined {black}'
+            cls=f'mdc-button mdc-button--outlined {black}',
+            **kwargs
         )
 
 
 class MDCButton(Button):
-    def __init__(self, text, p=True, disabled=False, icon=None):
+    def __init__(self, text, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
-        attrs = {}
-        if disabled:
-            attrs['disabled'] = True
 
         if icon and isinstance(icon, str):
             content = [MDCIcon(icon)]
@@ -65,7 +63,7 @@ class MDCButton(Button):
         super().__init__(
             *content,
             cls=f'mdc-button mdc-button--raised {black}',
-            **attrs
+            **kwargs
         )
 
 
@@ -156,14 +154,24 @@ class MDCFieldOutlined(Div):
             cls='form-group'
         )
 
-    def set_error(self, error):
-        helper = MDCTextFieldHelperLine(error, 'alert')
+    def _attach_helper_line(self, helper):
+        self.content.append(helper)
+
         label = self.content[0]
-        label.attrs['class'] += ' mdc-text-field--invalid'
         label.attrs['aria-describedby'] = helper._id
         label.attrs['aria-controls'] = helper._id
 
-        self.content.append(helper)
+    def set_helper(self, help_text):
+        helper = MDCTextFieldHelperLine(help_text)
+        self._attach_helper_line(helper)
+
+    def set_error(self, error):
+        label = self.content[0]
+        label.attrs['class'] += ' mdc-text-field--invalid'
+
+        helper = MDCTextFieldHelperLine(error, role='alert')
+        self._attach_helper_line(helper)
+
 
 
 class MDCTextareaFieldOutlined(Label):
@@ -290,17 +298,18 @@ class MDCSplitDateTime(Div):
 
 
 class MDCTextFieldHelperLine(Div):
-    attrs = {'aria-hidden': 'true'}
+    def __init__(self, text, role='', **kwargs):
+        cls = 'mdc-text-field-helper-text mdc-text-field-helper-text--persistent'
+        if role == 'alert':
+            cls += ' mdc-text-field-helper-text--validation-msg'
 
-    def __init__(self, text, role, **kwargs):
         super().__init__(
             Div(
                 text,
-                cls='mdc-text-field-helper-text mdc-text-field-helper-text--persitent mdc-text-field-helper-text--validation-msg',
-                role=role,
+                cls=cls,
+                role=role
             ),
             cls='mdc-text-field-helper-line',
-            **attrs
         )
 
 

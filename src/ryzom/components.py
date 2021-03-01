@@ -58,6 +58,8 @@ class CStyle(HTMLPayload):
     def to_dict(cls, value):
         result = {}
         for rule in value.split(';'):
+            if not rule.strip():
+                continue
             key, value = rule.split(':')
             result[key.strip()] = value.strip()
         return result

@@ -19,9 +19,9 @@ def context_attrs(context, **extra):
 @template('django/forms/widgets/time.html')
 @template('django/forms/widgets/text.html')
 @template('django/forms/widgets/email.html')
+@template('django/forms/widgets/password.html')
 class MDCInputWidget(Input):
     def __init__(self, **context):
-        import ipdb; ipdb.set_trace()
         attrs = context_attrs(
             context,
             cls='mdc-text-field__input'
@@ -31,13 +31,19 @@ class MDCInputWidget(Input):
     @classmethod
     def factory(cls, bf):
         bf.field.widget.attrs['aria-labelledby'] = f'id_{bf.name}_label'
-        return MDCFieldOutlined(
+        field =  MDCFieldOutlined(
             str(bf),
             name=bf.name,
             label=bf.label,
             help_text=bf.help_text,
             errors=bf.form.error_class(bf.errors),
         )
+        if bf.errors:
+            for e in bf.errors:
+                field.set_error(e)
+        elif bf.help_text:
+            field.set_helper(bf.help_text)
+        return field
 
 
 @template('django/forms/widgets/checkbox.html')
