@@ -346,7 +346,7 @@ class Component(metaclass=ComponentMetaclass):
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = self.attrs.to_html() + f'ryzom-id="{self._id}"'
+        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self._id}"'])
         html = ''
         if getattr(self, 'selfclose', False):
             html = f'<{self.tag} {attrs}/>'

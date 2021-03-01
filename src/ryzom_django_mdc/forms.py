@@ -17,9 +17,9 @@ def form_to_components(form):
         try:
             component = html.templates[bf.field.widget.template_name]
         except KeyError:
-            content.append(str(bf))
+            content.append(html.MDCVerticalMargin(str(bf)))
         else:
-            content.append(component.factory(bf))
+            content.append(html.MDCVerticalMargin(component.factory(bf)))
 
     return html.CList(*content)
 

@@ -290,6 +290,8 @@ class MDCSplitDateTime(Div):
 
 
 class MDCTextFieldHelperLine(Div):
+    attrs = {'aria-hidden': 'true'}
+
     def __init__(self, text, role, **kwargs):
         super().__init__(
             Div(
@@ -298,25 +300,26 @@ class MDCTextFieldHelperLine(Div):
                 role=role,
             ),
             cls='mdc-text-field-helper-line',
-            **kwargs
+            **attrs
         )
-        self.attrs['aria-hidden'] = 'true'
+
+
+class MDCVerticalMargin(Div):
+    style = 'margin-top: 12px; margin-bottom: 12px'
 
 
 class MDCList(Div):
-    def __init__(self, *content, **attrs):
-        attrs.setdefault('data-mdc-auto-init', 'MDCList')
-        attrs.setdefault('cls', 'mdc-list')
-        super().__init__(*content, **attrs)
+    attrs = {'class': 'mdc-list', 'data-mdc-auto-init': 'MDCList'}
 
 
 class MDCListItem(Li):
-    def __init__(self, *content, **kwargs):
-        cls = kwargs.pop('cls', '')
+    attrs = {'class': 'mdc-list-item'}
+
+    def __init__(self, *content, **attrs):
         super().__init__(
             Span(cls='mdc-list-item__ripple'),
             Span(*content, cls='mdc-list-item__text'),
-            cls=cls + ' mdc-list-item'
+            **attrs,
         )
 
 
@@ -782,3 +785,15 @@ class MdcTextField(Label):
             cls='mdc-text-field mdc-text-field--filled',
             data_mdc_auto_init='MDCTextField',
         )
+
+
+class MDCLayoutGrid(Div):
+    attrs = {'class': 'mdc-layout-grid'}
+
+
+class MDCLayoutGridInner(Div):
+    attrs = {'class': 'mdc-layout-grid__inner'}
+
+
+class MDCLayoutGridCell(Div):
+    attrs = {'class': 'mdc-layout-grid__cell'}
