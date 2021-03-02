@@ -109,12 +109,11 @@ class ExampleForm(forms.Form):
         help_text='Required checkbox multiple',
     )
     datetime = forms.SplitDateTimeField(
-        required=False,
         widget=forms.SplitDateTimeWidget(
             date_attrs=dict(type='date'),
             time_attrs=dict(type='time'),
         ),
-        help_text='Non required help text',
+        help_text='Required help text',
     )
 
     # Let's override the default rendering to add a submit button

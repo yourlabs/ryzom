@@ -42,7 +42,7 @@ def assert_equals_fixture(name, result):
 def test_widget_rendering(field, value):
     class TestForm(forms.Form):
         test = field
-    result = TestForm(dict(test=value))['test']
+    result = TestForm(dict(test=value)).to_fields()['test'].to_html()
     assert_equals_fixture(
         f'test_widget_{type(field).__name__}_{value}',
         result,
@@ -50,7 +50,11 @@ def test_widget_rendering(field, value):
 
 
 def test_form():
-    class TestForm(forms.Form):
-        test = forms.CharField()
-    result = TestForm(dict(test='val')).to_html()
-    assert_equals_fixture('test_charfield_form', result)
+    from ryzom_django_example.urls import ExampleForm
+    result = ExampleForm(dict(
+        char='',
+        email='foo@b.b',
+        datetime_0='11/11/2020',
+        datetime_1='aoeu',
+    )).to_html()
+    assert_equals_fixture('test_form', result)

@@ -142,6 +142,12 @@ class MDCField(Div):
         else:
             self.help_text = ''
 
+        # compensate for widget margin
+        if self.errors:
+            self.errors.attrs.style.margin_top = '-10px'
+        elif self.help_text:
+            self.help_text.attrs.style.margin_top = '-10px'
+
         super().__init__(*content, self.errors, self.help_text)
 
 
@@ -325,7 +331,7 @@ class MDCTextFieldHelperLine(Div):
 
 
 class MDCVerticalMargin(Div):
-    style = 'margin-top: 12px; margin-bottom: 12px'
+    style = 'margin-top: 18px; margin-bottom: 18px'
 
 
 class MDCList(Div):
@@ -386,7 +392,7 @@ class MDCErrorListItem(Li):
 
 class MDCErrorList(Ul):
     style = dict(
-        padding_left='16px',
+        padding_left='10px',
         margin_top=0,
         margin_bottom=0,
         font_size='var(--mdc-typography-caption-font-size, 0.75rem)',
@@ -403,7 +409,7 @@ class MDCHelpText(Div):
     style = dict(
         font_size='var(--mdc-typography-caption-font-size, 0.75rem)',
         color='rgba(0, 0, 0, 0.6)',
-        padding_left='16px',
+        padding_left='10px',
     )
 
 

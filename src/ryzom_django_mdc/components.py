@@ -2,7 +2,7 @@ from ryzom_django.html import *
 from ryzom_mdc import *
 
 
-def context_attrs(widget_context, **extra):
+def context_attrs(widget_context, extra=None):
     # extract attrs from a widget context
     attrs = dict()
     attrs.update(widget_context['attrs'])
@@ -11,11 +11,11 @@ def context_attrs(widget_context, **extra):
         value=widget_context['value'],
         type=widget_context['type'],
     ))
-    attrs.update(extra)
+    attrs.update(extra or {})
     return attrs
 
 
-def widget_context(bf, attrs=None):
+def boundfield_context(bf, attrs=None):
     # copy of BoundField.as_widget() with get_context instead of widget.render()
     widget = bf.field.widget
     if bf.field.localize:
@@ -28,7 +28,15 @@ def widget_context(bf, attrs=None):
         name=bf.html_name,
         value=bf.value(),
         attrs=attrs,
-    )['widget']
+    )
+
+
+def widget_context(bf, attrs=None):
+    return boundfield_context(bf, attrs)['widget']
+
+
+def widget_attrs(bf, attrs=None):
+    return context_attrs(widget_context(bf), attrs)
 
 
 def field_kwargs(bf):
@@ -60,7 +68,7 @@ class MDCInputWidget(Input):
             attrs['aria-describedby'] = helper_id
 
         return MDCFieldOutlined(
-            cls(**context_attrs(widget_context(bf, attrs))),
+            cls(**widget_attrs(bf, attrs)),
             **field_kwargs(bf),
         )
 
@@ -69,18 +77,10 @@ class MDCInputWidget(Input):
 class MDCCheckboxWidget(MDCCheckboxInput):
     @classmethod
     def factory(cls, bf):
-        field = MDCCheckboxField(
-            cls(**context_attrs(widget_context(bf))),
+        return MDCCheckboxField(
+            cls(**widget_attrs(bf)),
             **field_kwargs(bf),
         )
-
-        # compensate for checkbox margin
-        if field.errors:
-            field.errors.attrs.style.margin_top = '-10px'
-        elif field.help_text:
-            field.help_text.attrs.style.margin_top = '-10px'
-
-        return field
 
 
 @template('django/forms/widgets/checkbox_select.html')
@@ -116,32 +116,28 @@ class MDCCheckboxSelectMultipleWidget(Div):
 
     @classmethod
     def factory(cls, bf):
-        field = MDCField(
+        return MDCField(
             Label(bf.label),
             cls(**widget_context(bf)),
             **field_kwargs(bf),
         )
-
-        # compensate for checkbox margin
-        if field.errors:
-            field.errors.attrs.style.margin_top = '-10px'
-        elif field.help_text:
-            field.help_text.attrs.style.margin_top = '-10px'
-
-        return field
 
 
 @template('django/forms/widgets/multiwidget.html')
 class MultiWidget(CList):
     def __init__(self, **context):
         super().__init__(*[
-            templates[widget['template_name']](widget=widget)
+            templates[widget['template_name']](**widget)
             for widget in context['widget']['subwidgets']
         ])
 
     @classmethod
     def factory(cls, bf):
-        return Div(Label(bf.label), cls(**widget_context((bf))), cls='mdc-form-field')
+        return Div(
+            Label(bf.label),
+            cls(**widget_context((bf))),
+            cls='mdc-form-field'
+        )
 
 
 @template('django/forms/widgets/splitdatetime.html')
@@ -152,14 +148,14 @@ class SplitDateTimeWidget(CList):
         super().__init__(
             MDCVerticalMargin(
                 MDCFieldOutlined(
-                    templates[date_widget['template_name']](widget=date_widget),
+                    templates[date_widget['template_name']](**date_widget),
                     name=date_widget['name'],
                     label='Date',
                 ),
             ),
             MDCVerticalMargin(
                 MDCFieldOutlined(
-                    templates[time_widget['template_name']](widget=time_widget),
+                    templates[time_widget['template_name']](**time_widget),
                     name=time_widget['name'],
                     label='Time',
                 ),
@@ -168,4 +164,8 @@ class SplitDateTimeWidget(CList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Label(bf.label), cls(**widget_context((bf))))
+        return MDCField(
+            Label(bf.label),
+            cls(**widget_context((bf))),
+            **field_kwargs(bf),
+        )
