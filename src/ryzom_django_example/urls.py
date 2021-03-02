@@ -95,29 +95,25 @@ class ExampleFormViewComponent(html.Html):
 
 class ExampleForm(forms.Form):
     char = forms.CharField(
-        required=False,
         help_text='Non required example text input',
     )
     email = forms.EmailField(
         help_text='Valid email required',
     )
     boolean = forms.BooleanField(
-        required=False,
-        help_text='Non required boolean',
+        help_text='Required boolean!',
     )
     checkboxes = forms.MultipleChoiceField(
-        required=False,
         choices=(('a', 'a'), ('b', 'b')),
         widget=forms.CheckboxSelectMultiple,
         help_text='Required checkbox multiple',
     )
     datetime = forms.SplitDateTimeField(
-        required=False,
         widget=forms.SplitDateTimeWidget(
             date_attrs=dict(type='date'),
             time_attrs=dict(type='time'),
         ),
-        help_text='Non required help text',
+        help_text='Required help text',
     )
 
     # Let's override the default rendering to add a submit button
