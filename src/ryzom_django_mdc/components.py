@@ -2,14 +2,14 @@ from ryzom_django.html import *
 from ryzom_mdc import *
 
 
-def context_attrs(context, **extra):
+def context_attrs(widget_context, **extra):
     # extract attrs from a widget context
     attrs = dict()
-    attrs.update(context['widget']['attrs'])
+    attrs.update(widget_context['attrs'])
     attrs.update(dict(
-        name=context['widget']['name'],
-        value=context['widget']['value'],
-        type=context['widget']['type']
+        name=widget_context['name'],
+        value=widget_context['value'],
+        type=widget_context['type'],
     ))
     attrs.update(extra)
     return attrs
@@ -28,6 +28,16 @@ def widget_context(bf, attrs=None):
         name=bf.html_name,
         value=bf.value(),
         attrs=attrs,
+    )['widget']
+
+
+def field_kwargs(bf):
+    return dict(
+        name=bf.name,
+        label=bf.label,
+        value=bf.value(),
+        help_text=bf.help_text,
+        errors=bf.errors,
     )
 
 
@@ -38,11 +48,7 @@ def widget_context(bf, attrs=None):
 @template('django/forms/widgets/email.html')
 @template('django/forms/widgets/password.html')
 class MDCInputWidget(Input):
-    def __init__(self, **context):
-        super().__init__(**context_attrs(
-            context,
-            cls='mdc-text-field__input'
-        ))
+    attrs = {'class': 'mdc-text-field__input'}
 
     @classmethod
     def factory(cls, bf):
@@ -54,36 +60,40 @@ class MDCInputWidget(Input):
             attrs['aria-describedby'] = helper_id
 
         return MDCFieldOutlined(
-            cls(**widget_context(bf, attrs)),
-            name=bf.name,
-            label=bf.label,
-            value=bf.value(),
-            help_text=bf.help_text,
-            errors=bf.form.error_class(bf.errors),
+            cls(**context_attrs(widget_context(bf, attrs))),
+            **field_kwargs(bf),
         )
 
 
 @template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxInput):
-    def __init__(self, **context):
-        attrs = context_attrs(context, type='checkbox')
-        super().__init__(**attrs)
-
     @classmethod
     def factory(cls, bf):
-        return MDCCheckboxField(cls(**widget_context(bf)), label=bf.label)
+        field = MDCCheckboxField(
+            cls(**context_attrs(widget_context(bf))),
+            **field_kwargs(bf),
+        )
+
+        # compensate for checkbox margin
+        if field.errors:
+            field.errors.attrs.style.margin_top = '-10px'
+        elif field.help_text:
+            field.help_text.attrs.style.margin_top = '-10px'
+
+        return field
 
 
 @template('django/forms/widgets/checkbox_select.html')
-class MDCCheckboxSelectMultipleWidget(MDCList):
+class MDCCheckboxSelectMultipleWidget(Div):
     def __init__(self, **context):
         group_content = []
-        for group, options, index in context['widget']['optgroups']:
+        for group, options, index in context['optgroups']:
             option_content = []
             for option in options:
                 option_content.append(
-                    MDCListItem(
-                        MDCCheckboxField(**option),
+                    MDCCheckboxField(
+                        MDCCheckboxInput(**option),
+                        name=option['name'],
                     )
                     if option['wrap_label']
                     else MDCTextInput(**option)
@@ -106,7 +116,19 @@ class MDCCheckboxSelectMultipleWidget(MDCList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Label(bf.label), str(bf))
+        field = MDCField(
+            Label(bf.label),
+            cls(**widget_context(bf)),
+            **field_kwargs(bf),
+        )
+
+        # compensate for checkbox margin
+        if field.errors:
+            field.errors.attrs.style.margin_top = '-10px'
+        elif field.help_text:
+            field.help_text.attrs.style.margin_top = '-10px'
+
+        return field
 
 
 @template('django/forms/widgets/multiwidget.html')
@@ -125,8 +147,8 @@ class MultiWidget(CList):
 @template('django/forms/widgets/splitdatetime.html')
 class SplitDateTimeWidget(CList):
     def __init__(self, **context):
-        date_widget = context['widget']['subwidgets'][0]
-        time_widget = context['widget']['subwidgets'][1]
+        date_widget = context['subwidgets'][0]
+        time_widget = context['subwidgets'][1]
         super().__init__(
             MDCVerticalMargin(
                 MDCFieldOutlined(

@@ -8,15 +8,10 @@ class MDCLink(A):
 
 
 class MDCIcon(Icon):
-    def __init__(self, icon, **kwargs):
-        attrs = {
-            'class': 'material-icons',
-            'aria-hiddem': 'true'
-        }
-
-        if cls := kwargs.pop('cls', None):
-            attrs['class'] += f' {cls}'
-        super().__init__(icon, **attrs)
+    attrs = {
+        'class': 'material-icons',
+        'aria-hiddem': 'true'
+    }
 
 
 class MDCTextButton(Button):
@@ -132,6 +127,24 @@ class MDCNotchOutline(Span):
         )
 
 
+class MDCField(Div):
+    def __init__(self, *content, name, label=None, help_text=None, value=None,
+                 errors=None):
+        helper_id = f'id_{name}_helper'
+
+        if errors:
+            self.errors = MDCErrorList(*errors, id=helper_id)
+        else:
+            self.errors = ''
+
+        if help_text:
+            self.help_text = MDCHelpText(help_text, id=helper_id if not errors else '')
+        else:
+            self.help_text = ''
+
+        super().__init__(*content, self.errors, self.help_text)
+
+
 class MDCFieldOutlined(Div):
     def __init__(self, *content, name, label=None, help_text=None, value=None,
                  errors=None):
@@ -159,26 +172,18 @@ class MDCFieldOutlined(Div):
 
         if errors:
             label.attrs.addcls = 'mdc-text-field--invalid'
-            helper = MDCTextFieldHelperText(
-                '. '.join(errors),
-                id=helper_id,
-                help_text=help_text,
-                addcls='mdc-text-field-helper-text--validation-msg',
-            )
-        elif help_text:
-            helper = MDCTextFieldHelperText(
-                help_text,
-                id=helper_id,
-            )
+            errors = MDCErrorList(*errors, id=helper_id)
         else:
-            helper = ''
+            errors = ''
 
-        if helper:
-            helper = MDCTextFieldHelperLine(helper)
+        if help_text:
             label.attrs.aria_describedby = helper_id
             label.attrs.aria_controls = helper_id
+            help_text = MDCHelpText(help_text, id=helper_id if not errors else '')
+        else:
+            help_text = ''
 
-        super().__init__(label, helper)
+        super().__init__(label, errors, help_text)
 
 
 class MDCTextareaFieldOutlined(Label):
@@ -375,6 +380,33 @@ class MDCSnackBar(Div):
         )
 
 
+class MDCErrorListItem(Li):
+    style = dict(list_style_type='none')
+
+
+class MDCErrorList(Ul):
+    style = dict(
+        padding_left='16px',
+        margin_top=0,
+        margin_bottom=0,
+        font_size='var(--mdc-typography-caption-font-size, 0.75rem)',
+        color='var(--mdc-theme-error, #b00020)',
+    )
+    def __init__(self, *content, **attrs):
+        super().__init__(*[
+            MDCErrorListItem(c) if isinstance(c, str) else c
+            for c in content
+        ], **attrs)
+
+
+class MDCHelpText(Div):
+    style = dict(
+        font_size='var(--mdc-typography-caption-font-size, 0.75rem)',
+        color='rgba(0, 0, 0, 0.6)',
+        padding_left='16px',
+    )
+
+
 class MDCCheckboxInput(Div):
     """The actual input HTML element (widget)."""
     def __init__(self, **kwargs):
@@ -400,15 +432,20 @@ class MDCCheckboxInput(Div):
         )
 
 
-class MDCCheckboxField(Div):
-    def __init__(self, *content, **kwargs):
-        if not content:
-            content = [MDCCheckboxInput(**kwargs)]
+class MDCCheckboxField(MDCField):
+    def __init__(self, *content, name, label=None, help_text=None, value=None,
+                 errors=None):
 
         super().__init__(
-            *content,
-            Label(kwargs.get('label', kwargs.get('name'))),
-            cls='mdc-form-field',
+            Div(
+                *content,
+                Label(label or name.capitalize()),
+                cls='mdc-form-field',
+            ),
+            name=name,
+            value=value,
+            errors=errors,
+            help_text=help_text,
         )
 
 

@@ -95,18 +95,15 @@ class ExampleFormViewComponent(html.Html):
 
 class ExampleForm(forms.Form):
     char = forms.CharField(
-        required=False,
         help_text='Non required example text input',
     )
     email = forms.EmailField(
         help_text='Valid email required',
     )
     boolean = forms.BooleanField(
-        required=False,
-        help_text='Non required boolean',
+        help_text='Required boolean!',
     )
     checkboxes = forms.MultipleChoiceField(
-        required=False,
         choices=(('a', 'a'), ('b', 'b')),
         widget=forms.CheckboxSelectMultiple,
         help_text='Required checkbox multiple',
