@@ -787,7 +787,7 @@ class MdcTextField(Label):
                 name=name,
                 value=value or '',
                 type='text',
-                aria_labelledby=f'{name}-label',
+                aria_labelledby=f'id_{name}-label',
                 cls='mdc-text-field__input',
                 **context,
             ),

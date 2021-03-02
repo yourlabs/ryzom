@@ -3,6 +3,7 @@ from ryzom_mdc import *
 
 
 def context_attrs(context, **extra):
+    # extract attrs from a widget context
     attrs = dict()
     attrs.update(context['widget']['attrs'])
     attrs.update(dict(
@@ -12,6 +13,22 @@ def context_attrs(context, **extra):
     ))
     attrs.update(extra)
     return attrs
+
+
+def widget_context(bf, attrs=None):
+    # copy of BoundField.as_widget() with get_context instead of widget.render()
+    widget = bf.field.widget
+    if bf.field.localize:
+        widget.is_localized = True
+    attrs = attrs or {}
+    attrs = bf.build_widget_attrs(attrs, widget)
+    if bf.auto_id and 'id' not in widget.attrs:
+        attrs.setdefault('id', bf.auto_id)
+    return widget.get_context(
+        name=bf.html_name,
+        value=bf.value(),
+        attrs=attrs,
+    )
 
 
 @template('django/forms/widgets/input.html')
@@ -29,15 +46,15 @@ class MDCInputWidget(Input):
 
     @classmethod
     def factory(cls, bf):
-        bf.field.widget.attrs['aria-labelledby'] = f'id_{bf.name}_label'
+        attrs = {'aria-labelledby': f'id_{bf.name}_label'}
 
         helper_id = f'id_{bf.name}_helper'
         if bf.errors or bf.help_text:
-            bf.field.widget.attrs['aria-controls'] = helper_id
-            bf.field.widget.attrs['aria-describedby'] = helper_id
+            attrs['aria-controls'] = helper_id
+            attrs['aria-describedby'] = helper_id
 
         return MDCFieldOutlined(
-            str(bf),
+            cls(**widget_context(bf, attrs)),
             name=bf.name,
             label=bf.label,
             value=bf.value(),
@@ -54,7 +71,7 @@ class MDCCheckboxWidget(MDCCheckboxInput):
 
     @classmethod
     def factory(cls, bf):
-        return MDCCheckboxField(str(bf), label=bf.label)
+        return MDCCheckboxField(cls(**widget_context(bf)), label=bf.label)
 
 
 @template('django/forms/widgets/checkbox_select.html')
@@ -102,7 +119,7 @@ class MultiWidget(CList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Label(bf.label), str(bf), cls='mdc-form-field')
+        return Div(Label(bf.label), cls(**widget_context((bf))), cls='mdc-form-field')
 
 
 @template('django/forms/widgets/splitdatetime.html')
@@ -129,4 +146,4 @@ class SplitDateTimeWidget(CList):
 
     @classmethod
     def factory(cls, bf):
-        return Div(Label(bf.label), str(bf))
+        return Div(Label(bf.label), cls(**widget_context((bf))))
