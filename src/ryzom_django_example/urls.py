@@ -2,6 +2,7 @@ from django import forms
 from django.urls import path
 from django.views import generic
 
+from ryzom.js.renderer import JS
 import ryzom_mdc as html
 
 
@@ -13,6 +14,7 @@ class ExampleDocument(html.Html):
     ]
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        'static/ryzom/js/py-builtins.js',
     ]
 
     def __init__(self, *content, **context):
@@ -26,6 +28,15 @@ class ExampleDocument(html.Html):
         ]
         scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
 
+        body = html.Body(
+            *content,
+            cls='mdc-typography',
+        )
+
+        scripts.append(html.Script(body.render_js_tree(), type='text/javascript'))
+
+        body.addchildren(scripts)
+
         super().__init__(
             html.Head(
                 html.Meta(charset='utf-8'),
@@ -36,11 +47,7 @@ class ExampleDocument(html.Html):
                 html.Title('Secure elections with homomorphic encryption'),
                 *links,
             ),
-            html.Body(
-                *content,
-                *scripts,
-                cls='mdc-typography',
-            ),
+            body
         )
 
 
@@ -79,7 +86,7 @@ class ExampleFormViewComponent(html.Html):
         content.append(
             html.Form(
                 html.CSRFInput(view.request),
-                form,
+                form.to_components(),
                 method="post",
             ),
         )
@@ -87,13 +94,22 @@ class ExampleFormViewComponent(html.Html):
 
 
 class ExampleForm(forms.Form):
-    char = forms.CharField(required=False)
-    email = forms.EmailField(required=False)
-    boolean = forms.BooleanField(required=False)
+    char = forms.CharField(
+        required=False,
+        help_text='Non required example text input',
+    )
+    email = forms.EmailField(
+        help_text='Valid email required',
+    )
+    boolean = forms.BooleanField(
+        required=False,
+        help_text='Non required boolean',
+    )
     checkboxes = forms.MultipleChoiceField(
         required=False,
         choices=(('a', 'a'), ('b', 'b')),
         widget=forms.CheckboxSelectMultiple,
+        help_text='Required checkbox multiple',
     )
     datetime = forms.SplitDateTimeField(
         required=False,
@@ -101,11 +117,19 @@ class ExampleForm(forms.Form):
             date_attrs=dict(type='date'),
             time_attrs=dict(type='time'),
         ),
+        help_text='Non required help text',
     )
 
     # Let's override the default rendering to add a submit button
     def to_components(self):
-        return html.Div(
+        class FormDiv(html.Div):
+            def render_js(self):
+                def setvar():
+                    setattr(window, 'toto', 'toto')
+
+                return JS(setvar)
+
+        return FormDiv(
             html.H3('Example form!'),
             super().to_components(),
             html.Div(

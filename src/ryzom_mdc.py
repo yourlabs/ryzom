@@ -1,6 +1,6 @@
 from django.middleware.csrf import get_token
 from ryzom.html import *
-from ryzom.py2js.decorator import JavaScript
+from ryzom.js.renderer import JS
 
 
 class MDCLink(A):
@@ -33,7 +33,7 @@ class MDCTextButton(Button):
 
 
 class MDCButtonOutlined(Button):
-    def __init__(self, text, p=True, icon=None):
+    def __init__(self, text, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
         content = [Span(cls='mdc-button__ripple')]
         if icon and isinstance(icon, str):
@@ -43,16 +43,14 @@ class MDCButtonOutlined(Button):
         content.append(Span(text, cls='mdc-button__label'))
         super().__init__(
             *content,
-            cls=f'mdc-button mdc-button--outlined {black}'
+            cls=f'mdc-button mdc-button--outlined {black}',
+            **kwargs
         )
 
 
 class MDCButton(Button):
-    def __init__(self, text, p=True, disabled=False, icon=None):
+    def __init__(self, text, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
-        attrs = {}
-        if disabled:
-            attrs['disabled'] = True
 
         if icon and isinstance(icon, str):
             content = [MDCIcon(icon)]
@@ -65,7 +63,7 @@ class MDCButton(Button):
         super().__init__(
             *content,
             cls=f'mdc-button mdc-button--raised {black}',
-            **attrs
+            **kwargs
         )
 
 
@@ -120,50 +118,67 @@ class MDCTextFieldFilled(Label):
 
 
 class MDCNotchOutline(Span):
-    def __init__(self, *content):
-        attrs = {'class': 'mdc-notched-outline'}
-        content = [
+    attrs = {'class': 'mdc-notched-outline'}
+
+    def __init__(self, *content, **attrs):
+        super().__init__(
             Span(cls='mdc-notched-outline__leading'),
             Span(
                 *content,
                 cls='mdc-notched-outline__notch',
             ),
             Span(cls='mdc-notched-outline__trailing'),
-        ]
-        super().__init__(*content, **attrs)
+            **attrs,
+        )
 
 
 class MDCFieldOutlined(Div):
-    def __init__(self, *content, **kwargs):
-        name = kwargs['name']
+    def __init__(self, *content, name, label=None, help_text=None, value=None,
+                 errors=None):
+
+        label = label or name.capitalize()
         input_id = f'id_{name}'
         label_id = f'id_{name}_label'
-        label = kwargs.pop('label', name.capitalize())
-        help_text = kwargs.pop('help_text', '')
-        super().__init__(
-            Label(
-                MDCNotchOutline(
-                    Span(
-                        label,
-                        id=label_id,
-                        cls='mdc-floating-label',
-                    ),
-                ),
-                *content,
-                cls='mdc-text-field mdc-text-field--outlined',
-                data_mdc_auto_init='MDCTextField',
-            ),
-            cls='form-group'
+        helper_id = f'id_{name}_helper'
+
+        floating_label = Span(label, id=label_id, cls='mdc-floating-label')
+        notch_outline = MDCNotchOutline(floating_label)
+        label = Label(
+            notch_outline,
+            *content,
+            id=label_id,
+            cls='mdc-text-field mdc-text-field--outlined',
+            data_mdc_auto_init='MDCTextField',
         )
 
-    def set_error(self, error):
-        helper = MDCTextFieldHelperLine(error, 'alert')
-        label = self.content[0]
-        label.attrs['class'] += ' mdc-text-field--invalid'
-        label.attrs['aria-describedby'] = helper._id
-        label.attrs['aria-controls'] = helper._id
+        if value not in ('', None):
+            # float label because there is a value
+            label.attrs.addcls = 'mdc-text-field--label-floating'
+            floating_label.attrs.addcls = 'mdc-floating-label--float-above'
+            notch_outline.attrs.addcls = 'mdc-notched-outline--notched'
 
-        self.content.append(helper)
+        if errors:
+            label.attrs.addcls = 'mdc-text-field--invalid'
+            helper = MDCTextFieldHelperText(
+                '. '.join(errors),
+                id=helper_id,
+                help_text=help_text,
+                addcls='mdc-text-field-helper-text--validation-msg',
+            )
+        elif help_text:
+            helper = MDCTextFieldHelperText(
+                help_text,
+                id=helper_id,
+            )
+        else:
+            helper = ''
+
+        if helper:
+            helper = MDCTextFieldHelperLine(helper)
+            label.attrs.aria_describedby = helper_id
+            label.attrs.aria_controls = helper_id
+
+        super().__init__(label, helper)
 
 
 class MDCTextareaFieldOutlined(Label):
@@ -239,7 +254,7 @@ class MDCFileInput(Div):
 
             document.querySelector(input_id).addEventListener('change', update_name)
 
-        return JavaScript(change_event, dict(
+        return JS(change_event, dict(
             input_id=f'#{self.input_id}',
             label_id=self.selected_text._id,
         ))
@@ -289,19 +304,19 @@ class MDCSplitDateTime(Div):
         self.content.append(helper)
 
 
-class MDCTextFieldHelperLine(Div):
-    attrs = {'aria-hidden': 'true'}
+class MDCTextFieldHelperText(Div):
+    attrs = {
+        'class': ' '.join([
+            'mdc-text-field-helper-text',
+            'mdc-text-field-helper-text--persitent',
+        ]),
+    }
 
-    def __init__(self, text, role, **kwargs):
-        super().__init__(
-            Div(
-                text,
-                cls='mdc-text-field-helper-text mdc-text-field-helper-text--persitent mdc-text-field-helper-text--validation-msg',
-                role=role,
-            ),
-            cls='mdc-text-field-helper-line',
-            **attrs
-        )
+class MDCTextFieldHelperLine(Div):
+    attrs = {
+        'aria-hidden': 'true',
+        'cls': 'mdc-text-field-helper-line',
+    }
 
 
 class MDCVerticalMargin(Div):
@@ -443,7 +458,7 @@ class MDCCheckboxListItem(Li):
             elem = getElementByUuid(id)
             setattr(elem, 'onclick', click_input)
 
-        return JavaScript(events, dict(id=self._id))
+        return JS(events, dict(id=self._id))
 
 
 class MDCMultipleChoicesCheckbox(Ul):
@@ -491,7 +506,7 @@ class MDCMultipleChoicesCheckbox(Ul):
 
             document.addEventListener('readystatechange', update_inputs)
 
-        return JavaScript(change_event, dict(id=self._id, max_choices=self.max))
+        return JS(change_event, dict(id=self._id, max_choices=self.max))
 
 
 class MdcTopAppBar(Component):
@@ -772,7 +787,7 @@ class MdcTextField(Label):
                 name=name,
                 value=value or '',
                 type='text',
-                aria_labelledby=f'{name}-label',
+                aria_labelledby=f'id_{name}-label',
                 cls='mdc-text-field__input',
                 **context,
             ),

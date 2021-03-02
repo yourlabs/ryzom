@@ -13,20 +13,28 @@ def form_to_components(form):
     # if form.hidden_errors():  # Local method.
     #     form.content.append(HiddenErrors(form.form))
 
+    fields = form.to_fields()
+
+    return html.CList(*fields.values())
+
+
+def form_to_fields(form):
+    fields = dict()
     for bf in form.visible_fields():
         try:
             component = html.templates[bf.field.widget.template_name]
         except KeyError:
-            content.append(html.MDCVerticalMargin(str(bf)))
+            fields[bf.name] = html.MDCVerticalMargin(str(bf))
         else:
-            content.append(html.MDCVerticalMargin(component.factory(bf)))
+            fields[bf.name] = html.MDCVerticalMargin(component.factory(bf))
 
-    return html.CList(*content)
+    return fields
 
 
 def form_to_html(form):
     return form.to_components().to_html()
 
 
-forms.Form.to_components = form_to_components
-forms.Form.to_html = form_to_html
+forms.BaseForm.to_fields = form_to_fields
+forms.BaseForm.to_components = form_to_components
+forms.BaseForm.to_html = form_to_html

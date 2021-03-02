@@ -1,7 +1,7 @@
-from ryzom.py2js import convert_py2js
+from ryzom.js import convert_py2js
 import inspect
 
-class JavaScript(object):
+class JS(object):
     """
     Decorator that you can use to convert methods to JavaScript.
 
@@ -78,4 +78,4 @@ class JavaScript(object):
         return self._js
 
     def __call__(self, *args, **kwargs):
-        return self._obj(*args, **kwargs)
+        return str(self._obj(*args, **kwargs))
