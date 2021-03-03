@@ -1,9 +1,8 @@
 <div  ryzom-id="">
 <h3  ryzom-id="">
 Example form!</h3>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
-<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_char_helper" aria-controls="id_char_helper" ryzom-id="">
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
+<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id="">
 <span class="mdc-notched-outline" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -14,19 +13,17 @@ Char</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input class="mdc-text-field__input" required id="id_char" name="char" type="text" aria-labelledby="id_char_label" aria-controls="id_char_helper" aria-describedby="id_char_helper" input-id="id_char" label-id="id_char_label" ryzom-id="">
+<input required id="id_char" name="char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" ryzom-id="">
 </label>
-<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_char_helper" ryzom-id="">
+<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_char_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
 This field is required.</li>
 </ul>
-<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="" ryzom-id="">
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_char_helper" ryzom-id="">
 Non required example text input</div>
 </div>
-</div>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
-<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_email_helper" aria-controls="id_email_helper" ryzom-id="">
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
+<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id="">
 <span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -37,18 +34,16 @@ Email</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input class="mdc-text-field__input" required id="id_email" name="email" value="foo@b.b" type="email" aria-labelledby="id_email_label" aria-controls="id_email_helper" aria-describedby="id_email_helper" input-id="id_email" label-id="id_email_label" ryzom-id="">
+<input required id="id_email" name="email" value="foo@b.b" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" ryzom-id="">
 </label>
-<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_email_helper" ryzom-id="">
+<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_email_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
 Enter a valid email address.</li>
 </ul>
-<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="" ryzom-id="">
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_email_helper" ryzom-id="">
 Valid email required</div>
 </div>
-</div>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
 <input class="mdc-checkbox__native-control" required id="id_boolean" name="boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" ryzom-id="">
@@ -64,23 +59,20 @@ Valid email required</div>
 <label  ryzom-id="">
 Boolean</label>
 </div>
-<ul style="padding-left: 10px; margin-top: -10px; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_boolean_helper" ryzom-id="">
+<ul style="padding-left: 10px; margin-top: -10px; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_boolean_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
 This field is required.</li>
 </ul>
-<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="" ryzom-id="">
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_boolean_helper" ryzom-id="">
 Required boolean!</div>
 </div>
-</div>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
 <label  ryzom-id="">
 Checkboxes</label>
 <div  ryzom-id="">
-<div  ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="checkboxes" value="a" label="a" index="0" attrs="{'id': 'id_checkboxes_0'}" type="checkbox" template-name="django/forms/widgets/checkbox_option.html" wrap-label input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
+<input class="mdc-checkbox__native-control" id="id_checkboxes_0" name="checkboxes" value="a" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
 <div class="mdc-checkbox__background" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id="">
@@ -91,13 +83,13 @@ Checkboxes</label>
 </div>
 </div>
 <label  ryzom-id="">
-Checkboxes</label>
+a</label>
 </div>
 </div>
 <div  ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="checkboxes" value="b" label="b" index="1" attrs="{'id': 'id_checkboxes_1'}" type="checkbox" template-name="django/forms/widgets/checkbox_option.html" wrap-label input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
+<input class="mdc-checkbox__native-control" id="id_checkboxes_1" name="checkboxes" value="b" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
 <div class="mdc-checkbox__background" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id="">
@@ -108,63 +100,57 @@ Checkboxes</label>
 </div>
 </div>
 <label  ryzom-id="">
-Checkboxes</label>
+b</label>
 </div>
 </div>
-</div>
-<ul style="padding-left: 10px; margin-top: -10px; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_checkboxes_helper" ryzom-id="">
+<ul style="padding-left: 10px; margin-top: -10px; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_checkboxes_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
 This field is required.</li>
 </ul>
-<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="" ryzom-id="">
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_checkboxes_helper" ryzom-id="">
 Required checkbox multiple</div>
 </div>
-</div>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
 <label  ryzom-id="">
 Datetime</label>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
-<label id="id_datetime_0_label" class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField" ryzom-id="">
-<span class="mdc-notched-outline" ryzom-id="">
+<div class="mdc-form-field" ryzom-id="">
+<div style="margin-top: 12px; margin-bottom: 0; margin-right: 12px" ryzom-id="">
+<label id="id_datetime_0_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating" data-mdc-auto-init="MDCTextField" ryzom-id="">
+<span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
 <span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_datetime_0_label" class="mdc-floating-label" ryzom-id="">
+<span id="id_datetime_0_label" class="mdc-floating-label mdc-floating-label--float-above" ryzom-id="">
 Date</span>
 </span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input class="mdc-text-field__input" name="datetime_0" value="11/11/2020" attrs="{'required': True, 'id': 'id_datetime_0'}" template-name="django/forms/widgets/date.html" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" ryzom-id="">
+<input required id="id_datetime_0" name="datetime_0" value="11/11/2020" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" class="mdc-text-field__input" aria-labelledby="id_datetime_0_label" ryzom-id="">
 </label>
 </div>
-</div>
-<div style="margin-top: 18px; margin-bottom: 18px" ryzom-id="">
-<div  ryzom-id="">
-<label id="id_datetime_1_label" class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField" ryzom-id="">
-<span class="mdc-notched-outline" ryzom-id="">
+<div style="margin-top: 12px; margin-bottom: 0" ryzom-id="">
+<label id="id_datetime_1_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating" data-mdc-auto-init="MDCTextField" ryzom-id="">
+<span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
 <span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_datetime_1_label" class="mdc-floating-label" ryzom-id="">
+<span id="id_datetime_1_label" class="mdc-floating-label mdc-floating-label--float-above" ryzom-id="">
 Time</span>
 </span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input class="mdc-text-field__input" name="datetime_1" value="aoeu" attrs="{'required': True, 'id': 'id_datetime_1'}" template-name="django/forms/widgets/time.html" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" ryzom-id="">
+<input required id="id_datetime_1" name="datetime_1" value="aoeu" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" class="mdc-text-field__input" aria-labelledby="id_datetime_1_label" ryzom-id="">
 </label>
 </div>
 </div>
-<ul style="padding-left: 10px; margin-top: -10px; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_datetime_helper" ryzom-id="">
+<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_datetime_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
 Enter a valid time.</li>
 </ul>
-<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="" ryzom-id="">
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_datetime_helper" ryzom-id="">
 Required help text</div>
-</div>
 </div>
 <div  ryzom-id="">
 <button class="mdc-button mdc-button--outlined black-button" ryzom-id="">

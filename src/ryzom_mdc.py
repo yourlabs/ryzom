@@ -128,48 +128,49 @@ class MDCNotchOutline(Span):
 
 
 class MDCField(Div):
+    VERTICAL_MARGIN = '32px'
+    style = f'margin-top: {VERTICAL_MARGIN}; margin_bottom: {VERTICAL_MARGIN}'
+
     def __init__(self, *content, name, label=None, help_text=None, value=None,
-                 errors=None):
+                 errors=None, **attrs):
         helper_id = f'id_{name}_helper'
+        errors_id = f'id_{name}_errors'
 
         if errors:
-            self.errors = MDCErrorList(*errors, id=helper_id)
+            self.errors = MDCErrorList(*errors, id=errors_id)
         else:
             self.errors = ''
 
         if help_text:
-            self.help_text = MDCHelpText(help_text, id=helper_id if not errors else '')
+            self.help_text = MDCHelpText(help_text, id=helper_id)
         else:
             self.help_text = ''
 
-        # compensate for widget margin
-        if self.errors:
-            self.errors.attrs.style.margin_top = '-10px'
-        elif self.help_text:
-            self.help_text.attrs.style.margin_top = '-10px'
-
-        super().__init__(*content, self.errors, self.help_text)
+        super().__init__(*content, self.errors, self.help_text, **attrs)
 
 
-class MDCFieldOutlined(Div):
-    def __init__(self, *content, name, label=None, help_text=None, value=None,
-                 errors=None):
+class MDCTextFieldOutlined(MDCField):
+    def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
+        html_input.attrs.addcls = 'mdc-text-field__input'
 
-        label = label or name.capitalize()
+        name = html_input.attrs.name
         input_id = f'id_{name}'
         label_id = f'id_{name}_label'
         helper_id = f'id_{name}_helper'
+        errors_id = f'id_{name}_errors'
 
         floating_label = Span(label, id=label_id, cls='mdc-floating-label')
         notch_outline = MDCNotchOutline(floating_label)
         label = Label(
             notch_outline,
-            *content,
+            html_input,
             id=label_id,
             cls='mdc-text-field mdc-text-field--outlined',
             data_mdc_auto_init='MDCTextField',
         )
+        html_input.attrs.aria_labelledby = label_id
 
+        value = html_input.attrs.get('value', '')
         if value not in ('', None):
             # float label because there is a value
             label.attrs.addcls = 'mdc-text-field--label-floating'
@@ -178,18 +179,15 @@ class MDCFieldOutlined(Div):
 
         if errors:
             label.attrs.addcls = 'mdc-text-field--invalid'
-            errors = MDCErrorList(*errors, id=helper_id)
-        else:
-            errors = ''
-
-        if help_text:
+            label.attrs.aria_describedby = errors_id
+            label.attrs.aria_controls = errors_id
+        elif help_text:
             label.attrs.aria_describedby = helper_id
             label.attrs.aria_controls = helper_id
-            help_text = MDCHelpText(help_text, id=helper_id if not errors else '')
-        else:
-            help_text = ''
 
-        super().__init__(label, errors, help_text)
+        super().__init__(label, name=name, label=label,
+                         help_text=help_text, value=value,
+                         errors=errors, **attrs)
 
 
 class MDCTextareaFieldOutlined(Label):
@@ -441,18 +439,40 @@ class MDCCheckboxInput(Div):
 class MDCCheckboxField(MDCField):
     def __init__(self, *content, name, label=None, help_text=None, value=None,
                  errors=None):
-
         super().__init__(
-            Div(
+            MDCFormField(
                 *content,
                 Label(label or name.capitalize()),
-                cls='mdc-form-field',
             ),
             name=name,
             value=value,
             errors=errors,
             help_text=help_text,
         )
+
+        # compensate for widget margin
+        if self.errors:
+            self.errors.attrs.style.margin_top = '-10px'
+        elif self.help_text:
+            self.help_text.attrs.style.margin_top = '-10px'
+
+
+class MDCCheckboxSelectField(MDCField):
+    def __init__(self, *content, name, label=None, help_text=None, value=None,
+                 errors=None):
+        super().__init__(
+            *content,
+            name=name,
+            value=value,
+            errors=errors,
+            help_text=help_text,
+        )
+
+        # compensate for widget margin
+        if self.errors:
+            self.errors.attrs.style.margin_top = '-10px'
+        elif self.help_text:
+            self.help_text.attrs.style.margin_top = '-10px'
 
 
 class MDCCheckboxListItem(Li):

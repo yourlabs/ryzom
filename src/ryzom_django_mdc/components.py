@@ -1,52 +1,6 @@
 from ryzom_django.html import *
 from ryzom_mdc import *
-
-
-def context_attrs(widget_context, extra=None):
-    # extract attrs from a widget context
-    attrs = dict()
-    attrs.update(widget_context['attrs'])
-    attrs.update(dict(
-        name=widget_context['name'],
-        value=widget_context['value'],
-        type=widget_context['type'],
-    ))
-    attrs.update(extra or {})
-    return attrs
-
-
-def boundfield_context(bf, attrs=None):
-    # copy of BoundField.as_widget() with get_context instead of widget.render()
-    widget = bf.field.widget
-    if bf.field.localize:
-        widget.is_localized = True
-    attrs = attrs or {}
-    attrs = bf.build_widget_attrs(attrs, widget)
-    if bf.auto_id and 'id' not in widget.attrs:
-        attrs.setdefault('id', bf.auto_id)
-    return widget.get_context(
-        name=bf.html_name,
-        value=bf.value(),
-        attrs=attrs,
-    )
-
-
-def widget_context(bf, attrs=None):
-    return boundfield_context(bf, attrs)['widget']
-
-
-def widget_attrs(bf, attrs=None):
-    return context_attrs(widget_context(bf), attrs)
-
-
-def field_kwargs(bf):
-    return dict(
-        name=bf.name,
-        label=bf.label,
-        value=bf.value(),
-        help_text=bf.help_text,
-        errors=bf.errors,
-    )
+from ryzom_django.forms import field_kwargs, context_attrs, widget_attrs, widget_context
 
 
 @template('django/forms/widgets/input.html')
@@ -55,70 +9,49 @@ def field_kwargs(bf):
 @template('django/forms/widgets/text.html')
 @template('django/forms/widgets/email.html')
 @template('django/forms/widgets/password.html')
-class MDCInputWidget(Input):
-    attrs = {'class': 'mdc-text-field__input'}
-
+class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod
-    def factory(cls, bf):
-        attrs = {'aria-labelledby': f'id_{bf.name}_label'}
-
-        helper_id = f'id_{bf.name}_helper'
-        if bf.errors or bf.help_text:
-            attrs['aria-controls'] = helper_id
-            attrs['aria-describedby'] = helper_id
-
-        return MDCFieldOutlined(
-            cls(**widget_attrs(bf, attrs)),
-            **field_kwargs(bf),
+    def from_boundfield(cls, bf):
+        return cls(
+            Input(**widget_attrs(bf)),
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.errors,
         )
 
 
 @template('django/forms/widgets/checkbox.html')
-class MDCCheckboxWidget(MDCCheckboxInput):
+class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
-    def factory(cls, bf):
-        return MDCCheckboxField(
-            cls(**widget_attrs(bf)),
+    def from_boundfield(cls, bf):
+        return cls(
+            MDCCheckboxInput(**widget_attrs(bf)),
             **field_kwargs(bf),
         )
 
 
 @template('django/forms/widgets/checkbox_select.html')
-class MDCCheckboxSelectMultipleWidget(Div):
-    def __init__(self, **context):
-        group_content = []
-        for group, options, index in context['optgroups']:
-            option_content = []
-            for option in options:
-                option_content.append(
-                    MDCCheckboxField(
-                        MDCCheckboxInput(**option),
-                        name=option['name'],
-                    )
-                    if option['wrap_label']
-                    else MDCTextInput(**option)
-                )
-            if group:
-                group_attrs = {}
-                if _id:
-                    group_attrs['id'] = f'{_id}_{index}'
-                group_content.append(
-                    Li(
-                       Text(group),
-                       Ul(*option_content, **group_attrs),
-                    )
-                )
-            else:
-                group_content.extend(
-                    option_content
-                )
-        super().__init__(*group_content)
-
+class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
     @classmethod
-    def factory(cls, bf):
-        return MDCField(
+    def from_boundfield(cls, bf):
+        context = widget_context(bf)
+        choices = []
+        for group, options, index in context['optgroups']:
+            if group is not None:
+                continue
+            choices += options
+
+        return cls(
             Label(bf.label),
-            cls(**widget_context(bf)),
+            *[
+                Div(
+                    MDCFormField(
+                        MDCCheckboxInput(**context_attrs(choice)),
+                        Label(choice['label'])
+                    )
+                )
+                for choice in choices
+            ],
             **field_kwargs(bf),
         )
 
@@ -132,7 +65,7 @@ class MultiWidget(CList):
         ])
 
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         return Div(
             Label(bf.label),
             cls(**widget_context((bf))),
@@ -141,31 +74,24 @@ class MultiWidget(CList):
 
 
 @template('django/forms/widgets/splitdatetime.html')
-class SplitDateTimeWidget(CList):
-    def __init__(self, **context):
-        date_widget = context['subwidgets'][0]
-        time_widget = context['subwidgets'][1]
-        super().__init__(
-            MDCVerticalMargin(
-                MDCFieldOutlined(
-                    templates[date_widget['template_name']](**date_widget),
-                    name=date_widget['name'],
-                    label='Date',
-                ),
-            ),
-            MDCVerticalMargin(
-                MDCFieldOutlined(
-                    templates[time_widget['template_name']](**time_widget),
-                    name=time_widget['name'],
-                    label='Time',
-                ),
-            ),
-        )
-
+class SplitDateTimeWidget(MDCField):
     @classmethod
-    def factory(cls, bf):
-        return MDCField(
+    def from_boundfield(cls, bf):
+        context = widget_context(bf)
+        style = 'margin-bottom: 0; margin-top: 12px'
+        return cls(
             Label(bf.label),
-            cls(**widget_context((bf))),
+            MDCFormField(
+                MDCTextFieldOutlined(
+                    Input(**context_attrs(context['subwidgets'][0])),
+                    label='Date',
+                    style='margin-right: 12px; ' + style,
+                ),
+                MDCTextFieldOutlined(
+                    Input(**context_attrs(context['subwidgets'][1])),
+                    label='Time',
+                    style=style,
+                ),
+            ),
             **field_kwargs(bf),
         )
