@@ -43,12 +43,13 @@ forms.BaseForm.to_html = form_to_html
 def context_attrs(widget_context, extra=None):
     # extract attrs from a widget context
     attrs = dict()
-    attrs.update(widget_context['attrs'])
     attrs.update(dict(
         name=widget_context['name'],
         value=widget_context['value'],
-        type=widget_context['type'],
     ))
+    attrs.update(widget_context['attrs'])
+    if 'type' in widget_context:
+        attrs['type'] = widget_context['type']
     attrs.update(extra or {})
     return attrs
 
