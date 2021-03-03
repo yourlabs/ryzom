@@ -1,5 +1,5 @@
 from django import forms
-import ryzom_mdc as html
+from ryzom import html
 
 
 def boundfield_to_component(bf):
@@ -29,7 +29,7 @@ def form_to_component(form):
     #     form.content.append(HiddenErrors(form.form))
 
     for bf in form.visible_fields():
-        content.append(html.MDCVerticalMargin(bf.to_component()))
+        content.append(bf.to_component())
 
     return html.CList(*content)
 forms.BaseForm.to_component = form_to_component
