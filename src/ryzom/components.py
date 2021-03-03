@@ -424,7 +424,7 @@ class Component(metaclass=ComponentMetaclass):
             js_str = js_str[0:-2]
             js_str += '();\n\n'
 
-        if hasattr(self, 'content'):
+        if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
             for c in self.content:
                 if isinstance(c, Component):
                     js_str += c.render_js_tree(lvl+1)
