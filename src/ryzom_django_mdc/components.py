@@ -9,6 +9,7 @@ from ryzom_django.forms import field_kwargs, context_attrs, widget_attrs, widget
 @template('django/forms/widgets/text.html')
 @template('django/forms/widgets/email.html')
 @template('django/forms/widgets/password.html')
+@template('django/forms/widgets/number.html')
 class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod
     def from_boundfield(cls, bf):
