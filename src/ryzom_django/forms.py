@@ -6,7 +6,7 @@ def boundfield_to_component(bf):
     try:
         template = html.templates[bf.field.widget.template_name]
     except KeyError:
-        return str(bf)
+        return html.Text(str(bf))
     else:
         return template.from_boundfield(bf)
 forms.BoundField.to_component = boundfield_to_component
