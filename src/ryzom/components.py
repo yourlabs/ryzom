@@ -240,7 +240,7 @@ class Component(metaclass=ComponentMetaclass):
             self.content = self.content[0]
         else:
             for i, c in enumerate(self.content):
-                if isinstance(c, str):
+                if isinstance(c, (str, float, int)):
                     self.content[i] = c = Text(c)
                 c.parent = self._id
                 c.position = i
