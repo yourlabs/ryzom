@@ -86,7 +86,7 @@ class ExampleFormViewComponent(html.Html):
         content.append(
             html.Form(
                 html.CSRFInput(view.request),
-                form.to_components(),
+                form,
                 method="post",
             ),
         )
@@ -117,7 +117,7 @@ class ExampleForm(forms.Form):
     )
 
     # Let's override the default rendering to add a submit button
-    def to_components(self):
+    def to_component(self):
         class FormDiv(html.Div):
             def render_js(self):
                 def setvar():
@@ -127,7 +127,7 @@ class ExampleForm(forms.Form):
 
         return FormDiv(
             html.H3('Example form!'),
-            super().to_components(),
+            super().to_component(),
             html.Div(
                 html.MDCButtonOutlined('Submit'),
             )
