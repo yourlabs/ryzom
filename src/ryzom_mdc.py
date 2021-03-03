@@ -151,9 +151,10 @@ class MDCField(Div):
 
 class MDCTextFieldOutlined(MDCField):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
-        html_input.attrs.addcls = 'mdc-text-field__input'
+        self.html_input = html_input
+        self.html_input.attrs.addcls = 'mdc-text-field__input'
 
-        name = html_input.attrs.name
+        name = self.html_input.attrs.name
         input_id = f'id_{name}'
         label_id = f'id_{name}_label'
         helper_id = f'id_{name}_helper'
@@ -161,70 +162,46 @@ class MDCTextFieldOutlined(MDCField):
 
         floating_label = Span(label, id=label_id, cls='mdc-floating-label')
         notch_outline = MDCNotchOutline(floating_label)
-        label = Label(
+        self.label = Label(
             notch_outline,
-            html_input,
+            self.html_input,
             id=label_id,
             cls='mdc-text-field mdc-text-field--outlined',
             data_mdc_auto_init='MDCTextField',
         )
-        html_input.attrs.aria_labelledby = label_id
+        self.html_input.attrs.aria_labelledby = label_id
 
-        value = html_input.attrs.get('value', '')
+        value = self.html_input.attrs.get('value', '')
         if value not in ('', None):
             # float label because there is a value
-            label.attrs.addcls = 'mdc-text-field--label-floating'
+            self.label.attrs.addcls = 'mdc-text-field--label-floating'
             floating_label.attrs.addcls = 'mdc-floating-label--float-above'
             notch_outline.attrs.addcls = 'mdc-notched-outline--notched'
 
         if errors:
-            label.attrs.addcls = 'mdc-text-field--invalid'
-            html_input.attrs.aria_describedby = errors_id
-            html_input.attrs.aria_controls = errors_id
+            self.label.attrs.addcls = 'mdc-text-field--invalid'
+            self.html_input.attrs.aria_describedby = errors_id
+            self.html_input.attrs.aria_controls = errors_id
         elif help_text:
-            html_input.attrs.aria_describedby = helper_id
-            html_input.attrs.aria_controls = helper_id
+            self.html_input.attrs.aria_describedby = helper_id
+            self.html_input.attrs.aria_controls = helper_id
 
-        super().__init__(label, name=name, label=label,
-                         help_text=help_text, value=value,
+        super().__init__(self.label, name=name,
+                         help_text=help_text,
                          errors=errors, **attrs)
 
 
-class MDCTextareaFieldOutlined(Label):
-    def __init__(self, value='', label='', input_id='', label_id='', **kwargs):
-        name = kwargs.get('name', '')
-        if not label:
-            label = name
-        if name and not input_id:
-            input_id = name + '_input'
-        if input_id and not label_id:
-            label_id = input_id + '_label'
-
-        if label:
-            label = Span(
-                Span(label, cls='mdc-floating-label', id=label_id),
-                cls='mdc-notched-outline__notch'),
-        else:
-            label = tuple()
-
+class MDCTextareaFieldOutlined(MDCTextFieldOutlined):
+    def __init__(self, textarea, label=None, help_text=None, errors=None):
         super().__init__(
-            Span(
-                Span(cls='mdc-notched-outline__leading'),
-                *label,
-                Span(cls='mdc-notched-outline__trailing'),
-                cls='mdc-notched-outline'
-            ),
-            Span(
-                Textarea(
-                    value,
-                    id=input_id,
-                    cls='mdc-text-field__input',
-                    **{'aria-labelledby': label_id},
-                    **kwargs),
-                cls='mdc-text-field__resizer'),
-            cls='mdc-text-field mdc-text-field--outlined mdc-text-field--textarea',
-            **{'data-mdc-auto-init': 'MDCTextField'}
+            textarea,
+            label=label,
+            help_text=help_text,
+            errors=errors,
         )
+        # decorate textarea with a resizer
+        self.label.content[1] = Span(textarea, cls='mdc-text-field__resizer')
+        self.label.attrs.addcls = 'mdc-text-field--textarea'
 
 
 class MDCFormField(Div):
@@ -445,7 +422,6 @@ class MDCCheckboxField(MDCField):
                 Label(label or name.capitalize()),
             ),
             name=name,
-            value=value,
             errors=errors,
             help_text=help_text,
         )
@@ -463,7 +439,6 @@ class MDCCheckboxSelectField(MDCField):
         super().__init__(
             *content,
             name=name,
-            value=value,
             errors=errors,
             help_text=help_text,
         )
