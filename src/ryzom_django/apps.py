@@ -8,8 +8,6 @@ class BaseConfig(AppConfig):
 
     def ready(self):
         autodiscover_modules('components')
-        # patch django Form and BoundField to be components
-        from ryzom_django import forms
         super().ready()
 
 
