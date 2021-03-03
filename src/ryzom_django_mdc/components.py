@@ -59,7 +59,7 @@ class MDCInputWidget(Input):
     attrs = {'class': 'mdc-text-field__input'}
 
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         attrs = {'aria-labelledby': f'id_{bf.name}_label'}
 
         helper_id = f'id_{bf.name}_helper'
@@ -76,7 +76,7 @@ class MDCInputWidget(Input):
 @template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxInput):
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         return MDCCheckboxField(
             cls(**widget_attrs(bf)),
             **field_kwargs(bf),
@@ -115,7 +115,7 @@ class MDCCheckboxSelectMultipleWidget(Div):
         super().__init__(*group_content)
 
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         return MDCField(
             Label(bf.label),
             cls(**widget_context(bf)),
@@ -132,7 +132,7 @@ class MultiWidget(CList):
         ])
 
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         return Div(
             Label(bf.label),
             cls(**widget_context((bf))),
@@ -163,7 +163,7 @@ class SplitDateTimeWidget(CList):
         )
 
     @classmethod
-    def factory(cls, bf):
+    def from_boundfield(cls, bf):
         return MDCField(
             Label(bf.label),
             cls(**widget_context((bf))),

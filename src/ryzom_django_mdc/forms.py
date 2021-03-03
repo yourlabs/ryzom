@@ -8,7 +8,7 @@ def boundfield_to_component(bf):
     except KeyError:
         return str(bf)
     else:
-        return template.factory(bf)
+        return template.from_boundfield(bf)
 forms.BoundField.to_component = boundfield_to_component
 
 
