@@ -2,7 +2,7 @@
 <h3  ryzom-id="">
 Example form!</h3>
 <div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
-<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id="">
+<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" ryzom-id="">
 <span class="mdc-notched-outline" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -13,7 +13,7 @@ Char</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_char" name="char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" ryzom-id="">
+<input name="char" required id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id="">
 </label>
 <ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_char_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
@@ -23,7 +23,7 @@ This field is required.</li>
 Non required example text input</div>
 </div>
 <div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
-<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id="">
+<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" ryzom-id="">
 <span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -34,7 +34,7 @@ Email</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_email" name="email" value="foo@b.b" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" ryzom-id="">
+<input name="email" value="foo@b.b" required id="id_email" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id="">
 </label>
 <ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_email_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">

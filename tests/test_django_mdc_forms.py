@@ -36,8 +36,8 @@ def assert_equals_fixture(name, result):
 @pytest.mark.parametrize(
     'field,value',
     [
-        (forms.CharField(label='L'), 'V'),
-        (forms.BooleanField(label='L'), True),
+        (forms.CharField(label='L', help_text='H'), 'V'),
+        (forms.BooleanField(label='L', help_text='H'), True),
         (forms.BooleanField(label='L'), False),
     ]
 )

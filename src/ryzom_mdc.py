@@ -179,11 +179,11 @@ class MDCTextFieldOutlined(MDCField):
 
         if errors:
             label.attrs.addcls = 'mdc-text-field--invalid'
-            label.attrs.aria_describedby = errors_id
-            label.attrs.aria_controls = errors_id
+            html_input.attrs.aria_describedby = errors_id
+            html_input.attrs.aria_controls = errors_id
         elif help_text:
-            label.attrs.aria_describedby = helper_id
-            label.attrs.aria_controls = helper_id
+            html_input.attrs.aria_describedby = helper_id
+            html_input.attrs.aria_controls = helper_id
 
         super().__init__(label, name=name, label=label,
                          help_text=help_text, value=value,
