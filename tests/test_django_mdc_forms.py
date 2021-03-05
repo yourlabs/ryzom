@@ -57,6 +57,7 @@ def test_form():
         email='foo@b.b',
         datetime_0='11/11/2020',
         datetime_1='aoeu',
+        textarea='example textarea value',
     )).to_html()
     assert_equals_fixture('test_form', result)
 
