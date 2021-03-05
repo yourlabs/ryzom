@@ -13,15 +13,14 @@ class Task(Li):
         super().__init__(*content, **attrs, _id=f'task_{task_object.id}')
 
 
-class TaskList(Ul):
+class TaskList(Ul, SubscriberMixin):
 
     publication = 'all_tasks'
 
     def __init__(self):
         super().__init__(**{'class': 'list-group'}, _id='tasklist')
 
-    @classmethod
-    def subscribe(cls, sub, qs, opts):
+    def get_queryset(cls, qs, opts):
         # handle data: filter, order, offset or limit as you wish
         return qs
 

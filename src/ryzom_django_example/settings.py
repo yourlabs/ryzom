@@ -5,6 +5,8 @@ SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
 ALLOWED_HOSTS = []
 INSTALLED_APPS = [
+    'channels',
+    'channels_redis',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,8 +58,19 @@ TEMPLATES = [
 ]
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
+WS_URLPATTERNS = ROOT_URLCONF
+SERVER_METHODS = []
 
-WSGI_APPLICATION = 'ryzom_django_example.wsgi.application'
+ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 DATABASES = {
     'default': {

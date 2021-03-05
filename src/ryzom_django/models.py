@@ -51,11 +51,16 @@ class Publication(models.Model):
     template_module = models.CharField(max_length=255)
     template_class = models.CharField(max_length=255)
 
+    def get_model(self):
+        return self._import(self.model_module, self.model_class)
 
-class Subscriber(models.Model):
-    parent_id = models.CharField(max_length=255, unique=True)
-    parent_module = models.CharField(max_length=255)
-    parent_class = models.CharField(max_length=255)
+    def get_template(self):
+        return self._import(
+                self.template_module,
+                self.template_class)
+
+    def _import(self, mod, cls):
+        return getattr(importlib.import_module(mod), cls)
 
 
 class Subscription(models.Model):
@@ -70,11 +75,13 @@ class Subscription(models.Model):
     by its content via ryzom.ddp send_insert.
     '''
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parent = models.CharField(max_length=255)
     client = models.ForeignKey(Clients, models.CASCADE, blank=True, null=True)
     publication = models.ForeignKey(Publication, models.CASCADE)
+    subscriber_module = models.CharField(max_length=255)
+    subscriber_class = models.CharField(max_length=255)
     queryset = ArrayField(models.IntegerField(), default=list)
     options = JSONField(blank=True, null=True)
+
 
     def init(self, opts):
         '''
@@ -85,24 +92,16 @@ class Subscription(models.Model):
         implemented
         '''
         from ryzom.ddp import send_insert
-        self.options = opts
-        self.save()
-        pub = self.publication
-        model_mod = importlib.import_module(pub.model_module)
-        model_cls = getattr(model_mod, pub.model_class)
-        tmpl_mod = importlib.import_module(pub.template_module)
-        tmpl_cls = getattr(tmpl_mod, pub.template_class)
-        func = getattr(model_cls, pub.name)
-        subscriber = Subscriber.objects.get(parent_id=self.parent)
-        sub_mod = importlib.import_module(subscriber.parent_module)
-        sub_cls = getattr(sub_mod, subscriber.parent_class)
-        qs = sub_cls.subscribe(self, func(), opts)
-        qs = func().aggregate(ids=ArrayAgg('id'))
-        self.queryset = qs['ids']
-        for _id in self.queryset:
-            send_insert(self, model_cls, tmpl_cls, _id)
 
-    def exec_query(self, model=None, opts=None):  # noqa: C901
+        self.get_queryset(opts)
+
+        model = self.publication.get_model()
+        template = self.publication.get_template()
+
+        for _id in self.queryset:
+            send_insert(self, model, template, _id)
+
+    def get_queryset(self, opts={}):  # noqa: C901
         '''
         This method computes the publication query and create/update the
         queryset for the current subscription.
@@ -112,18 +111,24 @@ class Subscription(models.Model):
         More will come with special variables and function. Such as an $add
         to replace that ugly tupple i'm using for now.. to be discussed
         '''
-        pub = self.publication
+        model = self.publication.get_model()
 
-        if opts:
-            self.options = opts
-            self.save()
-        if not model:
-            model_mod = importlib.import_module(pub.model_module)
-            model = getattr(model_mod, pub.model_class)
+        subscriber_mod = importlib.import_module(self.subscriber_module)
+        subscriber_class = getattr(sub_mod, self.subscriber_class)
 
-        func = getattr(model, pub.name)
-        subscriber = Subscriber.objects.get(parent_id=self.parent)
-        sub_mod = importlib.import_module(subscriber.parent_module)
-        sub_cls = getattr(sub_mod, subscriber.parent_class)
-        qs = sub_cls.subscribe(self, func(), self.options)
-        return qs
+        publish_fonction = getattr(model, pub.name)
+
+        queryset = publish_function(user)
+
+        try:
+            sub_get_queryset = getattr(subscriber_class, 'get_queryset')
+        except AttributeError:
+            pass
+        else:
+            queryset = sub_get_queryset(queryset, opts)
+
+        self.options = opts
+        self.queryset = queryset.aggregate(ids=ArrayAgg('id'))['id']
+        self.save()
+
+        return queryset

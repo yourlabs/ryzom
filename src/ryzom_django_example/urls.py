@@ -2,12 +2,55 @@ from django import forms
 from django.urls import path
 from django.views import generic
 
+from ryzom_django.html import template
+from ryzom_django.views import ReactiveMixin
 from ryzom.js.renderer import JS
 import ryzom_mdc as html
 
 
 class ExampleDocument(html.Html):
-    title = 'Secure elections with homomorphic encryption'
+    stylesheets = [
+        'https://fonts.googleapis.com/icon?family=Material+Icons',
+        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    ]
+    scripts = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        '/static/ryzom/js/py-builtins.js',
+    ]
+
+    def __init__(self, *content, **context):
+        links = [
+            html.Link(href=src, rel='stylesheet')
+            for src in self.stylesheets
+        ]
+        scripts = [
+            html.Script(src=src, type='text/javascript')
+            for src in self.scripts
+        ]
+        scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
+
+        body = html.Body(
+            *content,
+            cls='mdc-typography',
+        )
+
+        scripts.append(html.Script(body.render_js_tree(), type='text/javascript'))
+
+        body.addchildren(scripts)
+
+        super().__init__(
+            html.Head(
+                html.Meta(charset='utf-8'),
+                html.Meta(
+                    name='viewport',
+                    content='width=device-width, initial-scale=1.0',
+                ),
+                html.Title('Secure elections with homomorphic encryption'),
+                *links,
+            ),
+            body
+        )
 
 
 # Serves to demonstrate template composition based on multi level nesting
@@ -48,6 +91,7 @@ class ExampleFormViewComponent(html.Div):
             html.Form(
                 html.CSRFInput(view.request),
                 form,
+                html.MDCButton('submit'),
                 method="post",
             ),
         )
@@ -81,23 +125,6 @@ class ExampleForm(forms.Form):
         help_text='This is the help text'
     )
 
-    # Let's override the default rendering to add a submit button
-    def to_component(self):
-        class FormDiv(html.Div):
-            def render_js(self):
-                def setvar():
-                    setattr(window, 'toto', 'toto')
-
-                return JS(setvar)
-
-        return FormDiv(
-            html.H3('Example form!'),
-            super().to_component(),
-            html.Div(
-                html.MDCButtonOutlined('Submit'),
-            )
-        )
-
 
 # Finally, a Django FormView, there's nothing to see here because of how well
 # Ryzom integrates with Django. Of course you're free to make views that do
@@ -114,6 +141,47 @@ class ExampleFormView(generic.FormView):
         return super().get(self.request)
 
 
+@template('base_view')
+class Home(html.Html):
+    scripts = [
+        '/static/ryzom/js/py-builtins.js',
+        '/static/ryzom/js/ryzom.js',
+    ]
+
+    def __init__(self, *content, view, **context):
+        body = html.Body(
+            html.H1('Test'),
+            html.A('test forms', href='form/'),
+        )
+
+        scripts = [
+            html.Script(src=src, type='text/javascript')
+            for src in self.scripts
+        ] + [
+            html.Script(body.render_js_tree(), type='text/javascript'),
+            html.Script(view.get_token(), type='text/javascript')
+        ]
+
+        body.addchildren(scripts)
+
+        super().__init__(
+            html.Head(
+                html.Meta(charset='utf-8'),
+                html.Meta(
+                    name='viewport',
+                    content='width=device-width, initial-scale=1.0',
+                ),
+                html.Title('Ryzom Example'),
+            ),
+            body
+        )
+
+
+class ExampleView(ReactiveMixin, generic.TemplateView):
+    template_name = 'base_view'
+
+
 urlpatterns = [
-    path('', ExampleFormView.as_view())
+    path('', ExampleView.as_view()),
+    path('form/', ExampleFormView.as_view())
 ]

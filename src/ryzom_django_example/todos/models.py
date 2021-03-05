@@ -17,11 +17,11 @@ class Task(Publishable, models.Model):
         return self.about
 
     @publish('todos.components.task.Task')
-    def all_tasks(cls):
+    def all_tasks(cls, user):
         return cls.objects.all()
 
     @publish('todos.components.task.Task')
-    def first_tasks(cls):
+    def first_tasks(cls, user):
         return cls.objects.all().order_by('about')[0:5]
 
 

@@ -2,18 +2,18 @@
 Defines the ryzom View class and the main index view
 '''
 from django import http
-from django.contrib.staticfiles import finders
+from ryzom.components import Component
+from ryzom_django.models import Subscription, Publication, Clients
 
-from ryzom.components import Component, Script
-from ryzom.models import Subscription, Publication, Clients
 
-ryzom_js_file = finders.find('ryzom/js/ryzom.js')
-ryzom_js_fd = open(ryzom_js_file, 'r')
-ryzom_js = f'{ryzom_js_fd.read()}\n'
+class ReactiveMixin:
+    def get_token(self):
+        import ipdb; ipdb.set_trace()
+        print(self.request)
+        return ''
 
-py2js_js_file = finders.find('ryzom/js/py-builtins.js')
-py2js_js_fd = open(py2js_js_file, 'r')
-py2js_js = f'{py2js_js_fd.read()}\n'
+    def update(self, component_id, *content, **context):
+        pass
 
 
 class View:

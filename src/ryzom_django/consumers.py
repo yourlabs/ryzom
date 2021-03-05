@@ -14,8 +14,8 @@ from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
+from ryzom_django.models import Clients, Subscription, Publication
 from ryzom.methods import Methods
-from ryzom.models import Clients, Subscription, Publication
 from ryzom.request import Request
 
 
@@ -24,7 +24,7 @@ class Consumer(JsonWebsocketConsumer):
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
     ddp_urlpatterns = importlib.import_module(
-        settings.DDP_URLPATTERNS).urlpatterns
+        settings.WS_URLPATTERNS).urlpatterns
 
     '''
     Import all user defined server methods
