@@ -51,7 +51,12 @@ def test_widget_rendering(field, value):
     )
 
 
-def test_form():
+def test_form_get():
+    result = ExampleForm().to_html()
+    assert_equals_fixture('test_form_get', result)
+
+
+def test_form_post():
     result = ExampleForm(dict(
         char='',
         email='foo@b.b',
@@ -59,7 +64,7 @@ def test_form():
         datetime_1='aoeu',
         textarea='example textarea value',
     )).to_html()
-    assert_equals_fixture('test_form', result)
+    assert_equals_fixture('test_form_post', result)
 
 
 def test_form_to_component_override():

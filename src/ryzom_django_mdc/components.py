@@ -104,7 +104,7 @@ class TextareaWidget(MDCTextareaFieldOutlined):
         attrs = widget_attrs(bf)
         return cls(
             Textarea(
-                attrs.pop('value'),
+                attrs.pop('value', '') or '',
                 aria_labelledby=f'id_{bf.html_name}_label',
                 **attrs,
             ),
