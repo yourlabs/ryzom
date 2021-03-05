@@ -240,7 +240,11 @@ class Component(metaclass=ComponentMetaclass):
             self.content = self.content[0]
         else:
             for i, c in enumerate(self.content):
-                if isinstance(c, str):
+                if c is None:
+                    del self.content[i]
+                    i -= 1
+                    continue
+                if isinstance(c, (str, float, int)):
                     self.content[i] = c = Text(c)
                 c.parent = self._id
                 c.position = i
@@ -420,14 +424,14 @@ class Component(metaclass=ComponentMetaclass):
     def render_js_tree(self, lvl=0):
         js_str = str(self.render_js())
 
-        if hasattr(self, 'content'):
+        if js_str:
+            js_str = js_str[0:-2]
+            js_str += '();\n\n'
+
+        if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
             for c in self.content:
                 if isinstance(c, Component):
                     js_str += c.render_js_tree(lvl+1)
-
-        if js_str and not lvl:
-            js_str = js_str[0:-2]
-            js_str += '();'
 
         return js_str
 

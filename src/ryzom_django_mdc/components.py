@@ -9,6 +9,7 @@ from ryzom_django.forms import field_kwargs, context_attrs, widget_attrs, widget
 @template('django/forms/widgets/text.html')
 @template('django/forms/widgets/email.html')
 @template('django/forms/widgets/password.html')
+@template('django/forms/widgets/number.html')
 class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod
     def from_boundfield(cls, bf):
@@ -75,22 +76,24 @@ class MultiWidget(CList):
 
 @template('django/forms/widgets/splitdatetime.html')
 class SplitDateTimeWidget(MDCField):
+    time_style = 'margin-bottom: 0; margin-top: 12px'
+    date_style = 'margin-right: 12px; ' + time_style
+
     @classmethod
     def from_boundfield(cls, bf):
         context = widget_context(bf)
-        style = 'margin-bottom: 0; margin-top: 12px'
         return cls(
             Label(bf.label),
             MDCFormField(
                 MDCTextFieldOutlined(
                     Input(**context_attrs(context['subwidgets'][0])),
                     label='Date',
-                    style='margin-right: 12px; ' + style,
+                    style=cls.date_style
                 ),
                 MDCTextFieldOutlined(
                     Input(**context_attrs(context['subwidgets'][1])),
                     label='Time',
-                    style=style,
+                    style=cls.time_style,
                 ),
             ),
             **field_kwargs(bf),
