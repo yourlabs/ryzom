@@ -2,7 +2,7 @@
 <h3  ryzom-id="">
 Example form!</h3>
 <div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
-<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id="">
+<label id="id_char_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" ryzom-id="">
 <span class="mdc-notched-outline" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -13,7 +13,7 @@ Char</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_char" name="char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" ryzom-id="">
+<input name="char" required id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id="">
 </label>
 <ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_char_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
@@ -23,7 +23,7 @@ This field is required.</li>
 Non required example text input</div>
 </div>
 <div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
-<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id="">
+<label id="id_email_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" ryzom-id="">
 <span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id="">
 </span>
@@ -34,7 +34,7 @@ Email</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_email" name="email" value="foo@b.b" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" ryzom-id="">
+<input name="email" value="foo@b.b" required id="id_email" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id="">
 </label>
 <ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_email_errors" ryzom-id="">
 <li style="list-style-type: none" ryzom-id="">
@@ -46,7 +46,7 @@ Valid email required</div>
 <div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" required id="id_boolean" name="boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="boolean" required id="id_boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" ryzom-id="">
 <div class="mdc-checkbox__background" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id="">
@@ -72,7 +72,7 @@ Checkboxes</label>
 <div  ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" id="id_checkboxes_0" name="checkboxes" value="a" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="checkboxes" value="a" id="id_checkboxes_0" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
 <div class="mdc-checkbox__background" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id="">
@@ -89,7 +89,7 @@ a</label>
 <div  ryzom-id="">
 <div class="mdc-form-field" ryzom-id="">
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" id="id_checkboxes_1" name="checkboxes" value="b" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="checkboxes" value="b" id="id_checkboxes_1" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" ryzom-id="">
 <div class="mdc-checkbox__background" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id="">
@@ -126,7 +126,7 @@ Date</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_datetime_0" name="datetime_0" value="11/11/2020" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" class="mdc-text-field__input" aria-labelledby="id_datetime_0_label" ryzom-id="">
+<input name="datetime_0" value="11/11/2020" required id="id_datetime_0" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" class="mdc-text-field__input" aria-labelledby="id_datetime_0_label" ryzom-id="">
 </label>
 </div>
 <div style="margin-top: 12px; margin-bottom: 0" ryzom-id="">
@@ -141,7 +141,7 @@ Time</span>
 <span class="mdc-notched-outline__trailing" ryzom-id="">
 </span>
 </span>
-<input required id="id_datetime_1" name="datetime_1" value="aoeu" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" class="mdc-text-field__input" aria-labelledby="id_datetime_1_label" ryzom-id="">
+<input name="datetime_1" value="aoeu" required id="id_datetime_1" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" class="mdc-text-field__input" aria-labelledby="id_datetime_1_label" ryzom-id="">
 </label>
 </div>
 </div>
@@ -151,6 +151,30 @@ Enter a valid time.</li>
 </ul>
 <div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_datetime_helper" ryzom-id="">
 Required help text</div>
+</div>
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
+<label id="id_textarea_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid mdc-text-field--textarea" data-mdc-auto-init="MDCTextField" ryzom-id="">
+<span class="mdc-notched-outline" ryzom-id="">
+<span class="mdc-notched-outline__leading" ryzom-id="">
+</span>
+<span class="mdc-notched-outline__notch" ryzom-id="">
+<span id="id_textarea_label" class="mdc-floating-label" ryzom-id="">
+Textarea</span>
+</span>
+<span class="mdc-notched-outline__trailing" ryzom-id="">
+</span>
+</span>
+<span class="mdc-text-field__resizer" ryzom-id="">
+<textarea aria-labelledby="id_textarea_label" name="textarea" cols="40" rows="10" required id="id_textarea" class="mdc-text-field__input" aria-describedby="id_textarea_errors" aria-controls="id_textarea_errors" ryzom-id="">
+</textarea>
+</span>
+</label>
+<ul style="padding-left: 10px; margin-top: 0; margin-bottom: 0; font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: var(--mdc-theme-error, #b00020)" id="id_textarea_errors" ryzom-id="">
+<li style="list-style-type: none" ryzom-id="">
+This field is required.</li>
+</ul>
+<div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_textarea_helper" ryzom-id="">
+This is the help text</div>
 </div>
 <div  ryzom-id="">
 <button class="mdc-button mdc-button--outlined black-button" ryzom-id="">

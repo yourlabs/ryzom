@@ -95,3 +95,18 @@ class SplitDateTimeWidget(MDCField):
             ),
             **field_kwargs(bf),
         )
+
+
+@template('django/forms/widgets/textarea.html')
+class TextareaWidget(MDCTextareaFieldOutlined):
+    @classmethod
+    def from_boundfield(cls, bf):
+        return cls(
+            Textarea(
+                aria_labelledby=f'id_{bf.html_name}_label',
+                **widget_attrs(bf)
+            ),
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.errors,
+        )

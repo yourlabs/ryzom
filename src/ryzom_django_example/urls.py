@@ -115,6 +115,10 @@ class ExampleForm(forms.Form):
         ),
         help_text='Required help text',
     )
+    textarea = forms.CharField(
+        widget=forms.Textarea,
+        help_text='This is the help text'
+    )
 
     # Let's override the default rendering to add a submit button
     def to_component(self):
