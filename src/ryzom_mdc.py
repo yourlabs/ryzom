@@ -149,6 +149,43 @@ class MDCField(Div):
         super().__init__(*content, self.errors, self.help_text, **attrs)
 
 
+class MDCFileField(MDCField):
+    def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
+        self.html_input = html_input
+
+        name = self.html_input.attrs.name
+        self.html_input.attrs.style.opacity = 0
+        self.html_input.attrs.style.height = '1px'
+        self.label = Label(
+            label,
+            self.html_input,
+            MDCButtonOutlined('Browse', tag='span'),
+            id=f'id_{name}_label',
+        )
+        super().__init__(self.label, name=name,
+                         help_text=help_text,
+                         errors=errors, **attrs)
+
+    def render_js(self):
+        def change_event():
+            def update_name(event):
+                file_name = document.getElementById(input_id).value
+                label = document.getElementById(label_id)
+
+                if file_name != '':
+                    setattr(label, 'innerText', file_name)
+                else:
+                    setattr(label, 'innerText', 'No file selected')
+
+            document.getElementById(input_id).addEventListener('change', update_name)
+            console.log('hi')
+
+        return JS(change_event, dict(
+            input_id=self.html_input.attrs.id,
+            label_id=self.label.attrs.id,
+        ))
+
+
 class MDCTextFieldOutlined(MDCField):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
         self.html_input = html_input

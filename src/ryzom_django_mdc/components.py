@@ -110,3 +110,18 @@ class TextareaWidget(MDCTextareaFieldOutlined):
             help_text=bf.help_text,
             errors=bf.errors,
         )
+
+
+@template('django/forms/widgets/clearable_file_input.html')
+class FileWidget(MDCFileField):
+    @classmethod
+    def from_boundfield(cls, bf):
+        return cls(
+            Input(
+                aria_labelledby=f'id_{bf.html_name}_label',
+                **widget_attrs(bf)
+            ),
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.errors,
+        )

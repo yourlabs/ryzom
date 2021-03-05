@@ -94,6 +94,10 @@ class ExampleFormViewComponent(html.Html):
 
 
 class ExampleForm(forms.Form):
+    filefield = forms.FileField(
+        required=False,
+        help_text='This is the help text for filefield',
+    )
     char = forms.CharField(
         help_text='Non required example text input',
     )
