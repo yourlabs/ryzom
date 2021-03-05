@@ -101,10 +101,12 @@ class SplitDateTimeWidget(MDCField):
 class TextareaWidget(MDCTextareaFieldOutlined):
     @classmethod
     def from_boundfield(cls, bf):
+        attrs = widget_attrs(bf)
         return cls(
             Textarea(
+                attrs.pop('value'),
                 aria_labelledby=f'id_{bf.html_name}_label',
-                **widget_attrs(bf)
+                **attrs,
             ),
             label=bf.label,
             help_text=bf.help_text,
