@@ -76,8 +76,8 @@ class MultiWidget(CList):
 
 @template('django/forms/widgets/splitdatetime.html')
 class SplitDateTimeWidget(MDCField):
-    date_style = 'margin: 12px 12px 0 0;'
-    time_style = 'margin: 12px 0 0 0;'
+    time_style = 'margin-bottom: 0; margin-top: 12px'
+    date_style = 'margin-right: 12px; ' + time_style
 
     @classmethod
     def from_boundfield(cls, bf):
