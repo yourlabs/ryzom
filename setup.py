@@ -22,10 +22,10 @@ setup(
     extras_require=dict(
         django=[
             'django',
-        ],
-        dev=[
             'channels',
             'channels-redis',
+        ],
+        dev=[
             'lxml',
         ],
         test=[
