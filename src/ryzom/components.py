@@ -8,6 +8,8 @@ import importlib
 import re
 import uuid
 
+from .js.renderer import autoexec
+
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -256,7 +258,7 @@ class Component(metaclass=ComponentMetaclass):
                     continue
                 if isinstance(c, (str, float, int)):
                     self.content[i] = c = Text(c)
-                c.parent = self._id
+                c.parent = self
                 c.position = i
 
     def addchild(self, component):
@@ -308,47 +310,31 @@ class Component(metaclass=ComponentMetaclass):
 
         :returns: A serializable representation of the instance
         '''
-        sub = None
-        if self.publication:
-            from ..models import Subscriber, Subscription, Publication
-            pub = Publication.objects.get(name=self.publication)
-            Subscriber.objects.get_or_create(
-                parent_id=self._id,
-                parent_module=self.__module__,
-                parent_class=self.__class__.__name__
-            )
-            model_mod = importlib.import_module(pub.model_module)
-            model = getattr(model_mod, pub.model_class)
-            func = getattr(model, pub.name)
-            qs = self.subscribe(None, func(), None)
-            self.content = []
-            tmpl_module = importlib.import_module(pub.template_module)
-            tmpl_class = getattr(tmpl_module, pub.template_class)
-            for c in qs:
-                self.content.append(tmpl_class(c))
+        if self.tag == 'text':
+            content = self.content
+        else:
+            content = []
+            for c in self.content:
+                if not c:
+                    continue
+                if isinstance(c, (int, float, str)):
+                    content.append(c)
+                else:
+                    content.append(c.to_obj())
 
-            from django.contrib.postgres.aggregates import ArrayAgg
-            sub = Subscription.objects.create(
-                parent=self._id,
-                publication=pub,
-                queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
-                options=None,
-                client=None
-            )
+        if isinstance(self.parent, str):
+            parent_id = self.parent
+        else:
+            parent_id = self.parent._id
 
         return {
             '_id': self._id,
             'tag': self.tag,
-            'content': [
-                c if isinstance(c, str) else c.to_obj()
-                for c in self.content
-            ] if self.tag != 'text' else self.content,
-            'parent': self.parent,
+            'content': content,
+            'parent': parent_id,
             'position': self.position,
             'events': self.events,
-            'attrs': self.attrs,
-            'publication': self.publication,
-            'subscription': f"{sub.id}" if sub else None
+            'attrs': self.attrs
         }
 
     @property
@@ -370,8 +356,7 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-            if self.publication:
-                self.create_subscription(kwargs)
+            self.setup_reactive()
             for c in self.content:
                 html += (
                     c.to_html(**kwargs)
@@ -379,54 +364,27 @@ class Component(metaclass=ComponentMetaclass):
                 )
             html += f'</{self.tag}>'
 
-        js_str = str(self.render_js())
-        if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();'
-            #context.scripts += js_str
 
         return html
 
-    def create_subscription(self, context=None):
-        from ..models import Subscriber, Subscription, Publication
-        pub = Publication.objects.get(name=self.publication)
-        if getattr(self, 'subscription', None):
-            return
-        else:
-            sub = Subscription.objects.filter(
-                client=context.request.client,
-                publication=pub,
-                parent=self._id
-            ).first()
-            if sub:
-                self.subscription = sub
-                return
-        Subscriber.objects.get_or_create(
-            parent_id=self._id,
-            parent_module=self.__module__,
-            parent_class=self.__class__.__name__
-        )
-        model_mod = importlib.import_module(pub.model_module)
-        model = getattr(model_mod, pub.model_class)
-        func = getattr(model, pub.name)
-        qs = self.subscribe(None, func(), None)
-        self.content = []
-        tmpl_module = importlib.import_module(pub.template_module)
-        tmpl_class = getattr(tmpl_module, pub.template_class)
-        for c in qs:
-            self.content.append(tmpl_class(c))
+    def setup_reactive(self):
+        if isinstance(self, ReactiveComponent):
+            if not hasattr(self, 'view') or self.view is None:
+                parent = self.parent or self
+                while parent and parent.parent:
+                    if hasattr(parent, 'view'):
+                        break
+                    parent = parent.parent
+                self.view = parent.view
 
-        from django.contrib.postgres.aggregates import ArrayAgg
-        self.subscription = Subscription.objects.create(
-            parent=self._id,
-            publication=pub,
-            queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
-            options=None,
-            client=context.request.client
-        )
+            if hasattr(self, 'publication'):
+                self.create_subscription()
 
     def render(self, **kwargs):
-        return self.to_html(**kwargs)
+        if 'view' in kwargs:
+            self.view = kwargs['view']
+
+        return self.to_html()
 
     def render_js(self):
         return ''
@@ -435,8 +393,7 @@ class Component(metaclass=ComponentMetaclass):
         js_str = str(self.render_js())
 
         if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();\n\n'
+            js_str = autoexec(js_str)
 
         if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
             for c in self.content:
@@ -465,6 +422,48 @@ class Component(metaclass=ComponentMetaclass):
                     self.visit(component, level+1)
 
 
+class ReactiveComponent:
+    view = None
+
+    def create_subscription(self):
+        from ryzom_django.models import Subscription, Publication
+        from django.contrib.postgres.aggregates import ArrayAgg
+
+        if self.view is None:
+            raise AttributeError('The current view cannot be found')
+
+        if not hasattr(self.view, 'client'):
+            raise AttributeError(
+                'The current view has no attribute "client".'
+                ' Maybe you forgot to call view.get_token()'
+                ' in your main component?')
+
+        opts = {}
+        if hasattr(self, 'subcscribe_options'):
+            opts = self.subscribe_options
+
+        publication = Publication.objects.get(name=self.publication)
+        subscription = Subscription.objects.create(
+            client=self.view.client,
+            publication=publication,
+            subscriber_id=self._id,
+            subscriber_module=self.__module__,
+            subscriber_class=self.__class__.__name__,
+            options=opts,
+        )
+
+        self.get_content(publication, subscription)
+
+    def get_content(self, publication, subscription):
+        template = publication.get_template()
+
+        content = []
+        for obj in subscription.get_queryset():
+            content.append(template(obj))
+
+        self.content = content
+
+
 class CTree(Component):
     def __init__(self, *components):
         self.components = components
@@ -483,12 +482,6 @@ class CList(Component):
         html_str = ''
         for c in self.content:
             html_str += c.to_html(**kwargs)
-
-        js_str = str(self.render_js())
-        if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();'
-            context.scripts += js_str
 
         return html_str
 

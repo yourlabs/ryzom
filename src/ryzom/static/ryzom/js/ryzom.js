@@ -21,7 +21,7 @@
     window.components['head'] = document.getElementsByTagName('head')[0];
     window.components['body'] = document.getElementsByTagName('body')[0];
 
-    setRoutes();
+    // setRoutes();
   }
 
   setRoutes = function() {
@@ -113,7 +113,7 @@
       parent.insertBefore(elem, prev);
     });
 
-    setRoutes();
+    //setRoutes();
   };
 
   removeDOM = function(params) {
@@ -131,6 +131,7 @@
     parent.insertBefore(cur_node, prev_node)
   };
 
+  /*
   pushState = function(url, q) {
     path = url;
     if (q && q.length)
@@ -175,6 +176,7 @@
       history.back()
     }
   };
+  */
 
   init = function() {
     if (window.onwsready_cb) {
@@ -182,7 +184,7 @@
         cb();
       });
     }
-    pushState(current_url, query_string);
+    //pushState(current_url, query_string);
     initialized = true;
   };
 
@@ -219,7 +221,7 @@
 
     ws.onclose = function(e) {
       setTimeout(function() {
-        ws_connect(true);
+        ws_connect();
       }, 1000);
     };
 

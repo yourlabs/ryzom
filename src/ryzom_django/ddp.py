@@ -27,7 +27,7 @@ def send_insert(sub, model, tmpl, _id):
         return
 
     tmpl_instance = tmpl(model.objects.get(id=_id))
-    tmpl_instance.parent = sub.parent
+    tmpl_instance.parent = sub.subscriber_id
     tmpl_instance.position = sub.queryset.index(_id)
     data = {
         'type': 'handle.ddp',
@@ -58,7 +58,7 @@ def send_change(sub, model, tmpl, _id):
     :param int _id: The id of the model to change
     '''
     tmpl_instance = tmpl(model.objects.get(id=_id))
-    tmpl_instance.parent = sub.parent
+    tmpl_instance.parent = sub.subscriber_id
     tmpl_instance.position = sub.queryset.index(_id)
     data = {
         'type': 'handle.ddp',
@@ -102,7 +102,7 @@ def send_remove(sub, model, tmpl, _id):
         'params': {
             'type': 'removed',
             '_id': tmpl_instance._id,
-            'parent': sub.parent
+            'parent': sub.subscriber_id
         }
     }
     channel = get_channel_layer()

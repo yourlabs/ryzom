@@ -63,7 +63,7 @@ class Publishable:
 
         :parameters: see :meth:`publish`
         '''
-        from ryzom.models import Publication
+        from ryzom_django.models import Publication
 
         tmpl_mod, tmpl_cls = template.rsplit('.', 1)
         kwargs = {
@@ -103,7 +103,9 @@ def publish(component):
         @classmethod
         def wrapper(*args):
             cls = args[0]
-            cls.publish(func.__name__, component)
-            return func(*args)
+            if not cls._published:
+                cls.publish(func.__name__, component)
+            else:
+                return func(*args)
         return wrapper
     return func_wrapper

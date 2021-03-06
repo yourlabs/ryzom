@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
-from ryzom_django.models import Clients, Subscription, Publication
+from ryzom_django.models import Client, Subscription, Publication
 from ryzom.methods import Methods
 from ryzom.request import Request
 
@@ -40,13 +40,10 @@ class Consumer(JsonWebsocketConsumer):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
-        print('CONNECTING')
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
-        print(f"consumer-connect Token: {token}")
-        print(f"consumer-connect Channel: {self.channel_name}")
         if token:
-            user_token = Clients.objects.filter(token=token).last()
+            user_token = Client.objects.filter(token=token).last()
             if user_token:
                 user = user_token.user
                 if user:
@@ -54,33 +51,28 @@ class Consumer(JsonWebsocketConsumer):
                     self.scope['session'].save()
 
         self.accept()
-        client = Clients.objects.filter(token=token).first()
+        client = Client.objects.filter(token=token).first()
         if client and client.channel != self.channel_name:
-            print("CLIENT FOUND")
-            print(f"new channel: {self.channel_name}")
             client.channel = self.channel_name
             client.user = user if isinstance(user, User) else None
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
         else:
-            print("CLIENT DISCONNECTED - Reloading")
+            print("WS: CLIENT DISCONNECTED - Reloading")
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
         '''
         Websocket disconnect handler.
-        Removes the ryzom.models.Clients entry attached to this
+        Removes the ryzom.models.Client entry attached to this
         channel, cascading deletion to Suscriptions
         Zombies that may stay in our DB on server reboots are removed in
         the ryzom.apps Appconfig.ready() function
         '''
-        client = Clients.objects.filter(channel=self.channel_name).first()
+        client = Client.objects.filter(channel=self.channel_name).first()
         if client:
-            print(f'STARTING DISCONNECT')
-            print(f'Token: {client.token}, Channel: {client.channel}')
             Subscription.objects.filter(client=client).delete()
             client.delete()
-            print(f'DISCONNECTED')
 
     def receive(self, text_data):
         '''
@@ -98,7 +90,7 @@ class Consumer(JsonWebsocketConsumer):
         - a 'params' key, which is used as a parameter, specific to
         each message type.
         '''
-        if not Clients.objects.filter(channel=self.channel_name).count():
+        if not Client.objects.filter(channel=self.channel_name).count():
             self.send(json.dumps({'type': 'Reload'}))
             return
 
@@ -152,7 +144,7 @@ class Consumer(JsonWebsocketConsumer):
         if user:
             async_to_sync(login)(self.scope, user)
             self.scope['session'].save()
-            client = Clients.objects.get(channel=self.channel_name)
+            client = Client.objects.get(channel=self.channel_name)
             client.user = user
             client.save()
             self.send(json.dumps({
@@ -192,7 +184,7 @@ class Consumer(JsonWebsocketConsumer):
                 if not cview or not isinstance(cview, url.callback):
                     if cview:
                         cview.ondestroy()
-                    client = Clients.objects.filter(channel=self.channel_name).last()
+                    client = Client.objects.filter(channel=self.channel_name).last()
                     req = Request(client, url.callback)
                     cview = self.view = url.callback(req)
                     cview.oncreate(to_url)
@@ -302,7 +294,7 @@ class Consumer(JsonWebsocketConsumer):
         '''
         params = data['params']
         to_send = {'_id': data['_id']}
-        client = Clients.objects.get(channel=self.channel_name)
+        client = Client.objects.get(channel=self.channel_name)
         print(f'GOT SUBSCRIBE FOR CLIENT {client}')
         for key in ['name', 'sub_id']:
             if key not in params:

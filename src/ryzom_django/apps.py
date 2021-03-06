@@ -31,10 +31,8 @@ class ReactiveConfig(BaseConfig):
         from ryzom_django.pubsub import to_publish
 
         try:
-            Clients = self.get_model('Clients')
-            Clients.objects.all().delete()
-            Subscriber = self.get_model('Subscriber')
-            Subscriber.objects.all().delete()
+            Client = self.get_model('Client')
+            Client.objects.all().delete()
 
             for publication in to_publish:
                 publication.publish_all()

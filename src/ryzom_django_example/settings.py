@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Enable components templates auto discover
+    'ryzom_django_example',
     'ryzom_django',
     'ryzom',
     # Enable Reactive components models

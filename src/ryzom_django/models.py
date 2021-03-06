@@ -14,7 +14,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import JSONField
 
 
-class Clients(models.Model):
+class Client(models.Model):
     '''
     Clients are the representation of connected Clients
     over websockets. It stores the channel name of a single
@@ -75,33 +75,15 @@ class Subscription(models.Model):
     by its content via ryzom.ddp send_insert.
     '''
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    client = models.ForeignKey(Clients, models.CASCADE, blank=True, null=True)
+    client = models.ForeignKey(Client, models.CASCADE, blank=True, null=True)
     publication = models.ForeignKey(Publication, models.CASCADE)
+    subscriber_id = models.CharField(max_length=255)
     subscriber_module = models.CharField(max_length=255)
     subscriber_class = models.CharField(max_length=255)
     queryset = ArrayField(models.IntegerField(), default=list)
     options = JSONField(blank=True, null=True)
 
-
-    def init(self, opts):
-        '''
-        This method is used to populate the component which made
-        the current subsription with its content, and to compute
-        the queryset for the first time.
-        This part is subject to near changes when SSR will be
-        implemented
-        '''
-        from ryzom.ddp import send_insert
-
-        self.get_queryset(opts)
-
-        model = self.publication.get_model()
-        template = self.publication.get_template()
-
-        for _id in self.queryset:
-            send_insert(self, model, template, _id)
-
-    def get_queryset(self, opts={}):  # noqa: C901
+    def get_queryset(self, opts=None):  # noqa: C901
         '''
         This method computes the publication query and create/update the
         queryset for the current subscription.
@@ -114,21 +96,22 @@ class Subscription(models.Model):
         model = self.publication.get_model()
 
         subscriber_mod = importlib.import_module(self.subscriber_module)
-        subscriber_class = getattr(sub_mod, self.subscriber_class)
+        subscriber_class = getattr(subscriber_mod, self.subscriber_class)
 
-        publish_fonction = getattr(model, pub.name)
+        publish_function = getattr(model, self.publication.name)
 
-        queryset = publish_function(user)
+        queryset = publish_function(self.client.user)
 
         try:
             sub_get_queryset = getattr(subscriber_class, 'get_queryset')
         except AttributeError:
             pass
         else:
+            opts = opts or self.options
             queryset = sub_get_queryset(queryset, opts)
 
         self.options = opts
-        self.queryset = queryset.aggregate(ids=ArrayAgg('id'))['id']
+        self.queryset = queryset.aggregate(ids=ArrayAgg('id'))['ids']
         self.save()
 
         return queryset

@@ -1,1 +1,1 @@
-default_app_config = 'ryzom_django.apps.BaseConfig'
+default_app_config = 'ryzom_django.apps.ReactiveConfig'

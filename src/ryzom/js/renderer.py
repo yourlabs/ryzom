@@ -79,3 +79,7 @@ class JS(object):
 
     def __call__(self, *args, **kwargs):
         return str(self._obj(*args, **kwargs))
+
+
+def autoexec(js):
+    return str(js)[:-2] + '();\n\n'

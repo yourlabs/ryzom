@@ -136,7 +136,7 @@ class Template:
 
         # TODO: Ryzom templates currently consume context in __init__ rather
         # than render() - this will possibly change...
-        html = self.template(**context).render()
+        html = self.template(**context).render(**context)
         if Markup:
             html = Markup(html)
         return mark_safe(html)

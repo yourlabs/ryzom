@@ -7,6 +7,9 @@ from ryzom_django.views import ReactiveMixin
 from ryzom.js.renderer import JS
 import ryzom_mdc as html
 
+from .components import TaskList
+from .models import Task
+
 
 class ExampleDocument(html.Html):
     stylesheets = [
@@ -143,23 +146,41 @@ class ExampleFormView(generic.FormView):
 
 @template('base_view')
 class Home(html.Html):
+    stylesheets = [
+        'https://fonts.googleapis.com/icon?family=Material+Icons',
+        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    ]
     scripts = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         '/static/ryzom/js/py-builtins.js',
         '/static/ryzom/js/ryzom.js',
     ]
 
-    def __init__(self, *content, view, **context):
+    def __init__(self, *content, view, form, **context):
         body = html.Body(
             html.H1('Test'),
             html.A('test forms', href='form/'),
+            html.Form(
+                form,
+                html.MDCButton('add task'),
+                html.CSRFInput(view.request),
+                method='POST'),
+            TaskList()
         )
+
+        links = [
+            html.Link(href=src, rel='stylesheet')
+            for src in self.stylesheets
+        ]
 
         scripts = [
             html.Script(src=src, type='text/javascript')
             for src in self.scripts
         ] + [
             html.Script(body.render_js_tree(), type='text/javascript'),
-            html.Script(view.get_token(), type='text/javascript')
+            html.Script(view.get_token(), type='text/javascript'),
+            html.Script('mdc.autoInit()', type='text/javascript')
         ]
 
         body.addchildren(scripts)
@@ -172,13 +193,26 @@ class Home(html.Html):
                     content='width=device-width, initial-scale=1.0',
                 ),
                 html.Title('Ryzom Example'),
+                *links
             ),
             body
         )
 
 
-class ExampleView(ReactiveMixin, generic.TemplateView):
+class TaskForm(forms.ModelForm):
+    about = forms.CharField(required=True, help_text='what to do next?')
+
+    class Meta:
+        model = Task
+        fields = ['about']
+
+
+class ExampleView(ReactiveMixin, generic.CreateView):
     template_name = 'base_view'
+    form_class = TaskForm
+
+    def get_success_url(self):
+        return '/'
 
 
 urlpatterns = [

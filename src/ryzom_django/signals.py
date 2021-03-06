@@ -30,16 +30,13 @@ def _ddp_insert_change(sender, **kwargs):
             model_class=sender.__name__,
             model_module=sender.__module__)
     for pub in pubs:
-        tmpl_module = importlib.import_module(pub.template_module)
-        tmpl_class = getattr(tmpl_module, pub.template_class)
+        template = pub.get_template()
         subscriptions = Subscription.objects.filter(publication=pub)
         for sub in subscriptions:
             old_qs = sub.queryset
-            new_qs = sub.exec_query(sender).aggregate(ids=ArrayAgg('id'))
-            new_qs = new_qs['ids']
-            # update the queryset
-            sub.queryset = new_qs
-            sub.save()
+
+            sub.get_queryset()
+            new_qs = sub.queryset
 
             diff = {
                 'inserted': set(new_qs).difference(set(old_qs)),
@@ -69,9 +66,9 @@ def _ddp_insert_change(sender, **kwargs):
                 # are handling only one entry, the queryset shouldn't
                 # move by more that one in and/or one out
                 for _id in diff['removed']:
-                    send_remove(sub, sender, tmpl_class, _id)
+                    send_remove(sub, sender, template, _id)
                 for _id in diff['inserted']:
-                    send_insert(sub, sender, tmpl_class, _id)
+                    send_insert(sub, sender, template, _id)
 
 
 @receiver(post_delete)
@@ -91,18 +88,17 @@ def _ddp_delete(sender, **kwargs):
             model_module=sender.__module__,
             model_class=sender.__name__)
     for pub in pubs:
-        tmpl_module = importlib.import_module(pub.template_module)
-        tmpl_class = getattr(tmpl_module, pub.template_class)
+        template = pub.get_template()
         subscriptions = Subscription.objects.filter(publication=pub)
         for sub in subscriptions:
             old_qs = sub.queryset
+
             # if instance not in queryset, no need to remove it
             # or update the queryset
+            # else:
             if instance.id in old_qs:
-                new_qs = sub.exec_query(sender).aggregate(ids=ArrayAgg('id'))
-                new_qs = new_qs['ids']
-                sub.queryset = new_qs
-                sub.save()
+                sub.get_queryset()
+                new_qs = sub.queryset
 
                 diff = {
                     'inserted': set(new_qs).difference(set(old_qs)),
@@ -110,6 +106,6 @@ def _ddp_delete(sender, **kwargs):
                 }
 
                 for _id in diff['removed']:
-                    send_remove(sub, sender, tmpl_class, _id)
+                    send_remove(sub, sender, template, _id)
                 for _id in diff['inserted']:
-                    send_insert(sub, sender, tmpl_class, _id)
+                    send_insert(sub, sender, template, _id)

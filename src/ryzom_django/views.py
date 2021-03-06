@@ -3,16 +3,28 @@ Defines the ryzom View class and the main index view
 '''
 from django import http
 from ryzom.components import Component
-from ryzom_django.models import Subscription, Publication, Clients
+from ryzom.js.renderer import JS, autoexec
+from ryzom_django.models import Subscription, Publication, Client
 
 
 class ReactiveMixin:
-    def get_token(self):
-        import ipdb; ipdb.set_trace()
-        print(self.request)
-        return ''
+    def get_token(view):
+        user = view.request.user
+        try:
+            client = Client.objects.create(user=user)
+        except ValueError:
+            client = Client.objects.create()
 
-    def update(self, component_id, *content, **context):
+        view.client = client
+
+        def js_set_token():
+            setattr(window, 'token', token)
+            ws_connect()
+
+        return autoexec(JS(js_set_token, dict(token=client.token)))
+
+
+    def update(view, component_id, *content, **context):
         pass
 
 
