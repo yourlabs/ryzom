@@ -16,39 +16,7 @@ class ExampleDocument(html.Html):
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         'static/ryzom/js/py-builtins.js',
     ]
-
-    def __init__(self, *content, **context):
-        links = [
-            html.Link(href=src, rel='stylesheet')
-            for src in self.stylesheets
-        ]
-        scripts = [
-            html.Script(src=src, type='text/javascript')
-            for src in self.scripts
-        ]
-        scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
-
-        body = html.Body(
-            *content,
-            cls='mdc-typography',
-        )
-
-        scripts.append(html.Script(body.render_js_tree(), type='text/javascript'))
-
-        body.addchildren(scripts)
-
-        super().__init__(
-            html.Head(
-                html.Meta(charset='utf-8'),
-                html.Meta(
-                    name='viewport',
-                    content='width=device-width, initial-scale=1.0',
-                ),
-                html.Title('Secure elections with homomorphic encryption'),
-                *links,
-            ),
-            body
-        )
+    title = 'Secure elections with homomorphic encryption'
 
 
 # Serves to demonstrate template composition based on multi level nesting

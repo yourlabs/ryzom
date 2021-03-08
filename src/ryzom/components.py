@@ -138,16 +138,30 @@ class CAttrs(HTMLPayload):
 class ComponentMetaclass(type):
     def __new__(cls, name, bases, class_attrs):
         attrs = CAttrs()
+        scripts = dict()
+        stylesheets = dict()
+
         for base in bases:
             if base_attrs := getattr(base, 'attrs', None):
                 attrs.update(base_attrs)
+            if extra_scripts := getattr(base, 'scripts', None):
+                scripts.update(extra_scripts)  # scripts are a dict!
+            if extra_stylesheets := getattr(base, 'stylesheets', None):
+                stylesheets.update(extra_stylesheets)  # styles are a dict!
+
         if class_attrs.get('attrs', None):
             attrs.update(class_attrs['attrs'])
-
         if 'style' in class_attrs:
             attrs.update(dict(style=class_attrs['style']))
-
         class_attrs['attrs'] = attrs
+
+        if extra_stylesheets := class_attrs.get('stylesheets', None):
+            stylesheets.update(extra_stylesheets)
+        class_attrs['stylesheets'] = stylesheets
+
+        if extra_scripts := class_attrs.get('scripts', None):
+            scripts.update(extra_scripts)
+        class_attrs['scripts'] = scripts
 
         return super().__new__(cls, name, bases, class_attrs)
 

@@ -170,3 +170,37 @@ def test_component_style():
     comp = RedWhite(style='background-color: black; color: green')
     assert comp.attrs.style.background_color == 'black'
     assert comp.attrs.style.color == 'green'
+
+
+def test_component_scripts_stylesheets():
+    class Foo(html.Div):
+        scripts = dict(foo='foo.js', override='initial.js')
+        stylesheets = dict(foo='foo.css')
+
+
+    class Bar(html.Div):
+        scripts = dict(bar='bar.js')
+        stylesheets = dict(bar='bar.css', override='initial.css')
+
+
+    class FooBar(Foo, Bar):
+        scripts = dict(foobar='foobar.js', new='test.js',
+                       override='new.js')
+        stylesheets = dict(foobar='foobar.css', new='test.css',
+                           override='new.css')
+
+    assert FooBar.scripts == {
+        'bar': 'bar.js',
+        'foo': 'foo.js',
+        'foobar': 'foobar.js',
+        'new': 'test.js',
+        'override': 'new.js',
+    }
+
+    assert FooBar.stylesheets == {
+        'bar': 'bar.css',
+        'foo': 'foo.css',
+        'foobar': 'foobar.css',
+        'new': 'test.css',
+        'override': 'new.css',
+    }

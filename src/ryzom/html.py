@@ -22,7 +22,7 @@ BASIC_TAGS = (
     'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl',
     'dt', 'em', 'fieldset', 'figcaption', 'figure', 'font', 'footer',
     'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
-    'header', 'Heading_Elements', 'hgroup', 'html', 'i', 'iframe', 'image',
+    'header', 'Heading_Elements', 'hgroup', 'i', 'iframe', 'image',
     'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'listing',
     'main', 'map', 'mark', 'marquee', 'menu', 'menu#context_menu', 'menuitem',
     'meter', 'multicol', 'nav', 'nextid', 'nobr', 'noembed', 'noframes',
@@ -67,3 +67,39 @@ class Input(Component):
 
 class Icon(Component):
     tag = 'i'
+
+
+class Html(Component):
+    tag = 'html'
+    stylesheets = []
+    scripts = []
+
+    def __init__(self, *content, **context):
+        links = [
+            Link(href=src, rel='stylesheet')
+            for src in self.stylesheets
+        ]
+        scripts = [
+            Script(src=src, type='text/javascript')
+            for src in self.scripts
+        ]
+        scripts.append(Script('mdc.autoInit()', type='text/javascript'))
+
+        self.body = Body(
+            *content,
+            cls='mdc-typography',
+        )
+        scripts.append(Script(self.body.render_js_tree(), type='text/javascript'))
+        self.body.addchildren(scripts)
+
+        self.head = Head(
+            Meta(charset='utf-8'),
+            Meta(
+                name='viewport',
+                content='width=device-width, initial-scale=1.0',
+            ),
+            Title(getattr(self, 'title', 'No title')),
+            *links,
+        )
+
+        super().__init__(self.head, self.body)
