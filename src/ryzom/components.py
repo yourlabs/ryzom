@@ -78,13 +78,9 @@ class CAttrs(HTMLPayload):
         return super().__getitem__(name)
 
     def __getattr__(self, name):
-        if name == 'style' and 'style' not in self:
-            self['style'] = CStyle()
-
-        if name == 'cls':
-            name = 'class'
-
-        return super().__getattr__(name)
+        if name in self or name in ('style', 'cls'):
+            return self.__getitem__(name)
+        raise AttributeError(f'{self} object has no attribute {name}')
 
     def __setitem__(self, name, value):
         if name == 'cls':
@@ -203,7 +199,7 @@ class Component(metaclass=ComponentMetaclass):
         elif name == 'style':
             self.style = self.attrs.style = CStyle()
             return self.style
-        return super().__getattr__(name)
+        raise AttributeError(f'{self} object has no attribute {name}')
 
     def __init__(self, *content, **attrs):
         cls = type(self)
