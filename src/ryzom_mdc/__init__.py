@@ -850,3 +850,22 @@ class MDCLayoutGridInner(Div):
 
 class MDCLayoutGridCell(Div):
     attrs = {'class': 'mdc-layout-grid__cell'}
+
+
+class Body(Body):
+    attrs = {'cls': 'mdc-typography'}
+
+
+class Html(Html):
+    tag = 'html'
+    scripts = dict(
+        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        ryzom='static/ryzom/js/py-builtins.js',
+        mdcautoinit='mdc.autoInit()',
+    )
+    stylesheets = dict(
+        mdcicons='https://fonts.googleapis.com/icon?family=Material+Icons',
+        mdcfont='https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    )
+    body_class = Body

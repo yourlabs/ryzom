@@ -170,3 +170,99 @@ def test_component_style():
     comp = RedWhite(style='background-color: black; color: green')
     assert comp.attrs.style.background_color == 'black'
     assert comp.attrs.style.color == 'green'
+
+
+def test_component_scripts_stylesheets():
+    class Foo(html.Div):
+        scripts = dict(foo='foo.js', override='initial.js')
+        stylesheets = dict(foo='foo.css')
+
+
+    class Bar(html.Div):
+        scripts = dict(bar='bar.js')
+        stylesheets = dict(bar='bar.css', override='initial.css')
+
+
+    class FooBar(Foo, Bar):
+        scripts = dict(foobar='foobar.js', new='test.js',
+                       override='new.js')
+        stylesheets = dict(foobar='foobar.css', new='test.css',
+                           override='new.css')
+
+    assert FooBar.scripts == {
+        'bar': 'bar.js',
+        'foo': 'foo.js',
+        'foobar': 'foobar.js',
+        'new': 'test.js',
+        'override': 'new.js',
+    }
+
+    assert FooBar.stylesheets == {
+        'bar': 'bar.css',
+        'foo': 'foo.css',
+        'foobar': 'foobar.css',
+        'new': 'test.css',
+        'override': 'new.css',
+    }
+
+
+def test_component_visit():
+    class Foo(html.Div):
+        x = 'foo'
+
+    class Bar(html.Div):
+        x = 'bar'
+
+    class FooBar(html.Div):
+        x = 'foobar'
+
+        def visit(self, component=None, level=0):
+            if level == 0:
+                self.xx = [self.x]
+            else:
+                self.xx.append(component.x)
+            super().visit(component, level)
+
+    obj = FooBar(Foo(), Bar())
+    obj.visit()
+    assert obj.xx == ['foobar', 'foo', 'bar']
+
+    ht = html.Html(obj)
+    ht.visit()
+    assert obj.xx == ['foobar', 'foo', 'bar']
+
+
+def test_component_visit_scripts():
+    class Foo(html.Div):
+        scripts = dict(foo='foo.js', override='initial.js')
+        stylesheets = dict(foo='foo.css')
+
+
+    class Bar(html.Div):
+        scripts = dict(bar='bar.js')
+        stylesheets = dict(bar='bar.css', override='initial.css')
+
+
+    class FooBar(html.Div):
+        scripts = dict(foobar='foobar.js', new='test.js',
+                       override='new.js')
+        stylesheets = dict(foobar='foobar.css', new='test.css',
+                           override='new.css')
+
+    obj = FooBar(Foo(), Bar())
+    obj.visit()
+    assert obj.scripts == {
+        'foobar': 'foobar.js',
+        'new': 'test.js',
+        'override': 'new.js',
+        'foo': 'foo.js',
+        'bar': 'bar.js'
+    }
+
+    assert obj.stylesheets == {
+        'bar': 'bar.css',
+        'foo': 'foo.css',
+        'foobar': 'foobar.css',
+        'new': 'test.css',
+        'override': 'new.css',
+    }

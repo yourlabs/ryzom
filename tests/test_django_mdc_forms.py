@@ -2,18 +2,20 @@ import difflib
 import os
 import re
 import pytest
+from unittest.mock import patch
 from django import forms
 from ryzom import html
 from ryzom_django_example.urls import ExampleForm
 
 
-ryzom_id_re = re.compile(r'(?<=ryzom-id=")(?P<uuid>\w*)')
+ryzom_id_re = re.compile(r'(?<=ryzom-id=")([^"]*)')
+csrf_re = r'[<][^<]*name="csrfmiddlewaretoken"[^>]*[>]'
 
 
 def assert_equals(expected, result):
     from django.test.html import parse_html
     expected = parse_html(expected)
-    result = parse_html(re.sub(ryzom_id_re, '', str(result)))
+    result = parse_html(result)
     assert result == expected
 
 
@@ -23,6 +25,8 @@ def assert_equals_fixture(name, result):
         'fixtures',
         f'{name}.html',
     )
+    result = re.sub(ryzom_id_re, '', str(result))
+    result = re.sub(csrf_re, 'csrfmiddlewaretoken', result)
     if not os.path.exists(path):
         result = re.sub(ryzom_id_re, '', str(result))
         with open(path, 'w') as f:
@@ -51,8 +55,8 @@ def test_widget_rendering(field, value):
     )
 
 
-def test_form_get():
-    result = ExampleForm().to_html()
+def test_view_get(client):
+    result = client.get('/').content.decode('utf8')
     assert_equals_fixture('test_form_get', result)
 
 

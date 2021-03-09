@@ -7,48 +7,7 @@ import ryzom_mdc as html
 
 
 class ExampleDocument(html.Html):
-    stylesheets = [
-        'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
-    ]
-    scripts = [
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        'static/ryzom/js/py-builtins.js',
-    ]
-
-    def __init__(self, *content, **context):
-        links = [
-            html.Link(href=src, rel='stylesheet')
-            for src in self.stylesheets
-        ]
-        scripts = [
-            html.Script(src=src, type='text/javascript')
-            for src in self.scripts
-        ]
-        scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
-
-        body = html.Body(
-            *content,
-            cls='mdc-typography',
-        )
-
-        scripts.append(html.Script(body.render_js_tree(), type='text/javascript'))
-
-        body.addchildren(scripts)
-
-        super().__init__(
-            html.Head(
-                html.Meta(charset='utf-8'),
-                html.Meta(
-                    name='viewport',
-                    content='width=device-width, initial-scale=1.0',
-                ),
-                html.Title('Secure elections with homomorphic encryption'),
-                *links,
-            ),
-            body
-        )
+    title = 'Secure elections with homomorphic encryption'
 
 
 # Serves to demonstrate template composition based on multi level nesting
@@ -61,7 +20,9 @@ class ExampleCard(html.Div):
 # to design views that you import from external packages, we have this example
 # here, it also shows how you can compose by nesting different layout objects
 @html.template('form.html', ExampleDocument, ExampleCard)
-class ExampleFormViewComponent(html.Html):
+class ExampleFormViewComponent(html.Div):
+    title = 'Example form view'
+
     def __init__(self, *content, view, form, **context):
         # view and form come from the default context, we're spreading them as
         # nice, required variables for this template.

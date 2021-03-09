@@ -78,13 +78,9 @@ class CAttrs(HTMLPayload):
         return super().__getitem__(name)
 
     def __getattr__(self, name):
-        if name == 'style' and 'style' not in self:
-            self['style'] = CStyle()
-
-        if name == 'cls':
-            name = 'class'
-
-        return super().__getattr__(name)
+        if name in self or name in ('style', 'cls'):
+            return self.__getitem__(name)
+        raise AttributeError(f'{self} object has no attribute {name}')
 
     def __setitem__(self, name, value):
         if name == 'cls':
@@ -138,16 +134,30 @@ class CAttrs(HTMLPayload):
 class ComponentMetaclass(type):
     def __new__(cls, name, bases, class_attrs):
         attrs = CAttrs()
+        scripts = dict()
+        stylesheets = dict()
+
         for base in bases:
             if base_attrs := getattr(base, 'attrs', None):
                 attrs.update(base_attrs)
+            if extra_scripts := getattr(base, 'scripts', None):
+                scripts.update(extra_scripts)  # scripts are a dict!
+            if extra_stylesheets := getattr(base, 'stylesheets', None):
+                stylesheets.update(extra_stylesheets)  # styles are a dict!
+
         if class_attrs.get('attrs', None):
             attrs.update(class_attrs['attrs'])
-
         if 'style' in class_attrs:
             attrs.update(dict(style=class_attrs['style']))
-
         class_attrs['attrs'] = attrs
+
+        if extra_stylesheets := class_attrs.get('stylesheets', None):
+            stylesheets.update(extra_stylesheets)
+        class_attrs['stylesheets'] = stylesheets
+
+        if extra_scripts := class_attrs.get('scripts', None):
+            scripts.update(extra_scripts)
+        class_attrs['scripts'] = scripts
 
         return super().__new__(cls, name, bases, class_attrs)
 
@@ -189,7 +199,7 @@ class Component(metaclass=ComponentMetaclass):
         elif name == 'style':
             self.style = self.attrs.style = CStyle()
             return self.style
-        return super().__getattr__(name)
+        raise AttributeError(f'{self} object has no attribute {name}')
 
     def __init__(self, *content, **attrs):
         cls = type(self)
@@ -434,6 +444,25 @@ class Component(metaclass=ComponentMetaclass):
                     js_str += c.render_js_tree(lvl+1)
 
         return js_str
+
+    def visit(self, component=None, level=0):
+        component = component or self
+
+        if level == 0:
+            self.__dict__['scripts'] = getattr(self, 'scripts', [])
+            self.__dict__['stylesheets'] = getattr(self, 'stylesheets', [])
+
+        if scripts := getattr(component, 'scripts', None):
+            for key, value in scripts.items():
+                self.scripts.setdefault(key, value)
+        if stylesheets := getattr(component, 'stylesheets', None):
+            for key, value in stylesheets.items():
+                self.stylesheets.setdefault(key, value)
+
+        if content := getattr(component, 'content', None):
+            if hasattr(content, '__iter__'):
+                for component in component.content:
+                    self.visit(component, level+1)
 
 
 class CTree(Component):

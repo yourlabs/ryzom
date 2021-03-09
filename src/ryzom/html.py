@@ -22,14 +22,14 @@ BASIC_TAGS = (
     'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl',
     'dt', 'em', 'fieldset', 'figcaption', 'figure', 'font', 'footer',
     'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
-    'header', 'Heading_Elements', 'hgroup', 'html', 'i', 'iframe', 'image',
+    'header', 'Heading_Elements', 'hgroup', 'i', 'iframe', 'image',
     'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'listing',
     'main', 'map', 'mark', 'marquee', 'menu', 'menu#context_menu', 'menuitem',
     'meter', 'multicol', 'nav', 'nextid', 'nobr', 'noembed', 'noframes',
     'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'picture',
     'plaintext', 'portal', 'pre', 'progress', 'q', 'rb', 'rp', 'rt', 'rtc',
     'ruby', 's', 'samp', 'section', 'select', 'shadow', 'slot', 'small',
-    'spacer', 'span', 'strike', 'strong', 'style', 'sub', 'summary', 'sup',
+    'spacer', 'span', 'strike', 'strong', 'sub', 'summary', 'sup',
     'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead',
     'time', 'title', 'tr', 'tt', 'u', 'ul', 'var', 'video', 'xmp',
 )
@@ -55,6 +55,15 @@ class Script(Component):
     attrs = {'type': 'text/javascript'}
 
 
+class Style(Component):
+    tag = 'link'
+    attrs = {'type': 'text/css'}
+
+
+class Stylesheet(Link):
+    attrs = {'type': 'text/css', 'rel': 'stylesheet'}
+
+
 class Input(Component):
     tag = 'input'
 
@@ -67,3 +76,37 @@ class Input(Component):
 
 class Icon(Component):
     tag = 'i'
+
+
+class Head(Component):
+    def __init__(self, *content, **attrs):
+        super().__init__(*content, **attrs)
+        self.content += [
+            Meta(
+                name='viewport',
+                content='width=device-width, initial-scale=1.0',
+            ),
+            Meta(charset='utf-8'),
+            Title(getattr(self, 'title', 'No title')),
+        ]
+
+
+class Html(Component):
+    tag = 'html'
+    body_class = Body
+    head_class = Head
+
+    def __init__(self, *content, **context):
+        links = [
+            Stylesheet(href=src)
+            for src in self.stylesheets.values()
+        ]
+        scripts = [
+            Script(src=src) if src.endswith('.js') else Script(src)
+            for src in self.scripts.values()
+        ]
+        self.body = self.body_class(*content, *scripts)
+        self.body.addchild(Script(self.body.render_js_tree()))
+        self.head = self.head_class(*context.get('extra_head', []), *links)
+
+        super().__init__(self.head, self.body)
