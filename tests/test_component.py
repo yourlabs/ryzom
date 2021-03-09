@@ -230,3 +230,39 @@ def test_component_visit():
     ht = html.Html(obj)
     ht.visit()
     assert obj.xx == ['foobar', 'foo', 'bar']
+
+
+def test_component_visit_scripts():
+    class Foo(html.Div):
+        scripts = dict(foo='foo.js', override='initial.js')
+        stylesheets = dict(foo='foo.css')
+
+
+    class Bar(html.Div):
+        scripts = dict(bar='bar.js')
+        stylesheets = dict(bar='bar.css', override='initial.css')
+
+
+    class FooBar(html.Div):
+        scripts = dict(foobar='foobar.js', new='test.js',
+                       override='new.js')
+        stylesheets = dict(foobar='foobar.css', new='test.css',
+                           override='new.css')
+
+    obj = FooBar(Foo(), Bar())
+    obj.visit()
+    assert obj.scripts == {
+        'foobar': 'foobar.js',
+        'new': 'test.js',
+        'override': 'new.js',
+        'foo': 'foo.js',
+        'bar': 'bar.js'
+    }
+
+    assert obj.stylesheets == {
+        'bar': 'bar.css',
+        'foo': 'foo.css',
+        'foobar': 'foobar.css',
+        'new': 'test.css',
+        'override': 'new.css',
+    }

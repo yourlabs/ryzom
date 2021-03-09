@@ -447,9 +447,22 @@ class Component(metaclass=ComponentMetaclass):
 
     def visit(self, component=None, level=0):
         component = component or self
-        for component in component.content:
-            if hasattr(component, 'visit'):
-                self.visit(component, level+1)
+
+        if level == 0:
+            self.__dict__['scripts'] = getattr(self, 'scripts', [])
+            self.__dict__['stylesheets'] = getattr(self, 'stylesheets', [])
+
+        if scripts := getattr(component, 'scripts', None):
+            for key, value in scripts.items():
+                self.scripts.setdefault(key, value)
+        if stylesheets := getattr(component, 'stylesheets', None):
+            for key, value in stylesheets.items():
+                self.stylesheets.setdefault(key, value)
+
+        if content := getattr(component, 'content', None):
+            if hasattr(content, '__iter__'):
+                for component in component.content:
+                    self.visit(component, level+1)
 
 
 class CTree(Component):
