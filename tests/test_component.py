@@ -204,3 +204,29 @@ def test_component_scripts_stylesheets():
         'new': 'test.css',
         'override': 'new.css',
     }
+
+
+def test_component_visit():
+    class Foo(html.Div):
+        x = 'foo'
+
+    class Bar(html.Div):
+        x = 'bar'
+
+    class FooBar(html.Div):
+        x = 'foobar'
+
+        def visit(self, component=None, level=0):
+            if level == 0:
+                self.xx = [self.x]
+            else:
+                self.xx.append(component.x)
+            super().visit(component, level)
+
+    obj = FooBar(Foo(), Bar())
+    obj.visit()
+    assert obj.xx == ['foobar', 'foo', 'bar']
+
+    ht = html.Html(obj)
+    ht.visit()
+    assert obj.xx == ['foobar', 'foo', 'bar']

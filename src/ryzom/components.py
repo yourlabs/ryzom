@@ -445,6 +445,12 @@ class Component(metaclass=ComponentMetaclass):
 
         return js_str
 
+    def visit(self, component=None, level=0):
+        component = component or self
+        for component in component.content:
+            if hasattr(component, 'visit'):
+                self.visit(component, level+1)
+
 
 class CTree(Component):
     def __init__(self, *components):
