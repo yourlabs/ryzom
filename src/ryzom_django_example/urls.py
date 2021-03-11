@@ -49,18 +49,13 @@ class ExampleFormViewComponent(html.Div):
                 )
             ]
 
-        content.append(
-            html.Form(
-                html.CSRFInput(view.request),
-                form,
-                html.MDCButton('submit'),
-                method="post",
-            ),
-        )
+        content.append(html.SimpleForm(view, form))
         super().__init__(*content)
 
 
 class ExampleForm(forms.Form):
+    submit_label = 'Send'
+
     char = forms.CharField(
         help_text='Non required example text input',
     )

@@ -869,3 +869,13 @@ class Html(Html):
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
     ]
     body_class = Body
+
+
+class SimpleForm(Form):
+    def __init__(self, view, form):
+        label = getattr(form, 'submit_label', 'submit')
+        super().__init__(
+            CSRFInput(view.request),
+            form,
+            MDCButton(label),
+            method='POST')
