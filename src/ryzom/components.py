@@ -136,16 +136,16 @@ class CAttrs(HTMLPayload):
 class ComponentMetaclass(type):
     def __new__(cls, name, bases, class_attrs):
         attrs = CAttrs()
-        scripts = dict()
-        stylesheets = dict()
+        scripts = list()
+        stylesheets = list()
 
         for base in bases:
             if base_attrs := getattr(base, 'attrs', None):
                 attrs.update(base_attrs)
             if extra_scripts := getattr(base, 'scripts', None):
-                scripts.update(extra_scripts)  # scripts are a dict!
+                scripts.extend(extra_scripts)  # scripts are a dict!
             if extra_stylesheets := getattr(base, 'stylesheets', None):
-                stylesheets.update(extra_stylesheets)  # styles are a dict!
+                stylesheets.extend(extra_stylesheets)  # styles are a dict!
 
         if class_attrs.get('attrs', None):
             attrs.update(class_attrs['attrs'])
@@ -154,11 +154,11 @@ class ComponentMetaclass(type):
         class_attrs['attrs'] = attrs
 
         if extra_stylesheets := class_attrs.get('stylesheets', None):
-            stylesheets.update(extra_stylesheets)
+            stylesheets.extend(extra_stylesheets)
         class_attrs['stylesheets'] = stylesheets
 
         if extra_scripts := class_attrs.get('scripts', None):
-            scripts.update(extra_scripts)
+            scripts.extend(extra_scripts)
         class_attrs['scripts'] = scripts
 
         return super().__new__(cls, name, bases, class_attrs)
@@ -226,6 +226,9 @@ class Component(metaclass=ComponentMetaclass):
             'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
         ]
+
+        self.scripts = copy.deepcopy(getattr(self, 'scripts', []))
+        self.stylesheets = copy.deepcopy(getattr(self, 'stylesheets', []))
 
         self.events = attrs.pop('events', {})
 
@@ -350,6 +353,7 @@ class Component(metaclass=ComponentMetaclass):
             return f'{self.content}'
         attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self._id}"'])
         html = ''
+
         if getattr(self, 'selfclose', False):
             html = f'<{self.tag} {attrs}/>'
         elif getattr(self, 'noclose', False):
@@ -357,8 +361,10 @@ class Component(metaclass=ComponentMetaclass):
         else:
             html = f'<{self.tag} {attrs}>'
             self.setup_reactive()
-            self.scripts = []
-            self.scripts.append(autoexec(self.render_js()))
+
+            if render_js_str := autoexec(self.render_js()):
+                self.scripts.append(render_js_str)
+
             for c in self.content:
                 html += (
                     c.to_html(**kwargs)
@@ -366,14 +372,47 @@ class Component(metaclass=ComponentMetaclass):
                 )
                 if hasattr(c, 'scripts'):
                     self.scripts += c.scripts
+                if hasattr(c, 'stylesheets'):
+                    self.stylesheets += c.stylesheets
+
             html += f'</{self.tag}>'
 
-        if self.tag == 'body':
-            js_str = ''.join(self.scripts)
-            if js_str:
-                html += '<script type="text/javascript">'
-                html += js_str
-                html += '</script>'
+        if self.tag in ('body', 'head'):
+            filestyles = []
+            rawstyles = ''
+            for src in self.stylesheets:
+                if not src:
+                    continue
+                if src.endswith('.css'):
+                    filestyles.append(src)
+                else:
+                    rawstyles += src
+
+            for src in filestyles:
+                html += f'<link rel="stylesheet" href="{src}"/>\n'
+
+            if self.tag == 'body' and rawstyles:
+                html += '<style type="text/css">\n'
+                html += rawstyles
+                html += '</style>\n'
+
+            filescripts = []
+            rawscripts = ''
+            for src in self.scripts:
+                if not src:
+                    continue
+                if src.endswith('.js'):
+                    filescripts.append(src)
+                else:
+                    rawscripts += src
+
+            for src in filescripts:
+                html += f'<script type="text/javascript" src="{src}"></script>\n'
+
+            if self.tag == 'body' and rawscripts:
+                html += '<script type="text/javascript">\n'
+                html += rawscripts
+                html += '</script>\n'
 
         return html
 
@@ -411,25 +450,6 @@ class Component(metaclass=ComponentMetaclass):
                     js_str += c.render_js_tree(lvl+1)
 
         return js_str
-
-    def visit(self, component=None, level=0):
-        component = component or self
-
-        if level == 0:
-            self.__dict__['scripts'] = getattr(self, 'scripts', [])
-            self.__dict__['stylesheets'] = getattr(self, 'stylesheets', [])
-
-        if scripts := getattr(component, 'scripts', None):
-            for key, value in scripts.items():
-                self.scripts.setdefault(key, value)
-        if stylesheets := getattr(component, 'stylesheets', None):
-            for key, value in stylesheets.items():
-                self.stylesheets.setdefault(key, value)
-
-        if content := getattr(component, 'content', None):
-            if hasattr(content, '__iter__'):
-                for component in component.content:
-                    self.visit(component, level+1)
 
 
 class ReactiveBase:

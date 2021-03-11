@@ -12,48 +12,7 @@ from .models import Message, Room
 
 
 class ExampleDocument(html.Html):
-    stylesheets = [
-        'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
-    ]
-    scripts = [
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        '/static/ryzom/js/py-builtins.js',
-    ]
-
-    def __init__(self, *content, **context):
-        links = [
-            html.Link(href=src, rel='stylesheet')
-            for src in self.stylesheets
-        ]
-        scripts = [
-            html.Script(src=src, type='text/javascript')
-            for src in self.scripts
-        ]
-        scripts.append(html.Script('mdc.autoInit()', type='text/javascript'))
-
-        body = html.Body(
-            *content,
-            cls='mdc-typography',
-        )
-
-        scripts.append(html.Script(body.render_js_tree(), type='text/javascript'))
-
-        body.addchildren(scripts)
-
-        super().__init__(
-            html.Head(
-                html.Meta(charset='utf-8'),
-                html.Meta(
-                    name='viewport',
-                    content='width=device-width, initial-scale=1.0',
-                ),
-                html.Title('Secure elections with homomorphic encryption'),
-                *links,
-            ),
-            body
-        )
+    title = 'Custom title'
 
 
 # Serves to demonstrate template composition based on multi level nesting
@@ -144,67 +103,57 @@ class ExampleFormView(generic.FormView):
         return super().get(self.request)
 
 
-@template('home')
-class Home(html.Html):
+class Head(html.Head):
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
         'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
     ]
+
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         '/static/ryzom/js/py-builtins.js',
         '/static/ryzom/js/ryzom.js',
     ]
 
+
+class Body(html.Body):
+    stylesheets = [
+        'form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
+        + '.mdc-list-item__text {display: flex; justify-content: space-between;',
+    ]
+
+    def __init__(self, view, *content):
+        super().__init__(*content)
+        self.scripts += [
+            'mdc.autoInit();',
+            view.get_token()
+        ]
+
+
+@template('home')
+class Home(html.Component):
+    tag='html'
     def __init__(self, *content, view, form, **context):
-        body = html.Body(
-            html.H1('Test'),
-            html.A('test forms', href='form/'),
-            html.Div(
-                html.Div(
-                    RoomForm(
-                        view.request.GET.get('order_by', 'name')),
-                    style='min-width: 20%'),
-                html.Div(
-                    ChatRoom(view.request.GET.get('room', 'general')),
-                    MessageFormComponent(
-                        view=view,
-                        form=form,
-                        style='width:100%'),
-                    style='flex-grow: 1; height: 100%;'),
-                style='display:flex; flex-flow: row wrap;'),
-        )
-
-        links = [
-            html.Link(href=src, rel='stylesheet')
-            for src in self.stylesheets
-        ]
-
-        scripts = [
-            html.Script(src=src, type='text/javascript')
-            for src in self.scripts
-        ] + [
-            html.Script(view.get_token(), type='text/javascript'),
-            html.Script('mdc.autoInit()', type='text/javascript'),
-            html.Style('form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
-                       '.mdc-list-item__text {display: flex; justify-content: space-between;',
-                       type='text/css')
-        ]
-
-        body.addchildren(scripts)
-
         super().__init__(
-            html.Head(
-                html.Meta(charset='utf-8'),
-                html.Meta(
-                    name='viewport',
-                    content='width=device-width, initial-scale=1.0',
-                ),
-                html.Title('Ryzom Example'),
-                *links
-            ),
-            body
+            Head(),
+            Body(view,
+                html.H1('Test'),
+                html.A('test forms', href='form/'),
+                html.Div(
+                    html.Div(
+                        RoomForm(
+                            view.request.GET.get('order_by', 'name')),
+                        style='min-width: 20%'),
+                    html.Div(
+                        ChatRoom(view.request.GET.get('room', 'general')),
+                        MessageFormComponent(
+                            view=view,
+                            form=form,
+                            style='width:100%'),
+                        style='flex-grow: 1; height: 100%;'),
+                    style='display:flex; flex-flow: row wrap;')
+            )
         )
 
 

@@ -858,14 +858,14 @@ class Body(Body):
 
 class Html(Html):
     tag = 'html'
-    scripts = dict(
-        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        ryzom='static/ryzom/js/py-builtins.js',
-        mdcautoinit='mdc.autoInit()',
-    )
-    stylesheets = dict(
-        mdcicons='https://fonts.googleapis.com/icon?family=Material+Icons',
-        mdcfont='https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
-        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
-    )
+    scripts = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        'static/ryzom/js/py-builtins.js',
+        'mdc.autoInit()',
+    ]
+    stylesheets = [
+        'https://fonts.googleapis.com/icon?family=Material+Icons',
+        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    ]
     body_class = Body
