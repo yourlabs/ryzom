@@ -376,7 +376,6 @@ class Component(metaclass=ComponentMetaclass):
                     self.stylesheets += c.stylesheets
 
             if self.tag in ('body', 'head'):
-                print(self.tag)
                 filestyles = []
                 rawstyles = ''
                 for src in self.stylesheets:
@@ -529,7 +528,6 @@ class CTree(Component):
         self.__name__ = components[-1].__name__
 
     def __call__(self, **kwargs):
-        print(self.components[-1])
         component = self.components[-1](**kwargs)
         for wrapper in reversed(self.components[:-1]):
             component = wrapper(component, **kwargs)

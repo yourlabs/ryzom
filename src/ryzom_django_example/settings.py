@@ -1,9 +1,17 @@
 import os
 from pathlib import Path
+import socket
+
+REDIS_SERVER = ("127.0.0.1", 6379)
+a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+result_of_check = a_socket.connect_ex(REDIS_SERVER)
+CHANNELS_ENABLE = result_of_check == 0
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
 ALLOWED_HOSTS = []
+
 INSTALLED_APPS = [
     'channels',
     'channels_redis',
@@ -18,17 +26,12 @@ INSTALLED_APPS = [
     'ryzom_django_example',
     'ryzom_django',
     'ryzom',
-    # Enable Reactive components models
-    # 'ryzom_django.apps.ReactiveConfig',
 
     # Enable form rendering with MDC components
     'ryzom_django_mdc',
 ]
 
 MIDDLEWARE = [
-    # Enable Reactive middleware
-    # 'ryzom_django.middleware.RyzomMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -37,6 +40,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if CHANNELS_ENABLE:
+    # Enable Reactive components models
+    INSTALLED_APPS.append('ryzom_django.apps.ReactiveConfig')
+    # Enable Reactive middleware
+    MIDDLEWARE.append('ryzom_django.middleware.RyzomMiddleware')
+
 
 # Enable Ryzom template backend
 TEMPLATES = [
@@ -68,10 +78,11 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [REDIS_SERVER],
         },
     },
 }
+
 
 DATABASES = {
     'default': {

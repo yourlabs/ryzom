@@ -1,4 +1,3 @@
-from django.middleware.csrf import get_token
 from ryzom.html import *
 from ryzom.js.renderer import JS
 
@@ -244,15 +243,6 @@ class MDCFileInput(Div):
             input_id=f'#{self.input_id}',
             label_id=self.selected_text._id,
         ))
-
-
-class CSRFInput(Input):
-    def __init__(self, request):
-        super().__init__(
-            type='hidden',
-            name='csrfmiddlewaretoken',
-            value=get_token(request)
-        )
 
 
 class MDCSplitDateTime(Div):
@@ -869,13 +859,3 @@ class Html(Html):
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
     ]
     body_class = Body
-
-
-class SimpleForm(Form):
-    def __init__(self, view, form):
-        label = getattr(form, 'submit_label', 'submit')
-        super().__init__(
-            CSRFInput(view.request),
-            form,
-            MDCButton(label),
-            method='POST')

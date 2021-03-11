@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch
 from django import forms
 from ryzom import html
-from ryzom_django_example.urls import ExampleForm
+from ryzom_django_example.forms import ExampleForm
 
 
 ryzom_id_re = re.compile(r'(?<=ryzom-id=")([^"]*)')
