@@ -83,6 +83,7 @@ def _ddp_delete(sender, **kwargs):
     '''
     if Publishable not in sender.mro():
         return
+
     instance = kwargs.pop('instance')
     pubs = Publication.objects.filter(
             model_module=sender.__module__,

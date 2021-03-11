@@ -10,7 +10,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
-from django.contrib.postgres.aggregates import ArrayAgg
+from django.utils import timezone
 from django.db.models import JSONField
 
 
@@ -32,6 +32,13 @@ class Client(models.Model):
                 blank=True,
                 null=True
            )
+    created = models.DateTimeField(default=timezone.now)
+
+
+class Registration(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    client = models.ForeignKey(Client, models.CASCADE, blank=True, null=True)
+    subscriber_id = models.CharField(max_length=255)
 
 
 class Publication(models.Model):
@@ -111,7 +118,7 @@ class Subscription(models.Model):
             queryset = sub_get_queryset(queryset, opts)
 
         self.options = opts
-        self.queryset = queryset.aggregate(ids=ArrayAgg('id'))['ids']
+        self.queryset = list(queryset.values_list('id', flat=True))
         self.save()
 
         return queryset

@@ -22,8 +22,7 @@ def send_insert(sub, model, tmpl, _id):
             the model instance
     :param int _id: The id of the model to insert
     '''
-    if sub.client is None or not sub.client.channel:
-        sub.delete()
+    if sub.client is None or sub.client.channel == '':
         return
 
     tmpl_instance = tmpl(model.objects.get(id=_id))
@@ -57,6 +56,9 @@ def send_change(sub, model, tmpl, _id):
             the model instance
     :param int _id: The id of the model to change
     '''
+    if sub.client is None or sub.client.channel == '':
+        return
+
     tmpl_instance = tmpl(model.objects.get(id=_id))
     tmpl_instance.parent = sub.subscriber_id
     tmpl_instance.position = sub.queryset.index(_id)
@@ -89,9 +91,7 @@ def send_remove(sub, model, tmpl, _id):
             the model instance
     :param int _id: The id of the model to remove
     '''
-    if sub.client is None:
-        if sub.id:
-            sub.delete()
+    if sub.client is None or sub.client.channel == '':
         return
 
     tmp = model()

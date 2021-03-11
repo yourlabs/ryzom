@@ -1,29 +1,41 @@
+from django.utils import timezone
 from django.conf import settings
 from django.db import models
 
 from ryzom_django.pubsub import Publishable, publish
 
 
-class Task(Publishable, models.Model):
+class Room(Publishable, models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    @publish('ryzom_django_example.components.RoomItem')
+    def rooms(cls, user):
+        return cls.objects.all()
+
+Room.rooms(None)
+
+
+class Message(Publishable, models.Model):
     user = models.ForeignKey(
-        getattr(settings, 'AUTH_USER_MODEL', 'auth.User'),
-        on_delete=models.SET_NULL, blank=True, null=True)
-    about = models.CharField(max_length=1024)
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True)
+    message = models.CharField(max_length=1024)
+    created = models.DateTimeField(default=timezone.now)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
     class Project:  # app_label - for app-specific model options
         ryzom = True
 
     def __str__(self):
-        return self.about
+        return self.message
 
-    @publish('ryzom_django_example.components.Task')
-    def all_tasks(cls, user):
+    @publish('ryzom_django_example.components.MessageItem')
+    def messages(cls, user):
         return cls.objects.all()
 
-    @publish('ryzom_django_example.components.Task')
-    def user_tasks(cls, user):
-        return cls.objects.filter(user=user)
+
+Message.messages(None)
 
 
-Task.all_tasks(None)
-Task.user_tasks(None)

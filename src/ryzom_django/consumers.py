@@ -11,6 +11,8 @@ from channels.generic.websocket import JsonWebsocketConsumer
 from channels.auth import get_user, login
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
@@ -69,10 +71,13 @@ class Consumer(JsonWebsocketConsumer):
         Zombies that may stay in our DB on server reboots are removed in
         the ryzom.apps Appconfig.ready() function
         '''
-        client = Client.objects.filter(channel=self.channel_name).first()
-        if client:
-            Subscription.objects.filter(client=client).delete()
+        client = Client.objects.filter(channel=self.channel_name)
+        if client.count():
             client.delete()
+
+        expiration = timezone.now() - timedelta(minutes=2)
+        deadclients = Client.objects.filter(channel='', created__lt=expiration)
+        deadclients.delete()
 
     def receive(self, text_data):
         '''
@@ -114,10 +119,10 @@ class Consumer(JsonWebsocketConsumer):
         if msg_type in [
                 'subscribe', 'unsubscribe',
                 'method', 'geturl',
-                'login', 'logout']:
+                'login', 'logout', 'ping']:
             func = getattr(self, f'recv_{msg_type}', None)
             if func:
-                if not data.get('params', None):
+                if data.get('params', None) is None:
                     self.send(json.dumps({
                         '_id': data.get('_id'),
                         'type': 'Error',
@@ -137,6 +142,12 @@ class Consumer(JsonWebsocketConsumer):
                     'message': f'{msg_type} not recognized'
                 }
             }))
+
+    def recv_ping(self, data):
+        self.send(json.dumps({
+            '_id': data['_id'],
+            'type': 'pong'
+        }))
 
     def recv_login(self, data):
         credentials = data['params']

@@ -333,7 +333,7 @@ class Component(metaclass=ComponentMetaclass):
             'content': content,
             'parent': parent_id,
             'position': self.position,
-            'events': self.events,
+            'script': autoexec(self.render_js()),
             'attrs': self.attrs
         }
 
@@ -357,28 +357,38 @@ class Component(metaclass=ComponentMetaclass):
         else:
             html = f'<{self.tag} {attrs}>'
             self.setup_reactive()
+            self.scripts = []
+            self.scripts.append(autoexec(self.render_js()))
             for c in self.content:
                 html += (
                     c.to_html(**kwargs)
                     if getattr(c, 'to_html', None) else str(c)
                 )
+                if hasattr(c, 'scripts'):
+                    self.scripts += c.scripts
             html += f'</{self.tag}>'
 
+        if self.tag == 'body':
+            js_str = ''.join(self.scripts)
+            if js_str:
+                html += '<script type="text/javascript">'
+                html += js_str
+                html += '</script>'
 
         return html
 
     def setup_reactive(self):
-        if isinstance(self, ReactiveComponent):
-            if not hasattr(self, 'view') or self.view is None:
-                parent = self.parent or self
-                while parent and parent.parent:
-                    if hasattr(parent, 'view'):
-                        break
-                    parent = parent.parent
-                self.view = parent.view
+        if isinstance(self, ReactiveBase):
+            self.set_view()
 
+        if isinstance(self, SubscribeComponentMixin):
             if hasattr(self, 'publication'):
                 self.create_subscription()
+
+        if isinstance(self, ReactiveComponentMixin):
+            if hasattr(self, 'register'):
+                self.create_registration()
+
 
     def render(self, **kwargs):
         if 'view' in kwargs:
@@ -422,15 +432,20 @@ class Component(metaclass=ComponentMetaclass):
                     self.visit(component, level+1)
 
 
-class ReactiveComponent:
+class ReactiveBase:
     view = None
 
-    def create_subscription(self):
-        from ryzom_django.models import Subscription, Publication
-        from django.contrib.postgres.aggregates import ArrayAgg
-
-        if self.view is None:
-            raise AttributeError('The current view cannot be found')
+    def set_view(self):
+        if not hasattr(self, 'view') or self.view is None:
+            parent = self.parent or self
+            while parent and parent.parent:
+                if hasattr(parent, 'view'):
+                    break
+                parent = parent.parent
+            try:
+                self.view = parent.view
+            except AttributeError:
+                raise AttributeError('The current view cannot be found')
 
         if not hasattr(self.view, 'client'):
             raise AttributeError(
@@ -438,9 +453,14 @@ class ReactiveComponent:
                 ' Maybe you forgot to call view.get_token()'
                 ' in your main component?')
 
-        opts = {}
-        if hasattr(self, 'subcscribe_options'):
-            opts = self.subscribe_options
+        return self.view
+
+
+class SubscribeComponentMixin(ReactiveBase):
+    subscribe_options = {}
+
+    def create_subscription(self):
+        from ryzom_django.models import Subscription, Publication
 
         publication = Publication.objects.get(name=self.publication)
         subscription = Subscription.objects.create(
@@ -449,7 +469,7 @@ class ReactiveComponent:
             subscriber_id=self._id,
             subscriber_module=self.__module__,
             subscriber_class=self.__class__.__name__,
-            options=opts,
+            options=self.subscribe_options,
         )
 
         self.get_content(publication, subscription)
@@ -462,6 +482,24 @@ class ReactiveComponent:
             content.append(template(obj))
 
         self.content = content
+
+
+class ReactiveComponentMixin:
+    register = None
+
+    def create_registration(self):
+        from ryzom_django.models import Registration
+        Registration.objects.create(
+            name=self.get_register(),
+            client=self.view.client,
+            subscriber_id=self._id,
+        )
+
+    def get_register(self):
+        if self.register is None:
+            raise AttributeError(f'{self}.register is not defined')
+
+        return self.register
 
 
 class CTree(Component):

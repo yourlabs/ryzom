@@ -54,6 +54,10 @@ function _new(cls, ...arg) {
     return new cls(...arg);
 }
 
+async function _await(fn, ...args) {
+    return await fn(...args);
+}
+
 function js(obj) {
     /*
        Converts (recursively) a Python object to a javascript builtin object.
@@ -1680,10 +1684,12 @@ var extend = function(cls, base_list) {
     for (var i = 1; i < _mro.length; i++){
         base = _mro[i];
         for(var property in base.prototype){
-            if(!(property in cls.prototype) && !(property in base.prototype.__inherited__)){
-                cls.prototype[property] = base.prototype[property];
-                cls.prototype.__inherited__[property] = base.prototype[property];
-            }
+            try {
+              if(!(property in cls.prototype) && !(property in base.prototype.__inherited__)){
+                  cls.prototype[property] = base.prototype[property];
+                  cls.prototype.__inherited__[property] = base.prototype[property];
+              }
+            } catch (e) {continue;}
         }
     }
     //static properties not defined in the original definition

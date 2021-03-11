@@ -1,5 +1,5 @@
 from django import forms
-from django.urls import path
+from django.urls import path, reverse
 from django.views import generic
 
 from ryzom_django.html import template
@@ -7,8 +7,8 @@ from ryzom_django.views import ReactiveMixin
 from ryzom.js.renderer import JS
 import ryzom_mdc as html
 
-from .components import TaskList
-from .models import Task
+from .components import ChatRoom, RoomForm, MessageFormComponent
+from .models import Message, Room
 
 
 class ExampleDocument(html.Html):
@@ -144,7 +144,7 @@ class ExampleFormView(generic.FormView):
         return super().get(self.request)
 
 
-@template('base_view')
+@template('home')
 class Home(html.Html):
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
@@ -161,12 +161,19 @@ class Home(html.Html):
         body = html.Body(
             html.H1('Test'),
             html.A('test forms', href='form/'),
-            html.Form(
-                form,
-                html.MDCButton('add task'),
-                html.CSRFInput(view.request),
-                method='POST'),
-            TaskList()
+            html.Div(
+                html.Div(
+                    RoomForm(
+                        view.request.GET.get('order_by', 'name')),
+                    style='min-width: 20%'),
+                html.Div(
+                    ChatRoom(view.request.GET.get('room', 'general')),
+                    MessageFormComponent(
+                        view=view,
+                        form=form,
+                        style='width:100%'),
+                    style='flex-grow: 1; height: 100%;'),
+                style='display:flex; flex-flow: row wrap;'),
         )
 
         links = [
@@ -178,9 +185,11 @@ class Home(html.Html):
             html.Script(src=src, type='text/javascript')
             for src in self.scripts
         ] + [
-            html.Script(body.render_js_tree(), type='text/javascript'),
             html.Script(view.get_token(), type='text/javascript'),
-            html.Script('mdc.autoInit()', type='text/javascript')
+            html.Script('mdc.autoInit()', type='text/javascript'),
+            html.Style('form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
+                       '.mdc-list-item__text {display: flex; justify-content: space-between;',
+                       type='text/css')
         ]
 
         body.addchildren(scripts)
@@ -199,23 +208,57 @@ class Home(html.Html):
         )
 
 
-class TaskForm(forms.ModelForm):
-    about = forms.CharField(required=True, help_text='what to do next?')
+class MessageForm(forms.ModelForm):
+    submit_label = 'Send'
+
+    message = forms.CharField(
+        required=True,
+        help_text='type your message here')
 
     class Meta:
-        model = Task
-        fields = ['about']
+        model = Message
+        fields = ['message']
 
 
-class ExampleView(ReactiveMixin, generic.CreateView):
-    template_name = 'base_view'
-    form_class = TaskForm
+class ChatView(ReactiveMixin, generic.CreateView):
+    template_name = 'home'
+    form_class = MessageForm
+
+    def form_valid(self, form):
+        if self.request.user.is_authenticated:
+            form.instance.user = self.request.user
+
+        room = self.request.GET.get('room', 'general')
+        room_obj, _ = Room.objects.get_or_create(name=room)
+
+        form.instance.room = room_obj
+
+        return super().form_valid(form)
 
     def get_success_url(self):
-        return '/'
+        return reverse('home')
+
+    @classmethod
+    def as_url(cls):
+        return path('', cls.as_view(), name='home')
+
+
+class ChatDeleteView(generic.DeleteView):
+    model = Message
+
+    def dispatch(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('home')
+
+    @classmethod
+    def as_url(cls):
+        return path('message/<pk>/delete', cls.as_view(), name='message_delete')
 
 
 urlpatterns = [
-    path('', ExampleView.as_view()),
+    ChatView.as_url(),
+    ChatDeleteView.as_url(),
     path('form/', ExampleFormView.as_view())
 ]

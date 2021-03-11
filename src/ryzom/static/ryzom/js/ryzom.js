@@ -66,11 +66,6 @@
       Object.keys(component.attrs).forEach(function(k) {
         elem.setAttribute(k, component.attrs[k]);
       });
-      Object.keys(component.events).forEach(function(k) {
-        elem.addEventListener(k, function(e) {
-          eval(component.events[k]);
-        });
-      });
     }
 
     if (component.publication) {
@@ -84,6 +79,7 @@
         var c = createDOMelement(child);
         var prev = elem.childNodes[c.position]
         elem.insertBefore(c, prev);
+        eval(child.script);
       });
     };
 
@@ -111,6 +107,7 @@
       var parent = getElementByUuid(component.parent)
       var prev = parent.childNodes[component.position]
       parent.insertBefore(elem, prev);
+      eval(component.script);
     });
 
     //setRoutes();
@@ -199,7 +196,11 @@
       ws.onopen = function() {
         window.location.reload(true);
       };
-    };
+    } else {
+      ws.onopen = function(e) {
+        setInterval(ws_ping, 5000)
+      }
+    }
 
     ws.onmessage = function(e) {
       var data = JSON.parse(e.data);
@@ -243,6 +244,12 @@
       });
     }
   };
+
+  ws_ping = function(cb) {
+    ws_send({type: 'ping', params: {}}, function(r, e) {
+      if (e) { window.location.reload(true); }
+    })
+  }
 
   onwsready = function(cb) {
     if (typeof(window.onwsready_cb) == 'undefined') {

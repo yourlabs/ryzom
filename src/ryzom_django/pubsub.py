@@ -46,7 +46,9 @@ class Publishable:
                 ])
         '''
         if not cls._published:
-            cls._prepubs[name] = template
+            if not cls in cls._prepubs:
+                cls._prepubs[cls] = {}
+            cls._prepubs[cls][name] = template
             if cls not in to_publish:
                 to_publish.append(cls)
         else:
@@ -93,7 +95,7 @@ class Publishable:
         associated to the current model class.
         '''
         cls._published = True
-        for k, v in cls._prepubs.items():
+        for k, v in cls._prepubs[cls].items():
             name, template = k, v
             cls.do_publish(name, template)
 
