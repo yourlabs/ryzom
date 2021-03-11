@@ -375,44 +375,45 @@ class Component(metaclass=ComponentMetaclass):
                 if hasattr(c, 'stylesheets'):
                     self.stylesheets += c.stylesheets
 
+            if self.tag in ('body', 'head'):
+                print(self.tag)
+                filestyles = []
+                rawstyles = ''
+                for src in self.stylesheets:
+                    if not src:
+                        continue
+                    if src.endswith('.css'):
+                        filestyles.append(src)
+                    else:
+                        rawstyles += src
+
+                for src in filestyles:
+                    html += f'<link rel="stylesheet" href="{src}"/>\n'
+
+                if self.tag == 'body' and rawstyles:
+                    html += '<style type="text/css">\n'
+                    html += rawstyles
+                    html += '</style>\n'
+
+                filescripts = []
+                rawscripts = ''
+                for src in self.scripts:
+                    if not src:
+                        continue
+                    if src.endswith('.js'):
+                        filescripts.append(src)
+                    else:
+                        rawscripts += src
+
+                for src in filescripts:
+                    html += f'<script type="text/javascript" src="{src}"></script>\n'
+
+                if self.tag == 'body' and rawscripts:
+                    html += '<script type="text/javascript">\n'
+                    html += rawscripts
+                    html += '</script>\n'
+
             html += f'</{self.tag}>'
-
-        if self.tag in ('body', 'head'):
-            filestyles = []
-            rawstyles = ''
-            for src in self.stylesheets:
-                if not src:
-                    continue
-                if src.endswith('.css'):
-                    filestyles.append(src)
-                else:
-                    rawstyles += src
-
-            for src in filestyles:
-                html += f'<link rel="stylesheet" href="{src}"/>\n'
-
-            if self.tag == 'body' and rawstyles:
-                html += '<style type="text/css">\n'
-                html += rawstyles
-                html += '</style>\n'
-
-            filescripts = []
-            rawscripts = ''
-            for src in self.scripts:
-                if not src:
-                    continue
-                if src.endswith('.js'):
-                    filescripts.append(src)
-                else:
-                    rawscripts += src
-
-            for src in filescripts:
-                html += f'<script type="text/javascript" src="{src}"></script>\n'
-
-            if self.tag == 'body' and rawscripts:
-                html += '<script type="text/javascript">\n'
-                html += rawscripts
-                html += '</script>\n'
 
         return html
 
