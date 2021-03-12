@@ -22,6 +22,7 @@ INSTALLED_APPS = [
 
     # Enable components templates auto discover
     'ryzom_django_example',
+    'ryzom_django',
     'ryzom',
 
     # Enable form rendering with MDC components
@@ -43,7 +44,6 @@ if CHANNELS_ENABLE:
     INSTALLED_APPS += [
         'channels',
         'channels_redis',
-        'ryzom_django.apps.ReactiveConfig'
     ]
     # Enable Reactive middleware
     MIDDLEWARE.append('ryzom_django.middleware.RyzomMiddleware')

@@ -162,6 +162,23 @@ Textarea</span>
 <div style="font-size: var(--mdc-typography-caption-font-size, 0.75rem); color: rgba(0, 0, 0, 0.6); padding-left: 10px" id="id_textarea_helper" ryzom-id="">
 This is the help text</div>
 </div>
+<div style="margin-top: 32px; margin-bottom: 32px" ryzom-id="">
+<label  ryzom-id="">
+Document</label>
+<div  ryzom-id="">
+<span style="display: block; width: 0; height: 0; overflow: hidden" ryzom-id="">
+<input name="document" required id="id_document" type="file" input-id="id_document" label-id="id_document_label" ryzom-id="">
+</span>
+<span  ryzom-id="">
+No file selected</span>
+<label class="mdc-button mdc-button--outlined " for="id_document" ryzom-id="">
+<span class="mdc-button__ripple" ryzom-id="">
+</span>
+<span class="mdc-button__label" ryzom-id="">
+Select file</span>
+</label>
+</div>
+</div>
 <button class="mdc-button mdc-button--raised black-button" ryzom-id="">
 <span class="mdc-button__label" ryzom-id="">
 Send</span>
@@ -175,9 +192,21 @@ Send</span>
 <script type="text/javascript" src="static/ryzom/js/py-builtins.js">
 </script>
 
+<script type="text/javascript" src="static/ryzom/js/ryzom.js">
+</script>
+
 <script type="text/javascript">
 
-mdc.autoInit()</script>
+mdc.autoInit();
+(function change_event() {
+    function update_name(event) {
+        var file_name = document.querySelector("#id_document").value;
+        var label = getElementByUuid();
+        label.innerHTML = (file_name)||('No file selected');
+    };
+    document.querySelector("#id_document").addEventListener('change',update_name);
+})();
+</script>
 
 </body>
 </html>
