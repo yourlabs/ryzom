@@ -115,3 +115,13 @@ class TextareaWidget(MDCTextareaFieldOutlined):
             help_text=bf.help_text,
             errors=bf.errors,
         )
+
+
+class SimpleForm(Form):
+    def __init__(self, view, form):
+        label = getattr(form, 'submit_label', 'submit')
+        super().__init__(
+            CSRFInput(view.request),
+            form,
+            MDCButton(label),
+            method='POST')

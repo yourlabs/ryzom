@@ -12,20 +12,19 @@ from .models import Message
 class AjaxFormMixin:
     def render_js(self):
         def handle_submit():
-            def handle_response(response):
-                console.log(response.status)
-
-            def on_form_submit(event):
+            async def on_form_submit(event):
                 event.preventDefault()
 
                 form = event.target
-                data = _new(object)
-                setattr(data, 'method', form.method)
-                setattr(data, 'body', _new(FormData, form))
+
+                await fetch(form.action, {
+                    'method': form.method,
+                    'body': new.FormData(form)
+                }).then(
+                    lambda response : print(response)
+                )
 
                 form.reset()
-
-                _await(fetch, form.action, data).then(handle_response)
 
             form = getElementByUuid(form_id)
             form.addEventListener('submit', on_form_submit)
@@ -60,13 +59,15 @@ class MessageItem(MDCListItem):
             def handle_response(response):
                 console.log(response.status)
 
-            def exec_delete(event):
+            async def exec_delete(event):
                 csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
-                request = _new(Request, delete_url)
-                setattr(request.headers, 'X-CSRFTOKEN', csrf.value)
-                setattr(request, 'method', 'delete')
+                request = new.Request(delete_url)
+                request.headers['X-CSRFTOKEN'] = csrf.value
+                request['method'] = 'delete'
 
-                _await(fetch, request).then(handle_response)
+                await fetch(request).then(
+                    lambda response : print(response)
+                )
 
             btn = getElementByUuid(btn_id)
             btn.addEventListener('click', exec_delete)
@@ -103,7 +104,7 @@ class RoomForm(Div):
         super().__init__(
             Form(
                 MDCTextFieldOutlined(
-                    MDCTextInput('room-name')),
+                    MDCTextInput('room-name'), 'Room Name'),
                 MDCButton('go'),
                 RoomList(order_by),
             )
@@ -114,7 +115,7 @@ class RoomForm(Div):
             def go_to_room(event):
                 event.preventDefault()
                 room_name = event.target.querySelector('input').value
-                setattr(document.location, 'href', '/?room=' + room_name)
+                document.location.href = '/?room=' + room_name
 
             form = getElementByUuid(_id)
             form.addEventListener('submit', go_to_room)

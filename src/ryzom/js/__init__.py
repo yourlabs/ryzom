@@ -24,6 +24,7 @@ class JS(object):
         'float' : '_float',
 
         'super' : '_super',
+        'print' : 'console.log',
 
         # ideally we should check, that this name is available:
         'py_builtins' : '___py_hard_to_collide',
@@ -152,6 +153,12 @@ class JS(object):
         for stmt in node.body:
             self.visit(stmt)
 
+    def visit_AsyncFunctionDef(self, node):
+        self.is_async = True
+        self.visit_FunctionDef(node)
+
+    def visit_Await(self, node):
+        return f'await {self.visit(node.value)}'
 
     @scope
     def visit_FunctionDef(self, node):
@@ -240,14 +247,17 @@ class JS(object):
                 args.append(arg.arg)
             defaults = "{" + ", ".join(defaults2) + "}"
             args = ", ".join(args)
-            self.write("var %s = $def(%s, function(%s) {" % (node.name,
-                defaults, args))
+            prep = "function %s(%s) {" % (node.name, args)
+            if getattr(self, 'is_async', False):
+                prep = 'async ' + prep
+                self.is_async = False
+            self.write(prep)
             self._scope = [arg.arg for arg in node.args.args]
             self.indent()
             for stmt in node.body:
                 self.visit(stmt)
             self.dedent()
-            self.write("});")
+            self.write("};")
 
     @scope
     def visit_ClassDef(self, node):
@@ -345,7 +355,9 @@ class JS(object):
                     declare = ""
                 self.write("%s%s = %s;" % (declare, var, value))
             elif isinstance(target, ast.Attribute):
-                js = self.write("%s.__setattr__(\"%s\", %s);" % (self.visit(target.value), str(target.attr), value))
+                js = self.write("%s.%s = %s;" % (self.visit(target.value), str(target.attr), value))
+            elif isinstance(target, ast.Subscript):
+                js = self.write(f"{self.visit(target)} = {value};")
             else:
                 raise JSError("Unsupported assignment type")
 
@@ -496,8 +508,16 @@ class JS(object):
     def visit_arguments(self, node):
         return ", ".join([self.visit(arg) for arg in node.args])
 
+    def visit_arg(self, node):
+        return node.arg
+
     def visit_Lambda(self, node):
-        return "function(%s) {return %s}" % (self.visit(node.args), self.visit(node.body))
+        args = self.visit(node.args)
+        body = self.visit(node.body)
+        formater = self.__formater
+        indent = formater._Formater__indent_string * (formater._Formater__indentation + 1)
+        indent2 = formater._Formater__indent_string * formater._Formater__indentation
+        return "\n%s(%s) => {return %s}\n%s" % (indent, args, body, indent2)
 
     def visit_BoolOp(self, node):
         return self.get_bool_op(node).join([ "(%s)" % self.visit(val) for val in node.values ])
@@ -522,7 +542,7 @@ class JS(object):
         if isinstance(node.op, ast.FloorDiv):
             return "Math.floor((%s)/(%s))" % (left, right)
 
-        return "(%s)%s(%s)" % (left, self.get_binary_op(node), right)
+        return "%s %s %s" % (left, self.get_binary_op(node), right)
 
     def visit_Compare(self, node):
         assert len(node.ops) == 1
@@ -569,7 +589,7 @@ class JS(object):
         #~ if id in self._classes:
             #~ id = '_' + id;
         elif self._context and id in self._context:
-            return "str(\"%s\")" % (self._context[id])
+            return "\"%s\"" % (self._context[id])
 
         return id
 
@@ -582,13 +602,13 @@ class JS(object):
             return self.visit_Num(node)
 
     def visit_Num(self, node):
-        return str(node.n)
+        return node.n
 
     def visit_Str(self, node):
         # Uses the Python builtin repr() of a string and the strip string type
         # from it. This is to ensure Javascriptness, even when they use things
         # like b"\\x00" or u"\\u0000".
-        return "str(%s)" % repr(node.s).lstrip("urb")
+        return "%s" % repr(node.s).lstrip("urb")
 
     def visit_Call(self, node):
         func = self.visit(node.func)
@@ -629,24 +649,24 @@ class JS(object):
         self.write("py_builtins.print(%s);" % values)
 
     def visit_Attribute(self, node):
+        value = self.visit(node.value)
+        if value == 'new':
+            return "%s %s" % (value, node.attr)
         return "%s.%s" % (self.visit(node.value), node.attr)
 
     def visit_Tuple(self, node):
         els = [self.visit(e) for e in node.elts]
-        return "tuple([%s])" % (", ".join(els))
+        return "[%s]" % (", ".join(els))
 
     def visit_Dict(self, node):
         els = []
         for k, v in zip(node.keys, node.values):
-            if isinstance(k, ast.Name):
-                els.append('tuple(["%s", %s])' % (self.visit(k), self.visit(v)))
-            else:
-                els.append("tuple([%s, %s])" % (self.visit(k), self.visit(v)))
-        return "dict(tuple([%s]))" % (",\n".join(els))
+            els.append('%s: %s' % (self.visit(k), self.visit(v)))
+        return "{%s}" % (",\n".join(els))
 
     def visit_List(self, node):
         els = [self.visit(e) for e in node.elts]
-        return "list([%s])" % (", ".join(els))
+        return "[%s]" % (", ".join(els))
 
     def visit_Slice(self, node):
         if node.lower and node.upper and node.step:
@@ -664,7 +684,7 @@ class JS(object):
         raise NotImplementedError("Slice")
 
     def visit_Subscript(self, node):
-        return "%s.__getitem__(%s)" % (self.visit(node.value), self.visit(node.slice))
+        return "%s[%s]" % (self.visit(node.value), self.visit(node.slice))
 
     def visit_Index(self, node):
         return self.visit(node.value)

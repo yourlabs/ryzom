@@ -83,5 +83,5 @@ class JS(object):
 
 def autoexec(js):
     if js:
-        return str(js)[:-2] + '();\n\n'
+        return '\n(' + str(js)[:-2] + ')();\n'
     return ''
