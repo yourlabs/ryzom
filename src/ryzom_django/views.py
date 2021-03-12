@@ -3,7 +3,6 @@ Defines the ryzom View class and the main index view
 '''
 from django import http
 from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from ryzom.components import Component
 from ryzom.js.renderer import JS, autoexec
 from ryzom_django.models import (
@@ -40,6 +39,7 @@ class RegisterManager:
         self.queryset = queryset
 
     def update(self, content):
+        from channels.layers import get_channel_layer
         channel = get_channel_layer()
         for registration in self.queryset:
             content._id = registration.subscriber_id
