@@ -8,7 +8,7 @@ from ryzom_django.pubsub import Publishable, publish
 class Room(Publishable, models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    @publish('ryzom_django_example.components.RoomItem')
+    @publish('ryzom_django_example.reactive.RoomItem')
     def rooms(cls, user):
         return cls.objects.all()
 
@@ -31,7 +31,7 @@ class Message(Publishable, models.Model):
     def __str__(self):
         return self.message
 
-    @publish('ryzom_django_example.components.MessageItem')
+    @publish('ryzom_django_example.reactive.MessageItem')
     def messages(cls, user):
         return cls.objects.all()
 

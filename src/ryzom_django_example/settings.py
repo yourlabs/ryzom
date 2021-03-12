@@ -24,7 +24,6 @@ INSTALLED_APPS = [
 
     # Enable components templates auto discover
     'ryzom_django_example',
-    'ryzom_django',
     'ryzom',
 
     # Enable form rendering with MDC components

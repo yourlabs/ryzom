@@ -4,9 +4,9 @@ from django.urls import path, reverse
 from ryzom.components import SubscribeComponentMixin
 from ryzom.js.renderer import JS
 from ryzom_django.views import ReactiveMixin
-from ryzom_mdc import *
+from ryzom_django_mdc.components import *
 
-from .models import Message
+from .models import Message, Room
 
 
 class AjaxFormMixin:
@@ -96,7 +96,7 @@ class RoomItem(MDCListItem):
         super().__init__(room.name,
             _id=f'room-{room.id}',
             tag='a',
-            href=f'/?room={room.name}')
+            href=f'/reactive/?room={room.name}')
 
 
 class RoomForm(Div):
@@ -115,7 +115,7 @@ class RoomForm(Div):
             def go_to_room(event):
                 event.preventDefault()
                 room_name = event.target.querySelector('input').value
-                document.location.href = '/?room=' + room_name
+                document.location.href = '/reactive/?room=' + room_name
 
             form = getElementByUuid(_id)
             form.addEventListener('submit', go_to_room)
@@ -155,9 +155,11 @@ class Body(Body):
         + '.mdc-list-item__text {display: flex; justify-content: space-between;',
     ]
 
+    scripts = ['mdc.autoInit();']
+
     def __init__(self, view, *content):
         super().__init__(*content)
-        # self.scripts += [view.get_token()]
+        self.scripts += [view.get_token()]
 
 
 @template('home')
@@ -167,6 +169,7 @@ class Home(Component):
         super().__init__(
             Head(),
             Body(
+                view,
                 H1('Test'),
                 A('test forms', href='form/'),
                 Div(

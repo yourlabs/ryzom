@@ -1,6 +1,7 @@
 from ryzom_django.html import *
 from ryzom_mdc import *
 from ryzom_django.forms import field_kwargs, context_attrs, widget_attrs, widget_context
+from .html import *
 
 
 @template('django/forms/widgets/input.html')
