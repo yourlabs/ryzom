@@ -338,13 +338,12 @@ class MDCSnackBar(Div):
         )
 
     def render_js(self):
-        return (
-            '\nvar snack = function() {' +
-            '\n\tvar elem = document.querySelector(".mdc-snackbar");' +
-            '\n\tsn = new mdc.snackbar.MDCSnackbar(elem);' +
-            '\n\tsn.open();' +
-            '\n}; '
-        )
+        def open_bar():
+            elem = getElementByUuid(sb_id)
+            sb = new.mdc.snackbar.MDCSnackbar(elem)
+            sb.open()
+
+        return JS(open_bar, dict(sb_id=self._id))
 
 
 class MDCErrorListItem(Li):
