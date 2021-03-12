@@ -509,17 +509,33 @@ class SubscribeComponentMixin(ReactiveBase):
 
         self.content = content
 
+    @classmethod
+    def get_queryset(self, qs, opts):
+        return qs
 
-class ReactiveComponentMixin:
+
+class ReactiveComponentMixin(ReactiveBase):
     register = None
 
     def create_registration(self):
         from ryzom_django.models import Registration
-        Registration.objects.create(
+        existent = Registration.objects.filter(
             name=self.get_register(),
-            client=self.view.client,
-            subscriber_id=self._id,
-        )
+            client=self.view.client
+        ).first()
+
+        if existent:
+            existent.subscriber_id = self._id
+            existent.subscriber_parent = self.parent._id
+            existent.save()
+
+        else:
+            Registration.objects.create(
+                name=self.get_register(),
+                client=self.view.client,
+                subscriber_id=self._id,
+                subscriber_parent=self.parent._id,
+            )
 
     def get_register(self):
         if self.register is None:

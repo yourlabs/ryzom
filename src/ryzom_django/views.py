@@ -2,9 +2,16 @@
 Defines the ryzom View class and the main index view
 '''
 from django import http
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from ryzom.components import Component
 from ryzom.js.renderer import JS, autoexec
-from ryzom_django.models import Subscription, Publication, Client
+from ryzom_django.models import (
+    Client,
+    Publication,
+    Registration,
+    Subscription,
+)
 
 
 class ReactiveMixin:
@@ -26,6 +33,31 @@ class ReactiveMixin:
 
     def update(view, component_id, *content, **context):
         pass
+
+
+class RegisterManager:
+    def __init__(self, queryset):
+        self.queryset = queryset
+
+    def update(self, content):
+        channel = get_channel_layer()
+        for registration in self.queryset:
+            content._id = registration.subscriber_id
+            content.parent = registration.subscriber_parent
+            channel_name = registration.client.channel
+            if channel_name:
+                async_to_sync(channel.send)(channel_name, {
+                    'type': 'handle.ddp',
+                    'params': {
+                        'type': 'changed',
+                        'instance': content.to_obj()
+                    }
+                })
+
+
+def register(register_name):
+    queryset = Registration.objects.filter(name=register_name)
+    return RegisterManager(queryset)
 
 
 class View:

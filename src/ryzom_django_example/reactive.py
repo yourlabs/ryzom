@@ -1,9 +1,9 @@
 from django import forms
 from django.views import generic
 from django.urls import path, reverse
-from ryzom.components import SubscribeComponentMixin
+from ryzom.components import SubscribeComponentMixin, ReactiveComponentMixin
 from ryzom.js.renderer import JS
-from ryzom_django.views import ReactiveMixin
+from ryzom_django.views import ReactiveMixin, register
 from ryzom_django_mdc.components import *
 
 from .models import Message, Room
@@ -104,23 +104,11 @@ class RoomForm(Div):
         super().__init__(
             Form(
                 MDCTextFieldOutlined(
-                    MDCTextInput('room-name'), 'Room Name'),
+                    MDCTextInput('room'), 'Room Name'),
                 MDCButton('go'),
                 RoomList(order_by),
             )
         )
-
-    def render_js(self):
-        def form_submit_handler():
-            def go_to_room(event):
-                event.preventDefault()
-                room_name = event.target.querySelector('input').value
-                document.location.href = '/reactive/?room=' + room_name
-
-            form = getElementByUuid(_id)
-            form.addEventListener('submit', go_to_room)
-
-        return JS(form_submit_handler, dict(_id=self._id))
 
 
 class RoomList(MDCList, SubscribeComponentMixin):
@@ -162,15 +150,23 @@ class Body(Body):
         self.scripts += [view.get_token()]
 
 
+class ReactiveTitle(ReactiveComponentMixin, H1):
+    register = 'page_title'
+
+    def __init__(self, room):
+        super().__init__(f'Test - {room}')
+
+
 @template('home')
 class Home(Component):
     tag='html'
     def __init__(self, *content, view, form, **context):
+        current_room = view.request.GET.get('room', 'general')
         super().__init__(
             Head(),
             Body(
                 view,
-                H1('Test'),
+                ReactiveTitle(''),
                 A('test forms', href='form/'),
                 Div(
                     Div(
@@ -178,7 +174,7 @@ class Home(Component):
                             view.request.GET.get('order_by', 'name')),
                         style='min-width: 20%'),
                     Div(
-                        ChatRoom(view.request.GET.get('room', 'general')),
+                        ChatRoom(current_room),
                         MessageFormComponent(
                             view=view,
                             form=form,
@@ -214,6 +210,7 @@ class ChatView(ReactiveMixin, generic.CreateView):
         room_obj, _ = Room.objects.get_or_create(name=room)
 
         form.instance.room = room_obj
+        register('page_title').update(ReactiveTitle(room))
 
         return super().form_valid(form)
 

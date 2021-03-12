@@ -36,9 +36,13 @@ class Client(models.Model):
 
 
 class Registration(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     client = models.ForeignKey(Client, models.CASCADE, blank=True, null=True)
     subscriber_id = models.CharField(max_length=255)
+    subscriber_parent = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = [('name', 'client')]
 
 
 class Publication(models.Model):
@@ -109,13 +113,8 @@ class Subscription(models.Model):
 
         queryset = publish_function(self.client.user)
 
-        try:
-            sub_get_queryset = getattr(subscriber_class, 'get_queryset')
-        except AttributeError:
-            pass
-        else:
-            opts = opts or self.options
-            queryset = sub_get_queryset(queryset, opts)
+        opts = opts or self.options
+        queryset = subscriber_class.get_queryset(queryset, opts)
 
         self.options = opts
         self.queryset = list(queryset.values_list('id', flat=True))
