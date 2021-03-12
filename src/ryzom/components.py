@@ -536,9 +536,18 @@ class CTree(Component):
 
 class CList(Component):
     def to_html(self, **kwargs):
+
+        if render_js_str := autoexec(self.render_js()):
+            self.scripts.append(render_js_str)
+
         html_str = ''
         for c in self.content:
             html_str += c.to_html(**kwargs)
+
+            if hasattr(c, 'scripts'):
+                self.scripts += c.scripts
+            if hasattr(c, 'stylesheets'):
+                self.stylesheets += c.stylesheets
 
         return html_str
 

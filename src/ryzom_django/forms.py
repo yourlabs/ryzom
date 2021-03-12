@@ -36,7 +36,11 @@ forms.BaseForm.to_component = form_to_component
 
 
 def form_to_html(form):
-    return form.to_component().to_html()
+    form_component = form.to_component()
+    html = form_component.to_html()
+    form.scripts = form_component.scripts
+    form.stylesheets = form_component.stylesheets
+    return html
 forms.BaseForm.to_html = form_to_html
 
 

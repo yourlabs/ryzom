@@ -211,14 +211,14 @@ class MDCFormField(Div):
 
 
 class MDCFileInput(Div):
-    def __init__(self, btn_text='', input_id='', name=''):
+    def __init__(self, btn_text='choose file', id='', name='', type='file', **attrs):
         self.btn = MDCButtonLabelOutlined(btn_text, False)
-        self.input_id = input_id
-        self.btn.attrs['for'] = input_id
+        self.input_id = id
+        self.btn.attrs['for'] = id
         self.selected_text = Span('No file selected')
         super().__init__(
             Span(
-                Input(type='file', id=input_id, name=name),
+                Input(id=id, type=type, name=name, **attrs),
                 style='display:block;width:0;height:0;overflow:hidden'
             ),
             self.selected_text,
@@ -230,11 +230,7 @@ class MDCFileInput(Div):
             def update_name(event):
                 file_name = document.querySelector(input_id).value
                 label = getElementByUuid(label_id)
-
-                if file_name != '':
-                    setattr(label, 'innerText', file_name)
-                else:
-                    setattr(label, 'innerText', 'No file selected')
+                label.innerHTML = file_name or 'No file selected'
 
 
             document.querySelector(input_id).addEventListener('change', update_name)
@@ -851,7 +847,8 @@ class Html(Html):
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         'static/ryzom/js/py-builtins.js',
-        'mdc.autoInit()',
+        'static/ryzom/js/ryzom.js',
+        'mdc.autoInit();',
     ]
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',

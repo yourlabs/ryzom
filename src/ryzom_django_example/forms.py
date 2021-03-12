@@ -86,6 +86,11 @@ class ExampleForm(forms.Form):
         help_text='This is the help text'
     )
 
+    document = forms.FileField(
+        widget=forms.FileInput,
+        help_text='Choose a file'
+    )
+
 
 # Finally, a Django FormView, there's nothing to see here because of how well
 # Ryzom integrates with Django. Of course you're free to make views that do

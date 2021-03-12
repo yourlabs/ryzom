@@ -118,6 +118,14 @@ class TextareaWidget(MDCTextareaFieldOutlined):
         )
 
 
+@template('django/forms/widgets/file.html')
+class FileInputWidget(MDCFileInput):
+    @classmethod
+    def from_boundfield(cls, bf):
+        attrs = widget_attrs(bf)
+        return cls(**attrs)
+
+
 class SimpleForm(Form):
     def __init__(self, view, form):
         label = getattr(form, 'submit_label', 'submit')
