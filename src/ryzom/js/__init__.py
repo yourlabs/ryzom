@@ -542,7 +542,7 @@ class JS(object):
         if isinstance(node.op, ast.FloorDiv):
             return "Math.floor((%s)/(%s))" % (left, right)
 
-        return "%s %s %s" % (left, self.get_binary_op(node), right)
+        return "(%s %s %s)" % (left, self.get_binary_op(node), right)
 
     def visit_Compare(self, node):
         assert len(node.ops) == 1
@@ -589,7 +589,11 @@ class JS(object):
         #~ if id in self._classes:
             #~ id = '_' + id;
         elif self._context and id in self._context:
-            return "\"%s\"" % (self._context[id])
+            value = self._context[id]
+            if isinstance(value, str):
+                return "\"%s\"" % value
+            else:
+                return "%s" % value
 
         return id
 
