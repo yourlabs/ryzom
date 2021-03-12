@@ -13,8 +13,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'channels',
-    'channels_redis',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,7 +40,11 @@ MIDDLEWARE = [
 
 if CHANNELS_ENABLE:
     # Enable Reactive components models
-    INSTALLED_APPS.append('ryzom_django.apps.ReactiveConfig')
+    INSTALLED_APPS += [
+        'channels',
+        'channels_redis',
+        'ryzom_django.apps.ReactiveConfig'
+    ]
     # Enable Reactive middleware
     MIDDLEWARE.append('ryzom_django.middleware.RyzomMiddleware')
 
