@@ -348,6 +348,20 @@ class Component(metaclass=ComponentMetaclass):
     def publication(self, value=None):
         self.__publication = value
 
+    def children_to_html(self, **kwargs):
+        html = ''
+        for c in self.content:
+            html += (
+                c.to_html(**kwargs)
+                if getattr(c, 'to_html', None) else str(c)
+            )
+            if hasattr(c, 'scripts'):
+                self.scripts += c.scripts
+            if hasattr(c, 'stylesheets'):
+                self.stylesheets += c.stylesheets
+
+        return html
+
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
@@ -365,15 +379,7 @@ class Component(metaclass=ComponentMetaclass):
             if render_js_str := autoexec(self.render_js()):
                 self.scripts.append(render_js_str)
 
-            for c in self.content:
-                html += (
-                    c.to_html(**kwargs)
-                    if getattr(c, 'to_html', None) else str(c)
-                )
-                if hasattr(c, 'scripts'):
-                    self.scripts += c.scripts
-                if hasattr(c, 'stylesheets'):
-                    self.stylesheets += c.stylesheets
+            html += self.children_to_html(**kwargs)
 
             if self.tag in ('body', 'head'):
                 filestyles = []
@@ -536,20 +542,7 @@ class CTree(Component):
 
 class CList(Component):
     def to_html(self, **kwargs):
-
-        if render_js_str := autoexec(self.render_js()):
-            self.scripts.append(render_js_str)
-
-        html_str = ''
-        for c in self.content:
-            html_str += c.to_html(**kwargs)
-
-            if hasattr(c, 'scripts'):
-                self.scripts += c.scripts
-            if hasattr(c, 'stylesheets'):
-                self.stylesheets += c.stylesheets
-
-        return html_str
+        return self.children_to_html(**kwargs)
 
     def to_obj(self, context=None):
         content = [
