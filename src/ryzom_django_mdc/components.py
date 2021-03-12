@@ -119,11 +119,18 @@ class TextareaWidget(MDCTextareaFieldOutlined):
 
 
 @template('django/forms/widgets/file.html')
-class FileInputWidget(MDCFileInput):
+class FileInputWidget(MDCField):
     @classmethod
     def from_boundfield(cls, bf):
         attrs = widget_attrs(bf)
-        return cls(**attrs)
+        return cls(
+            Label(bf.label),
+            MDCFileField(
+                Input(**attrs),
+                label='Select file',
+                **attrs),
+            name=attrs['name']
+        )
 
 
 class SimpleForm(Form):

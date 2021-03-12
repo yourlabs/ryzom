@@ -210,15 +210,15 @@ class MDCFormField(Div):
         super().__init__(*content, **self.attrs, **kwargs)
 
 
-class MDCFileInput(Div):
-    def __init__(self, btn_text='choose file', id='', name='', type='file', **attrs):
-        self.btn = MDCButtonLabelOutlined(btn_text, False)
-        self.input_id = id
-        self.btn.attrs['for'] = id
+class MDCFileField(Div):
+    def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
+        self.btn = MDCButtonLabelOutlined(label, False)
+        self.input_id = html_input.attrs['id']
+        self.btn.attrs['for'] = self.input_id
         self.selected_text = Span('No file selected')
         super().__init__(
             Span(
-                Input(id=id, type=type, name=name, **attrs),
+                html_input,
                 style='display:block;width:0;height:0;overflow:hidden'
             ),
             self.selected_text,
