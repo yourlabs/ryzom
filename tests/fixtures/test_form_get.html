@@ -202,7 +202,7 @@ mdc.autoInit();
     function update_name(event) {
         var file_name = document.querySelector("#id_document").value;
         var label = getElementByUuid();
-        label.innerHTML = (file_name)||('No file selected');
+        label.innerHTML = (file_name || 'No file selected');
     };
     document.querySelector("#id_document").addEventListener('change',update_name);
 })();
