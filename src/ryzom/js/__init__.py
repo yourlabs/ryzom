@@ -52,8 +52,8 @@ class JS(object):
     ])
 
     bool_op = {
-        'And'    : '&&',
-        'Or'     : '||',
+        'And'    : ' && ',
+        'Or'     : ' || ',
     }
 
     unary_op = {
@@ -64,26 +64,26 @@ class JS(object):
     }
 
     binary_op = {
-        'Add'    : '+',
-        'Sub'    : '-',
-        'Mult'   : '*',
-        'Div'    : '/',
-        'Mod'    : '%',
-        'LShift' : '<<',
-        'RShift' : '>>',
-        'BitOr'  : '|',
-        'BitXor' : '^',
-        'BitAnd' : '&',
+        'Add'    : ' + ',
+        'Sub'    : ' - ',
+        'Mult'   : ' * ',
+        'Div'    : ' / ',
+        'Mod'    : ' % ',
+        'LShift' : ' << ',
+        'RShift' : ' >> ',
+        'BitOr'  : ' | ',
+        'BitXor' : ' ^ ',
+        'BitAnd' : ' & ',
     }
 
     comparison_op = {
-            'Eq'    : "==",
-            'NotEq' : "!=",
-            'Lt'    : "<",
-            'LtE'   : "<=",
-            'Gt'    : ">",
-            'GtE'   : ">=",
-            'Is'    : "===",
+            'Eq'    : " == ",
+            'NotEq' : " != ",
+            'Lt'    : " < ",
+            'LtE'   : " <= ",
+            'Gt'    : " > ",
+            'GtE'   : " >= ",
+            'Is'    : " === ",
             'IsNot' : "is not", # Not implemented yet
         }
 
@@ -444,7 +444,7 @@ class JS(object):
 
     @scope
     def visit_If(self, node):
-        self.write("if (py_builtins.bool(%s)) {" % self.visit(node.test))
+        self.write("if (%s) {" % self.visit(node.test))
         self.indent()
         for stmt in node.body:
             self.visit(stmt)
@@ -520,7 +520,8 @@ class JS(object):
         return "\n%s(%s) => {return %s}\n%s" % (indent, args, body, indent2)
 
     def visit_BoolOp(self, node):
-        return self.get_bool_op(node).join([ "(%s)" % self.visit(val) for val in node.values ])
+        op = self.get_bool_op(node).join([ "%s" % self.visit(val) for val in node.values ])
+        return f'({op})'
 
     def visit_UnaryOp(self, node):
         return "%s(%s)" % (self.get_unary_op(node), self.visit(node.operand))
@@ -550,25 +551,14 @@ class JS(object):
         op = node.ops[0]
         comp = node.comparators[0]
         if isinstance(op, ast.In):
-            return "%s.__contains__(%s)" % (
+            return "%s.includes(%s)" % (
                     self.visit(comp),
                     self.visit(node.left),
                     )
         elif isinstance(op, ast.NotIn):
-            return "!(%s.__contains__(%s))" % (
+            return "!(%s.includes(%s))" % (
                     self.visit(comp),
                     self.visit(node.left),
-                    )
-        elif isinstance(op, ast.Eq):
-            return "py_builtins.eq(%s, %s)" % (
-                    self.visit(node.left),
-                    self.visit(comp),
-                    )
-        elif isinstance(op, ast.NotEq):
-            #In fact, we'll have to override this too:
-            return "!(py_builtins.eq(%s, %s))" % (
-                    self.visit(node.left),
-                    self.visit(comp),
                     )
         else:
             return "%s %s %s" % (self.visit(node.left),
@@ -666,10 +656,17 @@ class JS(object):
         els = []
         for k, v in zip(node.keys, node.values):
             els.append('%s: %s' % (self.visit(k), self.visit(v)))
-        return "{%s}" % (",\n".join(els))
+
+        if len(els) > 1:
+            indent_str = self.__formater._Formater__indent_string
+            indent_lvl = self.__formater._Formater__indentation
+            indent = indent_str * indent_lvl
+            indent2 = indent + indent_str
+            return "{\n%s%s\n%s}" % (indent2, f",\n{indent2}".join(els), indent)
+        return "{%s}" % (", ".join(els))
 
     def visit_List(self, node):
-        els = [self.visit(e) for e in node.elts]
+        els = [str(self.visit(e)) for e in node.elts]
         return "[%s]" % (", ".join(els))
 
     def visit_Slice(self, node):
