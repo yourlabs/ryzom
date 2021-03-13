@@ -320,46 +320,21 @@ class JS(object):
     def visit_Assign(self, node):
         assert len(node.targets) == 1
         target = node.targets[0]
-        #~ if self._class_name:
-            #~ target = self._class_name + '.' + target
         value = self.visit(node.value)
-        if isinstance(target, (ast.Tuple, ast.List)):
-            dummy = self.new_dummy()
-            self.write("var %s = %s;" % (dummy, value))
-
-            for i, target in enumerate(target.elts):
-                var = self.visit(target)
-                declare = ""
-                if isinstance(target, ast.Name):
-                    if not (var in self._scope):
-                        self._scope.append(var)
-                        declare = "var "
-                self.write("%s%s = %s.__getitem__(%d);" % (declare,
-                    var, dummy, i))
-        elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Index):
-            # found index assignment
-            self.write("%s.__setitem__(%s, %s);" % (self.visit(target.value),
-                self.visit(target.slice), value))
-        elif isinstance(target, ast.Subscript) and isinstance(target.slice, ast.Slice):
-            # found slice assignmnet
-            self.write("%s.__setslice__(%s, %s, %s);" % (self.visit(target.value),
-                self.visit(target.slice.lower), self.visit(target.slice.upper),
-                value))
-        else:
-            var = self.visit(target)
-            if isinstance(target, ast.Name):
-                if not (var in self._scope):
-                    self._scope.append(var)
-                    declare = "var "
-                else:
-                    declare = ""
-                self.write("%s%s = %s;" % (declare, var, value))
-            elif isinstance(target, ast.Attribute):
-                js = self.write("%s.%s = %s;" % (self.visit(target.value), str(target.attr), value))
-            elif isinstance(target, ast.Subscript):
-                js = self.write(f"{self.visit(target)} = {value};")
+        var = self.visit(target)
+        if isinstance(target, ast.Name):
+            if not (var in self._scope):
+                self._scope.append(var)
+                declare = "var "
             else:
-                raise JSError("Unsupported assignment type")
+                declare = ""
+            self.write("%s%s = %s;" % (declare, var, value))
+        elif isinstance(target, ast.Attribute):
+            js = self.write("%s.%s = %s;" % (self.visit(target.value), str(target.attr), value))
+        elif isinstance(target, ast.Subscript):
+            js = self.write(f"{self.visit(target)} = {value};")
+        else:
+            raise JSError("Unsupported assignment type")
 
     def visit_AugAssign(self, node):
         # TODO: Make sure that all the logic in Assign also works in AugAssign
