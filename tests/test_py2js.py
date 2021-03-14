@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+import py2js
 from py2js.renderer import JS
 
 
@@ -156,3 +157,36 @@ def test_in():
 
     result = JS(func)
     assert_equals_fixture('test_in', result)
+
+
+def test_py2js_context_attribute_string():
+    class Test:
+        def __init__(self):
+            self._id = 'test'
+
+        def bind():
+            getElementByUuid(self._id)
+
+    self = Test()
+    assert py2js.transpile(self.bind, self=self) == '''function bind() {
+    getElementByUuid("test");
+};
+'''
+
+
+def test_py2js_content_attribute_callable():
+    class Test:
+        def on_form_submit(event):
+            event.preventDefault()
+
+        def bind():
+            addEventListener('submit', self.on_form_submit)
+
+    self = Test()
+    assert py2js.transpile(self.bind, self=self) == '''function Test_on_form_submit(event) {
+    event.preventDefault();
+};
+function bind() {
+    addEventListener('submit',Test_on_form_submit);
+};
+'''

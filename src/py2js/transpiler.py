@@ -105,6 +105,7 @@ class JS(object):
         #All calls to names within _class_names will be preceded by 'new'
         self._class_names = set()
         self._classes = {}
+        self._functions = {}
 
         if context:
             _copy_context = context.copy()
@@ -621,7 +622,23 @@ class JS(object):
         self.write("py_builtins.print(%s);" % values)
 
     def visit_Attribute(self, node):
+        if (
+            isinstance(node.value, ast.Name)
+            and node.value.id in self._context
+            and hasattr(self._context[node.value.id], node.attr)
+        ):
+            obj = self._context[node.value.id]
+            value = getattr(obj, node.attr)
+            if isinstance(value, str):
+                return f'"{value}"'
+            elif callable(value):
+                name = getattr(obj, '__name__', type(obj).__name__) + f'_{node.attr}'
+                if name not in self._functions:
+                    self._functions[name] = value
+                return name
+
         value = self.visit(node.value)
+
         if value == 'new':
             return "%s %s" % (value, node.attr)
         return "%s.%s" % (self.visit(node.value), node.attr)
@@ -681,10 +698,18 @@ def convert_py2js(s, context=None):
     t = ast.parse(textwrap.dedent(s))
     v = JS(context)
     v.visit(t)
-    return v.read()
+    js = v.read()
+    for name, func in v._functions.items():
+        func_src = textwrap.dedent(inspect.getsource(func))
+        func_ast = ast.parse(func_src)
+        func_ast.body[0].name = name
+        func_js = JS(context)
+        func_js.visit(func_ast)
+        js = func_js.read() + js
+    return js
 
 
-def transpile(obj_or_src, context=None):
+def transpile(obj_or_src, **context):
     """
     Transpile a Python object or source code into javascript.
     """

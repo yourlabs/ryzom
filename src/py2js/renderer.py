@@ -71,7 +71,7 @@ class js_renderer(object):
 
     def __init__(self, obj, context=None):
         self._obj = obj
-        self._js = transpile(obj, context)
+        self._js = transpile(obj, **(context or {}))
 
     def __str__(self):
         return self._js
