@@ -186,7 +186,11 @@ def test_py2js_context_attribute_string():
     self = Test()
     assert py2js.transpile(self.bind, self=self) == '''function bind() {
     getElementByUuid("test");
+<<<<<<< HEAD
 }
+=======
+};
+>>>>>>> 5f082c8 (Support callable and string attributes)
 '''
 
 
@@ -201,6 +205,7 @@ def test_py2js_content_attribute_callable():
     self = Test()
     assert py2js.transpile(self.bind, self=self) == '''function Test_on_form_submit(event) {
     event.preventDefault();
+<<<<<<< HEAD
 }
 function bind() {
     addEventListener('submit',Test_on_form_submit);
