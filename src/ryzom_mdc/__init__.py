@@ -845,8 +845,7 @@ class Html(Html):
     tag = 'html'
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        'static/ryzom/js/py-builtins.js',
-        'static/ryzom/js/ryzom.js',
+        '/static/py2js.js',
         'mdc.autoInit();',
     ]
     stylesheets = [

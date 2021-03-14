@@ -7,9 +7,9 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from ryzom_django.ddp import send_insert, send_change, send_remove
-from ryzom_django.models import Publication, Subscription
-from ryzom_django.pubsub import Publishable
+from ryzom_django_channels.ddp import send_insert, send_change, send_remove
+from ryzom_django_channels.models import Publication, Subscription
+from ryzom_django_channels.pubsub import Publishable
 
 
 @receiver(post_save)

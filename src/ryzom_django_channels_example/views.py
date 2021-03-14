@@ -3,7 +3,7 @@ from django.views import generic
 from django.urls import path, reverse
 from ryzom.components import SubscribeComponentMixin, ReactiveComponentMixin
 from py2js.renderer import JS
-from ryzom_django.views import ReactiveMixin, register
+from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.components import *
 
 from .models import Message, Room
@@ -132,8 +132,8 @@ class Head(Head):
 
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        '/static/ryzom/js/py-builtins.js',
-        '/static/ryzom/js/ryzom.js',
+        '/static/py2js.js',
+        '/static/ryzom.js',
     ]
 
 
@@ -159,7 +159,8 @@ class ReactiveTitle(ReactiveComponentMixin, H1):
 
 @template('home')
 class Home(Component):
-    tag='html'
+    tag = 'html'
+
     def __init__(self, *content, view, form, **context):
         current_room = view.request.GET.get('room', 'general')
         super().__init__(

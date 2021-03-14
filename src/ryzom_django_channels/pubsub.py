@@ -65,7 +65,7 @@ class Publishable:
 
         :parameters: see :meth:`publish`
         '''
-        from ryzom_django.models import Publication
+        from ryzom_django_channels.models import Publication
 
         tmpl_mod, tmpl_cls = template.rsplit('.', 1)
         kwargs = {

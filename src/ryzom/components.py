@@ -486,7 +486,7 @@ class SubscribeComponentMixin(ReactiveBase):
     subscribe_options = {}
 
     def create_subscription(self):
-        from ryzom_django.models import Subscription, Publication
+        from ryzom_django_channels.models import Subscription, Publication
 
         publication = Publication.objects.get(name=self.publication)
         subscription = Subscription.objects.create(
@@ -518,7 +518,7 @@ class ReactiveComponentMixin(ReactiveBase):
     register = None
 
     def create_registration(self):
-        from ryzom_django.models import Registration
+        from ryzom_django_channels.models import Registration
         existent = Registration.objects.filter(
             name=self.get_register(),
             client=self.view.client

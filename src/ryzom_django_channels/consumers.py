@@ -16,7 +16,7 @@ from datetime import timedelta
 from asgiref.sync import async_to_sync
 
 from django.conf import settings
-from ryzom_django.models import Client, Subscription, Publication
+from ryzom_django_channels.models import Client, Subscription, Publication
 from ryzom.methods import Methods
 from ryzom.request import Request
 

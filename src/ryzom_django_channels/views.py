@@ -5,7 +5,7 @@ from django import http
 from asgiref.sync import async_to_sync
 from ryzom.components import Component
 from py2js.renderer import JS, autoexec
-from ryzom_django.models import (
+from ryzom_django_channels.models import (
     Client,
     Publication,
     Registration,

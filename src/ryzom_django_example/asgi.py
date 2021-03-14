@@ -7,7 +7,7 @@ from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
-from ryzom_django.consumers import Consumer
+from ryzom_django_channels.consumers import Consumer
 
 application = ProtocolTypeRouter({
     # Django's ASGI application to handle traditional HTTP requests
