@@ -4,7 +4,7 @@ Defines the ryzom View class and the main index view
 from django import http
 from asgiref.sync import async_to_sync
 from ryzom.components import Component
-from ryzom.js.renderer import JS, autoexec
+from py2js.renderer import JS, autoexec
 from ryzom_django.models import (
     Client,
     Publication,

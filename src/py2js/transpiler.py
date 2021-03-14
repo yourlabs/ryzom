@@ -679,3 +679,14 @@ def convert_py2js(s, context=None):
     v = JS(context)
     v.visit(t)
     return v.read()
+
+
+def transpile(obj_or_src, context=None):
+    """
+    Transpile a Python object or source code into javascript.
+    """
+    if isinstance(obj_or_src, str):
+        src = obj_or_src
+    else:
+        src = inspect.getsource(obj_or_src)
+    return convert_py2js(src, context)

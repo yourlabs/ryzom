@@ -8,7 +8,7 @@ import importlib
 import re
 import uuid
 
-from .js.renderer import autoexec
+from py2js.renderer import autoexec
 
 
 def component_html(path, *args, **kwargs):

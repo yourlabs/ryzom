@@ -1,5 +1,5 @@
-from ryzom.js import convert_py2js
-import inspect
+from py2js import transpile
+
 
 class js_renderer(object):
     """
@@ -71,8 +71,7 @@ class js_renderer(object):
 
     def __init__(self, obj, context=None):
         self._obj = obj
-        obj_source = inspect.getsource(obj)
-        self._js = convert_py2js(obj_source, context)
+        self._js = transpile(obj, context)
 
     def __str__(self):
         return self._js

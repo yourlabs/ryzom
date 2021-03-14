@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from ryzom.js.renderer import JS
+from py2js.renderer import JS
 
 
 def assert_equals_fixture(name, result):

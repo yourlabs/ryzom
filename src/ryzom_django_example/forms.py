@@ -4,7 +4,7 @@ from django.views import generic
 
 from ryzom_django.html import template
 from ryzom_django.views import ReactiveMixin
-from ryzom.js.renderer import JS
+from py2js.renderer import JS
 from ryzom_django_mdc import html
 
 
