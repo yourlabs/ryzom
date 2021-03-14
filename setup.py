@@ -22,14 +22,10 @@ setup(
     extras_require=dict(
         django=[
             'django',
+        ],
+        channels=[
             'channels',
             'channels-redis',
-        ],
-        dev=[
-            'lxml',
-        ],
-        test=[
-            'lxml',
         ],
         psql=[
             'psycopg2-binary',

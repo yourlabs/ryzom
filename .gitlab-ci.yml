@@ -1,12 +1,15 @@
 test:
   image: yourlabs/python
   script:
-  - pip install django -e .
+  - apk add py3-wheel rust cargo
+  - pip install django -e .[django,channels]
+  - ./manage.py diffsettings
   - py.test -vv --cov src --strict -r fEsxXw
   cache:
     paths:
       - .cache/pip
   variables:
+    CHANNELS_ENABLE: 1
     DJANGO_SETTINGS_MODULE: ryzom_django_example.settings
     DEBUG: '1'
     PIP_ALLOW_EXTERNAL: 'true'
