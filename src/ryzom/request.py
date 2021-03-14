@@ -1,5 +1,6 @@
 from channels.http import AsgiRequest
 
+
 class Request:
     def __init__(self, asgi_request, client, view):
         self.client = client

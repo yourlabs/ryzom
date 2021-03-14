@@ -1,5 +1,8 @@
 from django import forms
+
 from ryzom import html
+
+from .html import ErrorList
 
 
 def boundfield_to_component(bf):
@@ -20,7 +23,8 @@ forms.BoundField.to_html = boundfield_to_html
 def form_to_component(form):
     content = []
     if non_field_errors := form.non_field_errors():
-        content.append(ErrorList(*non_field_errors))
+        error_list = form.non_field_error_component
+        content.append(error_list(*non_field_errors))
 
     # TODO
     # if form.form.hidden_fields():
@@ -32,11 +36,16 @@ def form_to_component(form):
         content.append(bf.to_component())
 
     return html.CList(*content)
+forms.BaseForm.non_field_error_component = ErrorList
 forms.BaseForm.to_component = form_to_component
 
 
 def form_to_html(form):
-    return form.to_component().to_html()
+    form_component = form.to_component()
+    html = form_component.to_html()
+    form.scripts = form_component.scripts
+    form.stylesheets = form_component.stylesheets
+    return html
 forms.BaseForm.to_html = form_to_html
 
 

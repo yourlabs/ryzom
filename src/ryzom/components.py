@@ -8,6 +8,8 @@ import importlib
 import re
 import uuid
 
+from py2js.renderer import autoexec
+
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -134,16 +136,16 @@ class CAttrs(HTMLPayload):
 class ComponentMetaclass(type):
     def __new__(cls, name, bases, class_attrs):
         attrs = CAttrs()
-        scripts = dict()
-        stylesheets = dict()
+        scripts = list()
+        stylesheets = list()
 
         for base in bases:
             if base_attrs := getattr(base, 'attrs', None):
                 attrs.update(base_attrs)
             if extra_scripts := getattr(base, 'scripts', None):
-                scripts.update(extra_scripts)  # scripts are a dict!
+                scripts.extend(extra_scripts)  # scripts are a dict!
             if extra_stylesheets := getattr(base, 'stylesheets', None):
-                stylesheets.update(extra_stylesheets)  # styles are a dict!
+                stylesheets.extend(extra_stylesheets)  # styles are a dict!
 
         if class_attrs.get('attrs', None):
             attrs.update(class_attrs['attrs'])
@@ -152,11 +154,11 @@ class ComponentMetaclass(type):
         class_attrs['attrs'] = attrs
 
         if extra_stylesheets := class_attrs.get('stylesheets', None):
-            stylesheets.update(extra_stylesheets)
+            stylesheets.extend(extra_stylesheets)
         class_attrs['stylesheets'] = stylesheets
 
         if extra_scripts := class_attrs.get('scripts', None):
-            scripts.update(extra_scripts)
+            scripts.extend(extra_scripts)
         class_attrs['scripts'] = scripts
 
         return super().__new__(cls, name, bases, class_attrs)
@@ -225,6 +227,9 @@ class Component(metaclass=ComponentMetaclass):
             'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
         ]
 
+        self.scripts = copy.deepcopy(getattr(self, 'scripts', []))
+        self.stylesheets = copy.deepcopy(getattr(self, 'stylesheets', []))
+
         self.events = attrs.pop('events', {})
 
         # create an instance attribute from the class attribute
@@ -256,7 +261,7 @@ class Component(metaclass=ComponentMetaclass):
                     continue
                 if isinstance(c, (str, float, int)):
                     self.content[i] = c = Text(c)
-                c.parent = self._id
+                c.parent = self
                 c.position = i
 
     def addchild(self, component):
@@ -308,47 +313,31 @@ class Component(metaclass=ComponentMetaclass):
 
         :returns: A serializable representation of the instance
         '''
-        sub = None
-        if self.publication:
-            from ..models import Subscriber, Subscription, Publication
-            pub = Publication.objects.get(name=self.publication)
-            Subscriber.objects.get_or_create(
-                parent_id=self._id,
-                parent_module=self.__module__,
-                parent_class=self.__class__.__name__
-            )
-            model_mod = importlib.import_module(pub.model_module)
-            model = getattr(model_mod, pub.model_class)
-            func = getattr(model, pub.name)
-            qs = self.subscribe(None, func(), None)
-            self.content = []
-            tmpl_module = importlib.import_module(pub.template_module)
-            tmpl_class = getattr(tmpl_module, pub.template_class)
-            for c in qs:
-                self.content.append(tmpl_class(c))
+        if self.tag == 'text':
+            content = self.content
+        else:
+            content = []
+            for c in self.content:
+                if not c:
+                    continue
+                if isinstance(c, (int, float, str)):
+                    content.append(c)
+                else:
+                    content.append(c.to_obj())
 
-            from django.contrib.postgres.aggregates import ArrayAgg
-            sub = Subscription.objects.create(
-                parent=self._id,
-                publication=pub,
-                queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
-                options=None,
-                client=None
-            )
+        if isinstance(self.parent, str):
+            parent_id = self.parent
+        else:
+            parent_id = self.parent._id
 
         return {
             '_id': self._id,
             'tag': self.tag,
-            'content': [
-                c if isinstance(c, str) else c.to_obj()
-                for c in self.content
-            ] if self.tag != 'text' else self.content,
-            'parent': self.parent,
+            'content': content,
+            'parent': parent_id,
             'position': self.position,
-            'events': self.events,
-            'attrs': self.attrs,
-            'publication': self.publication,
-            'subscription': f"{sub.id}" if sub else None
+            'script': autoexec(self.render_js()),
+            'attrs': self.attrs
         }
 
     @property
@@ -359,74 +348,98 @@ class Component(metaclass=ComponentMetaclass):
     def publication(self, value=None):
         self.__publication = value
 
+    def children_to_html(self, **kwargs):
+        html = ''
+        for c in self.content:
+            html += (
+                c.to_html(**kwargs)
+                if getattr(c, 'to_html', None) else str(c)
+            )
+            if hasattr(c, 'scripts'):
+                self.scripts += c.scripts
+            if hasattr(c, 'stylesheets'):
+                self.stylesheets += c.stylesheets
+
+        return html
+
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
         attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self._id}"'])
         html = ''
+
         if getattr(self, 'selfclose', False):
             html = f'<{self.tag} {attrs}/>'
         elif getattr(self, 'noclose', False):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-            if self.publication:
-                self.create_subscription(kwargs)
-            for c in self.content:
-                html += (
-                    c.to_html(**kwargs)
-                    if getattr(c, 'to_html', None) else str(c)
-                )
-            html += f'</{self.tag}>'
+            self.setup_reactive()
 
-        js_str = str(self.render_js())
-        if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();'
-            #context.scripts += js_str
+            if render_js_str := autoexec(self.render_js()):
+                self.scripts.append(render_js_str)
+
+            html += self.children_to_html(**kwargs)
+
+            if self.tag in ('body', 'head'):
+                filestyles = []
+                rawstyles = ''
+                for src in self.stylesheets:
+                    if not src:
+                        continue
+                    if src.endswith('.css'):
+                        filestyles.append(src)
+                    else:
+                        rawstyles += src
+
+                for src in filestyles:
+                    html += f'<link rel="stylesheet" href="{src}"/>\n'
+
+                if self.tag == 'body' and rawstyles:
+                    html += '<style type="text/css">\n'
+                    html += rawstyles
+                    html += '</style>\n'
+
+                filescripts = []
+                rawscripts = ''
+                for src in self.scripts:
+                    if not src:
+                        continue
+                    if src.endswith('.js'):
+                        filescripts.append(src)
+                    else:
+                        rawscripts += src
+
+                for src in filescripts:
+                    html += f'<script type="text/javascript" src="{src}"></script>\n'
+
+                if self.tag == 'body' and rawscripts:
+                    html += '<script type="text/javascript">\n'
+                    html += rawscripts
+                    html += '</script>\n'
+
+            html += f'</{self.tag}>'
 
         return html
 
-    def create_subscription(self, context=None):
-        from ..models import Subscriber, Subscription, Publication
-        pub = Publication.objects.get(name=self.publication)
-        if getattr(self, 'subscription', None):
-            return
-        else:
-            sub = Subscription.objects.filter(
-                client=context.request.client,
-                publication=pub,
-                parent=self._id
-            ).first()
-            if sub:
-                self.subscription = sub
-                return
-        Subscriber.objects.get_or_create(
-            parent_id=self._id,
-            parent_module=self.__module__,
-            parent_class=self.__class__.__name__
-        )
-        model_mod = importlib.import_module(pub.model_module)
-        model = getattr(model_mod, pub.model_class)
-        func = getattr(model, pub.name)
-        qs = self.subscribe(None, func(), None)
-        self.content = []
-        tmpl_module = importlib.import_module(pub.template_module)
-        tmpl_class = getattr(tmpl_module, pub.template_class)
-        for c in qs:
-            self.content.append(tmpl_class(c))
+    def setup_reactive(self):
+        if isinstance(self, ReactiveBase):
+            self.set_view()
 
-        from django.contrib.postgres.aggregates import ArrayAgg
-        self.subscription = Subscription.objects.create(
-            parent=self._id,
-            publication=pub,
-            queryset=qs.aggregate(ids=ArrayAgg('id'))['ids'],
-            options=None,
-            client=context.request.client
-        )
+        if isinstance(self, SubscribeComponentMixin):
+            if hasattr(self, 'publication'):
+                self.create_subscription()
+
+        if isinstance(self, ReactiveComponentMixin):
+            if hasattr(self, 'register'):
+                self.create_registration()
+
 
     def render(self, **kwargs):
-        return self.to_html(**kwargs)
+        if 'view' in kwargs:
+            self.view = kwargs['view']
+
+        return self.to_html()
 
     def render_js(self):
         return ''
@@ -435,8 +448,7 @@ class Component(metaclass=ComponentMetaclass):
         js_str = str(self.render_js())
 
         if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();\n\n'
+            js_str = autoexec(js_str)
 
         if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
             for c in self.content:
@@ -445,24 +457,91 @@ class Component(metaclass=ComponentMetaclass):
 
         return js_str
 
-    def visit(self, component=None, level=0):
-        component = component or self
 
-        if level == 0:
-            self.__dict__['scripts'] = getattr(self, 'scripts', [])
-            self.__dict__['stylesheets'] = getattr(self, 'stylesheets', [])
+class ReactiveBase:
+    view = None
 
-        if scripts := getattr(component, 'scripts', None):
-            for key, value in scripts.items():
-                self.scripts.setdefault(key, value)
-        if stylesheets := getattr(component, 'stylesheets', None):
-            for key, value in stylesheets.items():
-                self.stylesheets.setdefault(key, value)
+    def set_view(self):
+        if not hasattr(self, 'view') or self.view is None:
+            parent = self.parent or self
+            while parent and parent.parent:
+                if hasattr(parent, 'view'):
+                    break
+                parent = parent.parent
+            try:
+                self.view = parent.view
+            except AttributeError:
+                raise AttributeError('The current view cannot be found')
 
-        if content := getattr(component, 'content', None):
-            if hasattr(content, '__iter__'):
-                for component in component.content:
-                    self.visit(component, level+1)
+        if not hasattr(self.view, 'client'):
+            raise AttributeError(
+                'The current view has no attribute "client".'
+                ' Maybe you forgot to call view.get_token()'
+                ' in your main component?')
+
+        return self.view
+
+
+class SubscribeComponentMixin(ReactiveBase):
+    subscribe_options = {}
+
+    def create_subscription(self):
+        from ryzom_django_channels.models import Publication, Subscription
+
+        publication = Publication.objects.get(name=self.publication)
+        subscription = Subscription.objects.create(
+            client=self.view.client,
+            publication=publication,
+            subscriber_id=self._id,
+            subscriber_module=self.__module__,
+            subscriber_class=self.__class__.__name__,
+            options=self.subscribe_options,
+        )
+
+        self.get_content(publication, subscription)
+
+    def get_content(self, publication, subscription):
+        template = publication.get_template()
+
+        content = []
+        for obj in subscription.get_queryset():
+            content.append(template(obj))
+
+        self.content = content
+
+    @classmethod
+    def get_queryset(self, qs, opts):
+        return qs
+
+
+class ReactiveComponentMixin(ReactiveBase):
+    register = None
+
+    def create_registration(self):
+        from ryzom_django_channels.models import Registration
+        existent = Registration.objects.filter(
+            name=self.get_register(),
+            client=self.view.client
+        ).first()
+
+        if existent:
+            existent.subscriber_id = self._id
+            existent.subscriber_parent = self.parent._id
+            existent.save()
+
+        else:
+            Registration.objects.create(
+                name=self.get_register(),
+                client=self.view.client,
+                subscriber_id=self._id,
+                subscriber_parent=self.parent._id,
+            )
+
+    def get_register(self):
+        if self.register is None:
+            raise AttributeError(f'{self}.register is not defined')
+
+        return self.register
 
 
 class CTree(Component):
@@ -471,7 +550,6 @@ class CTree(Component):
         self.__name__ = components[-1].__name__
 
     def __call__(self, **kwargs):
-        print(self.components[-1])
         component = self.components[-1](**kwargs)
         for wrapper in reversed(self.components[:-1]):
             component = wrapper(component, **kwargs)
@@ -480,17 +558,7 @@ class CTree(Component):
 
 class CList(Component):
     def to_html(self, **kwargs):
-        html_str = ''
-        for c in self.content:
-            html_str += c.to_html(**kwargs)
-
-        js_str = str(self.render_js())
-        if js_str:
-            js_str = js_str[0:-2]
-            js_str += '();'
-            context.scripts += js_str
-
-        return html_str
+        return self.children_to_html(**kwargs)
 
     def to_obj(self, context=None):
         content = [

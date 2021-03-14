@@ -1,5 +1,4 @@
-from ryzom.components import Component, CTree, CList, HTMLPayload, Text
-
+from ryzom.components import CList, Component, CTree, HTMLPayload, Text
 
 templates = dict()
 
@@ -97,16 +96,10 @@ class Html(Component):
     head_class = Head
 
     def __init__(self, *content, **context):
-        links = [
-            Stylesheet(href=src)
-            for src in self.stylesheets.values()
-        ]
-        scripts = [
-            Script(src=src) if src.endswith('.js') else Script(src)
-            for src in self.scripts.values()
-        ]
-        self.body = self.body_class(*content, *scripts)
-        self.body.addchild(Script(self.body.render_js_tree()))
-        self.head = self.head_class(*context.get('extra_head', []), *links)
+        self.head = self.head_class(*context.get('extra_head', []))
+        self.head.stylesheets += self.stylesheets
+
+        self.body = self.body_class(*content)
+        self.body.scripts += self.scripts
 
         super().__init__(self.head, self.body)

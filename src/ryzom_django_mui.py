@@ -2,7 +2,6 @@
 Render Django forms using ryzom components.
 """
 import logging
-
 from collections.abc import Iterable
 
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -11,12 +10,8 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 
 from ..backends.ryzom import Ryzom
-
-from .components import (
-    Div, Input, Label, Li,
-    Optgroup, Option, Select, Text, Textarea, Ul,
-)
-
+from .components import (Div, Input, Label, Li, Optgroup, Option, Select, Text,
+                         Textarea, Ul)
 
 logger = logging.getLogger(__name__)
 

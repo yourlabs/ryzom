@@ -23,13 +23,9 @@ setup(
         django=[
             'django',
         ],
-        dev=[
+        channels=[
             'channels',
             'channels-redis',
-            'lxml',
-        ],
-        test=[
-            'lxml',
         ],
         psql=[
             'psycopg2-binary',

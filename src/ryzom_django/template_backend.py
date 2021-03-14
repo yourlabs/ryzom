@@ -9,7 +9,7 @@ from django.template.backends.django import reraise
 from django.template.base import Origin
 from django.template.context import BaseContext
 from django.utils.encoding import smart_text
-from django.utils.functional import cached_property, SimpleLazyObject
+from django.utils.functional import SimpleLazyObject, cached_property
 from django.utils.module_loading import import_string
 
 from ryzom import html
@@ -136,7 +136,7 @@ class Template:
 
         # TODO: Ryzom templates currently consume context in __init__ rather
         # than render() - this will possibly change...
-        html = self.template(**context).render()
+        html = self.template(**context).render(**context)
         if Markup:
             html = Markup(html)
         return mark_safe(html)

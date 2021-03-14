@@ -1,6 +1,5 @@
-from django.middleware.csrf import get_token
+from py2js.renderer import JS
 from ryzom.html import *
-from ryzom.js.renderer import JS
 
 
 class MDCLink(A):
@@ -211,15 +210,15 @@ class MDCFormField(Div):
         super().__init__(*content, **self.attrs, **kwargs)
 
 
-class MDCFileInput(Div):
-    def __init__(self, btn_text='', input_id='', name=''):
-        self.btn = MDCButtonLabelOutlined(btn_text, False)
-        self.input_id = input_id
-        self.btn.attrs['for'] = input_id
+class MDCFileField(Div):
+    def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
+        self.btn = MDCButtonLabelOutlined(label, False)
+        self.input_id = html_input.attrs['id']
+        self.btn.attrs['for'] = self.input_id
         self.selected_text = Span('No file selected')
         super().__init__(
             Span(
-                Input(type='file', id=input_id, name=name),
+                html_input,
                 style='display:block;width:0;height:0;overflow:hidden'
             ),
             self.selected_text,
@@ -231,11 +230,7 @@ class MDCFileInput(Div):
             def update_name(event):
                 file_name = document.querySelector(input_id).value
                 label = getElementByUuid(label_id)
-
-                if file_name != '':
-                    setattr(label, 'innerText', file_name)
-                else:
-                    setattr(label, 'innerText', 'No file selected')
+                label.innerHTML = file_name or 'No file selected'
 
 
             document.querySelector(input_id).addEventListener('change', update_name)
@@ -244,15 +239,6 @@ class MDCFileInput(Div):
             input_id=f'#{self.input_id}',
             label_id=self.selected_text._id,
         ))
-
-
-class CSRFInput(Input):
-    def __init__(self, request):
-        super().__init__(
-            type='hidden',
-            name='csrfmiddlewaretoken',
-            value=get_token(request)
-        )
 
 
 class MDCSplitDateTime(Div):
@@ -352,13 +338,12 @@ class MDCSnackBar(Div):
         )
 
     def render_js(self):
-        return (
-            '\nvar snack = function() {' +
-            '\n\tvar elem = document.querySelector(".mdc-snackbar");' +
-            '\n\tsn = new mdc.snackbar.MDCSnackbar(elem);' +
-            '\n\tsn.open();' +
-            '\n}; '
-        )
+        def open_bar():
+            elem = getElementByUuid(sb_id)
+            sb = new.mdc.snackbar.MDCSnackbar(elem)
+            sb.open()
+
+        return JS(open_bar, dict(sb_id=self._id))
 
 
 class MDCErrorListItem(Li):
@@ -858,14 +843,14 @@ class Body(Body):
 
 class Html(Html):
     tag = 'html'
-    scripts = dict(
-        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        ryzom='static/ryzom/js/py-builtins.js',
-        mdcautoinit='mdc.autoInit()',
-    )
-    stylesheets = dict(
-        mdcicons='https://fonts.googleapis.com/icon?family=Material+Icons',
-        mdcfont='https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
-        mdc='https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
-    )
+    scripts = [
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        '/static/py2js.js',
+        'mdc.autoInit();',
+    ]
+    stylesheets = [
+        'https://fonts.googleapis.com/icon?family=Material+Icons',
+        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+    ]
     body_class = Body

@@ -1,6 +1,9 @@
 from ryzom_django.html import *
+from ryzom_django_mdc.forms import (context_attrs, field_kwargs, widget_attrs,
+                                    widget_context)
 from ryzom_mdc import *
-from ryzom_django.forms import field_kwargs, context_attrs, widget_attrs, widget_context
+
+from .html import *
 
 
 @template('django/forms/widgets/input.html')
@@ -115,3 +118,28 @@ class TextareaWidget(MDCTextareaFieldOutlined):
             help_text=bf.help_text,
             errors=bf.errors,
         )
+
+
+@template('django/forms/widgets/file.html')
+class FileInputWidget(MDCField):
+    @classmethod
+    def from_boundfield(cls, bf):
+        attrs = widget_attrs(bf)
+        return cls(
+            Label(bf.label),
+            MDCFileField(
+                Input(**attrs),
+                label='Select file',
+                **attrs),
+            name=attrs['name']
+        )
+
+
+class SimpleForm(Form):
+    def __init__(self, view, form):
+        label = getattr(form, 'submit_label', 'submit')
+        super().__init__(
+            CSRFInput(view.request),
+            form,
+            MDCButton(label),
+            method='POST')

@@ -1,9 +1,21 @@
 import os
+import socket
 from pathlib import Path
+
+REDIS_SERVER = ('127.0.0.1', 6379)
+
+if 'CHANNELS_ENABLE' in os.environ:
+    CHANNELS_ENABLE = bool(os.environ['CHANNELS_ENABLE'])
+else:
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result_of_check = a_socket.connect_ex(REDIS_SERVER)
+    CHANNELS_ENABLE = result_of_check == 0
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
 ALLOWED_HOSTS = []
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -12,20 +24,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'ryzom_django_example',
+
     # Enable components templates auto discover
     'ryzom_django',
-    'ryzom',
-    # Enable Reactive components models
-    # 'ryzom_django.apps.ReactiveConfig',
+
+    # Add py2js static file
+    'py2js',
 
     # Enable form rendering with MDC components
     'ryzom_django_mdc',
 ]
 
 MIDDLEWARE = [
-    # Enable Reactive middleware
-    # 'ryzom_django.middleware.RyzomMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -34,6 +45,19 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+if CHANNELS_ENABLE:
+    # Enable Reactive components models
+    INSTALLED_APPS += [
+        'ryzom_django_channels',
+        'ryzom_django_channels_example',
+        'channels',
+        'channels_redis',
+    ]
+
+    # Enable Reactive middleware
+    MIDDLEWARE.append('ryzom_django_channels.middleware.RyzomMiddleware')
+
 
 # Enable Ryzom template backend
 TEMPLATES = [
@@ -56,8 +80,20 @@ TEMPLATES = [
 ]
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
+WS_URLPATTERNS = ROOT_URLCONF
+SERVER_METHODS = []
 
-WSGI_APPLICATION = 'ryzom_django_example.wsgi.application'
+ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_SERVER],
+        },
+    },
+}
+
 
 DATABASES = {
     'default': {

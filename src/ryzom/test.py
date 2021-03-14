@@ -28,8 +28,7 @@ In pytest, this will display a beautiful diff in case of failure !
 """
 
 import pytest  # noqa: F401
-
-from lxml.html import fromstring, HtmlElement
+from lxml.html import HtmlElement, fromstring
 
 
 def tree(html):

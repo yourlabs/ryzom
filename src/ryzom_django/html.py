@@ -1,4 +1,5 @@
 from django.utils.safestring import mark_safe
+
 from ryzom.html import *
 
 
@@ -16,3 +17,10 @@ def component_html(path, *args, **kwargs):
     if Markup:
         html = Markup(html)
     return mark_safe(html)
+
+
+class ErrorList(Ul):
+    def __init__(self, *content, **attrs):
+        super().__init__(
+            *[Li(e) for e in content]
+        )

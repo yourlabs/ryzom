@@ -4,7 +4,6 @@ Ryzom mdc (Material Design Components) components.
 from .components import *  # noqa
 
 
-
 class MdcTopAppBar(Component):
     """
     <header class="mdc-top-app-bar">

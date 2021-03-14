@@ -1,8 +1,8 @@
 import pytest
 
 from ryzom.html import Div, Text
-from ryzom_mdc import *
 from ryzom.test import pretty
+from ryzom_mdc import *
 
 
 class TestMdc(object):
