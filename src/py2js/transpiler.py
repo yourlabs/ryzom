@@ -714,3 +714,10 @@ def transpile(obj_or_src, **context):
     else:
         src = inspect.getsource(obj_or_src)
     return convert_py2js(src, context)
+
+
+def transpile_body(obj, **context):
+    src = inspect.getsource(obj)
+    src = '\n'.join(src.split('\n')[1:])
+    src = textwrap.dedent(src)
+    return convert_py2js(src)

@@ -201,3 +201,9 @@ function bind() {
     addEventListener('submit',Test_on_form_submit);
 };
 '''
+
+
+def test_transpile_body():
+    def foo():
+        print('a')
+    assert py2js.transpile_body(foo) == "console.log('a');\n"
