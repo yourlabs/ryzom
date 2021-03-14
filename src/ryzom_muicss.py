@@ -2,17 +2,15 @@
 Ryzom MUI CSS components.
 '''
 import re
-
 from collections.abc import Iterable
 
 from django.utils.html import conditional_escape
 from django.utils.translation import gettext as _
 
-from .components import *  # noqa
 from .components import Select as RyzSelect
+from .components import *  # noqa
 from .django import Factory, InputOption, SelectOption
 from .django import TextInput as DjangoTextInput
-
 
 """
 class Component(Component):

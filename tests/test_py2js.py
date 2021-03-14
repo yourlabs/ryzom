@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from py2js.renderer import JS

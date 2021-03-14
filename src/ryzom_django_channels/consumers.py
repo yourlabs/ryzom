@@ -6,19 +6,19 @@ near future. Both will be handled in a separate file
 '''
 import importlib
 import json
+from datetime import timedelta
 
-from channels.generic.websocket import JsonWebsocketConsumer
+from asgiref.sync import async_to_sync
 from channels.auth import get_user, login
+from channels.generic.websocket import JsonWebsocketConsumer
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
-from datetime import timedelta
-from asgiref.sync import async_to_sync
 
-from django.conf import settings
-from ryzom_django_channels.models import Client, Subscription, Publication
 from ryzom.methods import Methods
 from ryzom.request import Request
+from ryzom_django_channels.models import Client, Publication, Subscription
 
 
 class Consumer(JsonWebsocketConsumer):

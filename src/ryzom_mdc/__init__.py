@@ -1,5 +1,5 @@
-from ryzom.html import *
 from py2js.renderer import JS
+from ryzom.html import *
 
 
 class MDCLink(A):

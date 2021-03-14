@@ -1,5 +1,4 @@
-from ryzom.components import Component, CTree, CList, HTMLPayload, Text
-
+from ryzom.components import CList, Component, CTree, HTMLPayload, Text
 
 templates = dict()
 

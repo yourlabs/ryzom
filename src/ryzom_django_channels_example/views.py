@@ -1,8 +1,9 @@
 from django import forms
-from django.views import generic
 from django.urls import path, reverse
-from ryzom.components import SubscribeComponentMixin, ReactiveComponentMixin
+from django.views import generic
+
 from py2js.renderer import JS
+from ryzom.components import ReactiveComponentMixin, SubscribeComponentMixin
 from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.components import *
 

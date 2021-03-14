@@ -3,8 +3,6 @@ from django.urls import path, reverse
 from django.views import generic
 
 from ryzom_django.html import template
-from ryzom_django_channels.views import ReactiveMixin
-from py2js.renderer import JS
 from ryzom_django_mdc import html
 
 

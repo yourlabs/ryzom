@@ -1,16 +1,13 @@
 '''
 Defines the ryzom View class and the main index view
 '''
-from django import http
 from asgiref.sync import async_to_sync
-from ryzom.components import Component
+from django import http
+
 from py2js.renderer import JS, autoexec
-from ryzom_django_channels.models import (
-    Client,
-    Publication,
-    Registration,
-    Subscription,
-)
+from ryzom.components import Component
+from ryzom_django_channels.models import (Client, Publication, Registration,
+                                          Subscription)
 
 
 class ReactiveMixin:

@@ -1,6 +1,9 @@
 from django import forms
+
 from ryzom import html
+
 from .html import ErrorList
+
 
 def boundfield_to_component(bf):
     try:

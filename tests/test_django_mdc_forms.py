@@ -1,12 +1,13 @@
 import difflib
 import os
 import re
-import pytest
 from unittest.mock import patch
+
+import pytest
 from django import forms
+
 from ryzom import html
 from ryzom_django_example.views import ExampleForm
-
 
 ryzom_id_re = re.compile(r'(?<=ryzom-id=")([^"]*)')
 re_uuid = re.compile(r'getElementByUuid\(["a-z0-9]*\)')

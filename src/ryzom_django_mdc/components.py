@@ -1,6 +1,8 @@
 from ryzom_django.html import *
+from ryzom_django_mdc.forms import (context_attrs, field_kwargs, widget_attrs,
+                                    widget_context)
 from ryzom_mdc import *
-from ryzom_django_mdc.forms import field_kwargs, context_attrs, widget_attrs, widget_context
+
 from .html import *
 
 

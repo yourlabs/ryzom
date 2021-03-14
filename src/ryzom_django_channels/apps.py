@@ -20,7 +20,6 @@ class BaseConfig(AppConfig):
         in the to_publish list of ryzom.pusub module.
         '''
         import ryzom_django_channels.signals
-
         from ryzom_django_channels.pubsub import to_publish
 
         try:

@@ -1,7 +1,6 @@
 import pytest
-
 from django.conf import settings
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage import default_storage
 from django.contrib.sessions.backends.base import SessionBase
@@ -13,14 +12,12 @@ from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory as drf
 from django.test.utils import override_settings
 from django.urls import reverse
-
-from ryzom.html import Div, Text
-from ryzom_django.muicss import Form
-from ryzom_django.html import component_html
-from ryzom_django.template_backend import Ryzom
-
 from todos.crudlfap import TaskRouter
 
+from ryzom.html import Div, Text
+from ryzom_django.html import component_html
+from ryzom_django.muicss import Form
+from ryzom_django.template_backend import Ryzom
 
 pytestmark = pytest.mark.skipif(getattr(settings, 'PYTEST_SKIP', True),
                                 reason="skip tests in this module")

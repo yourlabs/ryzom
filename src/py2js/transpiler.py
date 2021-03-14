@@ -3,7 +3,9 @@
 import ast
 import inspect
 import textwrap
+
 from . import formater
+
 
 def scope(func):
     func.scope = True
@@ -283,6 +285,7 @@ class JS(object):
         self.write("%s.prototype.toString = _iter.prototype.toString;" % \
                 (class_name))
         from ast import dump
+
         #~ methods = []
         self._class_name = class_name
         for stmt in node.body:
