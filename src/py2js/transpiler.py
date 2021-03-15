@@ -242,11 +242,14 @@ class JS(object):
 
             self._scope = []
         else:
-            defaults = [None]*(len(node.args.args) - len(node.args.defaults)) + node.args.defaults
+            _args = [arg.arg for arg in node.args.args if arg.arg != 'self']
+            defaults = [None]*(len(_args) - len(node.args.defaults)) + node.args.defaults
 
             args = []
             defaults2 = []
             for arg, default in zip(node.args.args, defaults):
+                if arg.arg == 'self':
+                    continue
                 if not isinstance(arg, ast.arg):
                     raise JSError("tuples in argument list are not supported")
                 if default:
@@ -254,7 +257,10 @@ class JS(object):
                 args.append(arg.arg)
             defaults = "{" + ", ".join(defaults2) + "}"
             args = ", ".join(args)
-            prep = "function %s(%s) {" % (node.name, args)
+            func_name = node.name
+            if func_name == '__init__':
+                func_name = 'constructor'
+            prep = "function %s(%s) {" % (func_name, args)
             if getattr(self, 'is_async', False):
                 prep = 'async ' + prep
                 self.is_async = False
@@ -268,52 +274,23 @@ class JS(object):
 
     @scope
     def visit_ClassDef(self, node):
-        bases = [self.visit(n) for n in node.bases]
-        if not bases:
-            bases = ['object']
-        class_name = node.name
-        #self._classes remembers all classes defined
-        self._classes[class_name] = node
-        self._class_names.add(class_name)
-        self.write("function %s() {" % class_name)
-        self.write("    if( this === _global_this){")
-        self.write("        t = new %s();" % class_name)
-        self.write("        t.__init__.apply(t,arguments);")
-        self.write("        return t;")
-        self.write("    }")
-        self.write("}")
-        self.write("%s.__name__ = '%s';" % (class_name, class_name))
-        self.write("%s.__setattr__ = object.prototype.__setattr__;" % (class_name))
-        self.write("%s.__getattr__ = object.prototype.__setattr__;" % (class_name))
-        self.write("%s.__call__    = object.prototype.__call__;" % (class_name))
-        self.write("%s.prototype.__class__ = %s;" % (class_name, class_name))
-        self.write("%s.prototype.toString = _iter.prototype.toString;" % \
-                (class_name))
-        from ast import dump
+        if node.bases:
+            self.write(f"class {node.name} extends {node.bases[0].id}" + " {")
+        else:
+            self.write(f"class {node.name}" + " {")
+        self.indent()
 
-        #~ methods = []
-        self._class_name = class_name
         for stmt in node.body:
             if isinstance(stmt, ast.Assign):
                 value = self.visit(stmt.value)
                 for t in stmt.targets:
                     var = self.visit(t)
-                    self.write("%s.%s = %s;" % (class_name, var, value))
-                    self.write("%s.prototype.%s = %s.%s;" % (class_name, var, class_name, var))
+                    self.write("%s = %s;" % (var, value))
             else:
                 self.visit(stmt)
-        self._class_name = None
 
-        #The following is unnecessary: __init__ is inherited from
-        #'object'
-        #~ methods_names = [m.name for m in methods]
-        #~ if not "__init__" in methods_names:
-            #~ # if the user didn't define __init__(), we have to add it ourselves
-            #~ # because we call it from the constructor above
-            #~ self.write("_%s.prototype.__init__ = function() {" % class_name)
-            #~ js.append("}")
-
-        self.write('extend(%s, [%s]);' % (class_name, ', '.join(bases)))
+        self.dedent()
+        self.write("}")
 
     def visit_Return(self, node):
         if node.value is not None:

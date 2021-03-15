@@ -225,3 +225,19 @@ def test_py2js_mixin():
 };
 getElementById("test").addEventListener('submit',Test_on_form_submit);
 '''
+
+
+def test_class():
+    class HTMLElement:
+        pass
+
+    class MyComponent(HTMLElement):
+        def __init__(self):
+            self.something = 'test'
+
+    assert py2js.transpile(MyComponent) == '''class MyComponent extends HTMLElement {
+    function constructor() {
+        this.something = 'test';
+    };
+}
+'''
