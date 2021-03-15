@@ -4,4 +4,4 @@ async function func() {
     ).then(
         (r) => {return (console.log(r) && r.status)}
     );
-};
+}

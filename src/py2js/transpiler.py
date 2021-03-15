@@ -261,7 +261,10 @@ class JS(object):
             func_name = node.name
             if func_name == '__init__':
                 func_name = 'constructor'
-            prep = "function %s(%s) {" % (func_name, args)
+            if node.args.args and node.args.args[0].arg == 'self':
+                prep = "%s(%s) {" % (func_name, args)
+            else:
+                prep = "function %s(%s) {" % (func_name, args)
             if getattr(self, 'is_async', False):
                 prep = 'async ' + prep
                 self.is_async = False
@@ -271,7 +274,7 @@ class JS(object):
             for stmt in node.body:
                 self.visit(stmt)
             self.dedent()
-            self.write("};")
+            self.write("}")
 
     @scope
     def visit_ClassDef(self, node):

@@ -5,4 +5,4 @@ function func() {
     
         (arg) => {return arg.method()}
     ;
-};
+}

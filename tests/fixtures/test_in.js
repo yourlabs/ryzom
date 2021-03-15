@@ -8,4 +8,4 @@ function func() {
     if (deep.test.includes(x)) {
         console.log('test3');
     }
-};
+}

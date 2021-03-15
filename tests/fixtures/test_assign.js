@@ -12,4 +12,4 @@ function func() {
     };
     var k = {'toto': 11532};
     var i = h;
-};
+}

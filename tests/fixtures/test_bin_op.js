@@ -4,4 +4,4 @@ function func() {
     var test3 = ((10  -  5)  %  3);
     var test4 = ((4  /  2)  +  5.2);
     var test5 = ('titi'  +  'tutu');
-};
+}

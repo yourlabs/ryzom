@@ -181,7 +181,7 @@ def test_py2js_context_attribute_string():
     self = Test()
     assert py2js.transpile(self.bind, self=self) == '''function bind() {
     getElementByUuid("test");
-};
+}
 '''
 
 
@@ -196,10 +196,10 @@ def test_py2js_content_attribute_callable():
     self = Test()
     assert py2js.transpile(self.bind, self=self) == '''function Test_on_form_submit(event) {
     event.preventDefault();
-};
+}
 function bind() {
     addEventListener('submit',Test_on_form_submit);
-};
+}
 '''
 
 
@@ -220,11 +220,8 @@ def test_py2js_mixin():
             getElementById(self._id).addEventListener(
                 'submit', self.on_form_submit)
 
-    assert Test().render_js() == '''function Test_on_form_submit(event) {
-    event.preventDefault();
-};
-getElementById("test").addEventListener('submit',Test_on_form_submit);
-'''
+    result = Test().render_js()
+    assert_equals_fixture('test_mixin', result)
 
 
 def test_class():
@@ -235,12 +232,8 @@ def test_class():
         def __init__(self):
             self.something = 'test'
 
-    assert py2js.transpile(MyComponent) == '''class MyComponent extends HTMLElement {
-    function constructor() {
-        this.something = 'test';
-    };
-}
-'''
+    result = py2js.transpile(MyComponent)
+    assert_equals_fixture('test_class', result)
 
 
 def test_transpile_class():
@@ -248,16 +241,12 @@ def test_transpile_class():
         def __init__(self):
             self.something = 'test'
 
-    assert py2js.transpile_class(
+    result = py2js.transpile_class(
         MyComponent,
         newname='Test',
         superclass='HTMLElement',
-    ) == '''class Test extends HTMLElement {
-    function constructor() {
-        this.something = 'test';
-    };
-}
-'''
+    )
+    assert_equals_fixture('test_transpile_class', result)
 
 
 def test_HTMLElement():
@@ -265,9 +254,4 @@ def test_HTMLElement():
         class HTMLElement:
             def __init__(self):
                 self.test = '1'
-    assert MyComponent().render_js() == '''class MyComponent extends HTMLElement {
-    function constructor() {
-        this.test = '1';
-    };
-}
-'''
+    assert_equals_fixture('test_HTMLElement', MyComponent().render_js())

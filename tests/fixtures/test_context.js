@@ -5,4 +5,4 @@ function func() {
     var titi = {'a': 'tutu', 'b': 'test'}["b"];
     var assign_dict = {'a': 'tutu', 'b': 'test'};
     var val = assign_dict["b"];
-};
+}
