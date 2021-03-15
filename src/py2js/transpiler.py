@@ -3,6 +3,7 @@
 import ast
 import inspect
 import textwrap
+import re
 
 from . import formater
 
@@ -700,11 +701,13 @@ def transpile_body(obj, **context):
     return transpile(src, **context)
 
 
-def transpile_class(cls, superclass=None, **context):
+def transpile_class(cls, superclass=None, newname=None, **context):
     src = inspect.getsource(cls)
+    lines = src.split('\n')
+    if newname:
+        lines[0] = re.sub('class ([^:])*:', f'class {newname}:', lines[0])
     if superclass:
-        lines = src.split('\n')
-        lines[0] = lines[0].replace(':', f'({superclass}):')
-        src = '\n'.join(lines)
+        lines[0] = re.sub('[()]*:', f'({superclass}):', lines[0])
+    src = '\n'.join(lines)
     src = textwrap.dedent(src)
     return transpile(src, **context)

@@ -248,9 +248,26 @@ def test_transpile_class():
         def __init__(self):
             self.something = 'test'
 
-    assert py2js.transpile_class(MyComponent, 'HTMLElement') == '''class MyComponent extends HTMLElement {
+    assert py2js.transpile_class(
+        MyComponent,
+        newname='Test',
+        superclass='HTMLElement',
+    ) == '''class Test extends HTMLElement {
     function constructor() {
         this.something = 'test';
+    };
+}
+'''
+
+
+def test_HTMLElement():
+    class MyComponent(py2js.HTMLElementMixin):
+        class HTMLElement:
+            def __init__(self):
+                self.test = '1'
+    assert MyComponent().render_js() == '''class MyComponent extends HTMLElement {
+    function constructor() {
+        this.test = '1';
     };
 }
 '''
