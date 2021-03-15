@@ -3,4 +3,4 @@ function func() {
     for (const x of [...Array(3).keys()]) {
         console.log(x);
     }
-};
+}
