@@ -1,3 +1,4 @@
+import py2js
 from py2js.renderer import JS
 from ryzom.html import *
 
@@ -435,7 +436,7 @@ class MDCCheckboxSelectField(MDCField):
             self.help_text.attrs.style.margin_top = '-10px'
 
 
-class MDCCheckboxListItem(Li):
+class MDCCheckboxListItem(py2js.Mixin, Li):
     def __init__(self, title, id, checked=False, **kwargs):
         self.input_id = id
         if checked:
@@ -470,21 +471,18 @@ class MDCCheckboxListItem(Li):
             }
         )
 
-    def render_js(self):
-        def events():
-            def click_input(event):
-                event.stopPropagation()
-                elem = event.target.querySelector('input')
-                if elem:
-                    elem.click()
+    def click_input(event):
+        event.stopPropagation()
+        elem = event.target.querySelector('input')
+        if elem:
+            elem.click()
 
-            elem = getElementByUuid(id)
-            setattr(elem, 'onclick', click_input)
-
-        return JS(events, dict(id=self._id))
+    def py2js(self):
+        elem = getElementByUuid(self._id)
+        elem.onclick = self.click_input
 
 
-class MDCMultipleChoicesCheckbox(Ul):
+class MDCMultipleChoicesCheckbox(py2js.Mixin, Ul):
     def __init__(self, name, choices, n=1, **kwargs):
         self.max = n
         alabel = kwargs.pop('aria-label', 'Label')
@@ -501,35 +499,31 @@ class MDCMultipleChoicesCheckbox(Ul):
             **{'aria-label': alabel}
         )
 
-    def render_js(self):
-        def change_event():
-            def update_inputs(event):
-                checked = input_list.querySelectorAll('input:checked')
-                unchecked = input_list.querySelectorAll('input:not(:checked)')
+    def update_inputs(event):
+        input_list = event.target
+        checked = input_list.querySelectorAll('input:checked')
+        unchecked = input_list.querySelectorAll('input:not(:checked)')
 
-                def disable(elem, pos, arr):
-                    setattr(elem, 'disabled', 'true')
-                    list_item = document.querySelector(
-                        '[data-list-item-of="' + elem.id + '"]'
-                    ).classList.add('mdc-list-item--disabled')
+        def disable(elem, pos, arr):
+            elem.disabled = True
+            list_item = document.querySelector(
+                '[data-list-item-of="' + elem.id + '"]'
+            ).classList.add('mdc-list-item--disabled')
 
-                def enable(elem, pas, arr):
-                    setattr(elem, 'disabled', undefined)
-                    list_item = document.querySelector(
-                        '[data-list-item-of="' + elem.id + '"]'
-                    ).classList.remove('mdc-list-item--disabled')
+        def enable(elem, pas, arr):
+            elem.disabled = undefined
+            list_item = document.querySelector(
+                '[data-list-item-of="' + elem.id + '"]'
+            ).classList.remove('mdc-list-item--disabled')
 
-                if checked.length >= max_choices:
-                    unchecked.forEach(disable)
-                else:
-                    unchecked.forEach(enable)
+        if checked.length >= self.max:
+            unchecked.forEach(disable)
+        else:
+            unchecked.forEach(enable)
 
-            input_list = getElementByUuid(id)
-            input_list.addEventListener('change', update_inputs)
-
-            document.addEventListener('readystatechange', update_inputs)
-
-        return JS(change_event, dict(id=self._id, max_choices=self.max))
+    def py2js(self):
+        input_list = getElementByUuid(self._id)
+        input_list.addEventListener('change', self.update_inputs)
 
 
 class MdcTopAppBar(Component):
