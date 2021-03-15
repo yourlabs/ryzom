@@ -234,6 +234,31 @@ def test_py2js_context_attribute_deeper():
 '''
 
 
+def test_py2js_context_attribute_deeper2():
+    class Test_A:
+        z = 10
+
+    class Test_B:
+        y = Test_A()
+
+    class Test_C:
+        x = Test_B()
+
+    class Test:
+        def __init__(self):
+            self.w = Test_C()
+
+        def log():
+            # should write "console.log(10)"
+            print(self.w.x.y.z)
+
+    self = Test()
+    assert py2js.transpile(self.log, self=self) == '''function log() {
+    console.log(10);
+}
+'''
+
+
 def test_transpile_body():
     def foo():
         print('a')
