@@ -41,6 +41,6 @@ def bundle(*modules):
         for key, value in mod.__dict__.items():
             if hasattr(value, 'HTMLElement') and hasattr(value, 'tag'):
                 out += webcomponent(value)
-            if hasattr(value, 'py2js'):
+            if getattr(value, 'py2js', None):
                 out += functions(value)
     return '\n'.join(out)
