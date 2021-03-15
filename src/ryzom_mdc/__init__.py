@@ -211,12 +211,13 @@ class MDCFormField(Div):
         super().__init__(*content, **self.attrs, **kwargs)
 
 
-class MDCFileField(Div):
+class MDCFileField(py2js.Mixin, Div):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
         self.btn = MDCButtonLabelOutlined(label, False)
         self.input_id = html_input.attrs['id']
         self.btn.attrs['for'] = self.input_id
         self.selected_text = Span('No file selected')
+        self.label_id = self.selected_text._id
         super().__init__(
             Span(
                 html_input,
@@ -226,20 +227,16 @@ class MDCFileField(Div):
             self.btn
         )
 
-    def render_js(self):
-        def change_event():
-            def update_name(event):
-                file_name = document.querySelector(input_id).value
-                label = getElementByUuid(label_id)
-                label.innerHTML = file_name or 'No file selected'
+    def set_update_name(input_id, label_id):
+        def update_name(event):
+            file_name = event.target.value
+            label = getElementByUuid(label_id)
+            label.innerHTML = file_name or 'No file selected'
 
+        document.querySelector('#'+input_id).addEventListener('change', update_name)
 
-            document.querySelector(input_id).addEventListener('change', update_name)
-
-        return JS(change_event, dict(
-            input_id=f'#{self.input_id}',
-            label_id=self.selected_text._id,
-        ))
+    def py2js(self):
+        self.set_update_name(self.input_id, self.label_id)
 
 
 class MDCSplitDateTime(Div):
@@ -311,7 +308,7 @@ class MDCListItem(Li):
         )
 
 
-class MDCSnackBar(Div):
+class MDCSnackBar(py2js.Mixin, Div):
     def __init__(self, msg, status='success'):
         super().__init__(
             Div(
@@ -338,13 +335,11 @@ class MDCSnackBar(Div):
             **{'data-mdc-auto-init': 'MDCSnackbar'}
         )
 
-    def render_js(self):
-        def open_bar():
-            elem = getElementByUuid(sb_id)
-            sb = new.mdc.snackbar.MDCSnackbar(elem)
-            sb.open()
 
-        return JS(open_bar, dict(sb_id=self._id))
+    def py2js(self):
+        elem = getElementByUuid(self._id)
+        sb = new.mdc.snackbar.MDCSnackbar(elem)
+        sb.open()
 
 
 class MDCErrorListItem(Li):
