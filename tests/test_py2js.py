@@ -156,3 +156,15 @@ def test_in():
 
     result = JS(func)
     assert_equals_fixture('test_in', result)
+
+
+def test_range():
+    def func():
+        a = range(10)
+
+        for x in range(3):
+            print(x)
+
+    result = JS(func)
+    assert_equals_fixture('test_range', result)
+
