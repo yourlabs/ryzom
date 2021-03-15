@@ -608,13 +608,21 @@ class JS(object):
                 if name not in self._functions:
                     self._functions[name] = value
                 return name
-            else:
+            elif isinstance(value, (int, float)):
                 return f'{value}'
+            else:
+                return value
 
         value = self.visit(node.value)
 
         if value == 'new':
             return "%s %s" % (value, node.attr)
+
+        if not isinstance(value, str):
+            value = getattr(value, node.attr)
+            if isinstance(value, str):
+                return f'"{value}"'
+            return value
         return "%s.%s" % (self.visit(node.value), node.attr)
 
     def visit_Tuple(self, node):

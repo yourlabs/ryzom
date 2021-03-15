@@ -190,6 +190,50 @@ def test_py2js_context_attribute_string():
 '''
 
 
+def test_py2js_context_attribute_deep():
+    class Test_A:
+        test = 'test'
+
+    class Test:
+        def __init__(self):
+            self.x = Test_A()
+
+        def log():
+            # should write "console.log('test')"
+            print(self.x.test)
+
+    self = Test()
+    assert py2js.transpile(self.log, self=self) == '''function log() {
+    console.log("test");
+}
+'''
+
+
+def test_py2js_context_attribute_deeper():
+    class Test_A:
+        z = 'test'
+
+    class Test_B:
+        y = Test_A()
+
+    class Test_C:
+        x = Test_B()
+
+    class Test:
+        def __init__(self):
+            self.w = Test_C()
+
+        def log():
+            # should write "console.log('test')"
+            print(self.w.x.y.z)
+
+    self = Test()
+    assert py2js.transpile(self.log, self=self) == '''function log() {
+    console.log("test");
+}
+'''
+
+
 def test_transpile_body():
     def foo():
         print('a')
