@@ -1,5 +1,9 @@
+import ast
+import inspect
 import importlib
 import py2js
+from py2js.transpiler import JS
+import textwrap
 
 
 def webcomponent(value):
@@ -13,6 +17,23 @@ def webcomponent(value):
     ]
 
 
+def functions(value):
+    out = []
+    tree = ast.parse(textwrap.dedent(inspect.getsource(value.py2js)))
+    transpiler = JS()
+    transpiler._context = dict(self=value)
+    transpiler.visit(tree)
+    for name, func in transpiler._functions.items():
+        func_src = textwrap.dedent(inspect.getsource(func))
+        func_ast = ast.parse(func_src)
+        func_ast.body[0].name = name
+        func_js = JS()
+        func_js._context = dict(self=value)
+        func_js.visit(func_ast)
+        out.append(func_js.read())
+    return out
+
+
 def bundle(*modules):
     out = []
     for module in modules:
@@ -20,4 +41,6 @@ def bundle(*modules):
         for key, value in mod.__dict__.items():
             if hasattr(value, 'HTMLElement') and hasattr(value, 'tag'):
                 out += webcomponent(value)
+            if hasattr(value, 'py2js'):
+                out += functions(value)
     return '\n'.join(out)

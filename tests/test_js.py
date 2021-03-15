@@ -17,5 +17,15 @@ class MyComponent(Component):
             this.connected = True
 
 
+class OtherComponent(Component):
+    tag = 'div'
+
+    def on_form_submit():
+        print('hi!')
+
+    def py2js(self):
+        self.on_form_submit()
+
+
 def test_bundle():
     assert_equals_fixture('test_bundle', bundle(__name__))

@@ -186,29 +186,6 @@ def test_py2js_context_attribute_string():
     self = Test()
     assert py2js.transpile(self.bind, self=self) == '''function bind() {
     getElementByUuid("test");
-<<<<<<< HEAD
-}
-=======
-};
->>>>>>> 5f082c8 (Support callable and string attributes)
-'''
-
-
-def test_py2js_content_attribute_callable():
-    class Test:
-        def on_form_submit(event):
-            event.preventDefault()
-
-        def bind():
-            addEventListener('submit', self.on_form_submit)
-
-    self = Test()
-    assert py2js.transpile(self.bind, self=self) == '''function Test_on_form_submit(event) {
-    event.preventDefault();
-<<<<<<< HEAD
-}
-function bind() {
-    addEventListener('submit',Test_on_form_submit);
 }
 '''
 
@@ -217,21 +194,6 @@ def test_transpile_body():
     def foo():
         print('a')
     assert py2js.transpile_body(foo) == "console.log('a');\n"
-
-
-def test_py2js_mixin():
-    class Test(py2js.Mixin):
-        _id = 'test'
-
-        def on_form_submit(event):
-            event.preventDefault()
-
-        def py2js():
-            getElementById(self._id).addEventListener(
-                'submit', self.on_form_submit)
-
-    result = Test().render_js()
-    assert_equals_fixture('test_mixin', result)
 
 
 def test_class():

@@ -676,13 +676,6 @@ def convert_py2js(s, context=None):
     v = JS(context)
     v.visit(t)
     js = v.read()
-    for name, func in v._functions.items():
-        func_src = textwrap.dedent(inspect.getsource(func))
-        func_ast = ast.parse(func_src)
-        func_ast.body[0].name = name
-        func_js = JS(context)
-        func_js.visit(func_ast)
-        js = func_js.read() + js
     return js
 
 
