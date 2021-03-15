@@ -89,6 +89,10 @@ class JS(object):
             'IsNot' : "is not", # Not implemented yet
         }
 
+    funcs = {
+            'range' : 'visit_Range'
+    }
+
     def __init__(self, context=None):
         self.__formater = formater.Formater()
         self.write = self.__formater.write
@@ -359,24 +363,7 @@ class JS(object):
         for_target = self.visit(node.target)
         for_iter = self.visit(node.iter)
 
-        iter_dummy = self.new_dummy()
-        orelse_dummy = self.new_dummy()
-        exc_dummy = self.new_dummy()
-
-        self.write("var %s = iter(%s);" % (iter_dummy, for_iter))
-        self.write("var %s = false;" % orelse_dummy)
-        self.write("while (1) {")
-        self.write("    var %s;" % for_target)
-        self.write("    try {")
-        self.write("        %s = %s.next();" % (for_target, iter_dummy))
-        self.write("    } catch (%s) {" % exc_dummy)
-        self.write("        if (isinstance(%s, py_builtins.StopIteration)) {" % exc_dummy)
-        self.write("            %s = true;" % orelse_dummy)
-        self.write("            break;")
-        self.write("        } else {")
-        self.write("            throw %s;" % exc_dummy)
-        self.write("        }")
-        self.write("    }")
+        self.write(f"for (const {for_target} of {for_iter}) {{")
         self.indent()
         for stmt in node.body:
             self.visit(stmt)
@@ -606,6 +593,10 @@ class JS(object):
             except:
                 raise
 
+            if func in self.funcs.keys():
+                method = getattr(self, self.funcs[func])
+                return method(js_args)
+
             return "%s(%s)" % (func, js_args)
 
     def visit_Raise(self, node):
@@ -667,6 +658,11 @@ class JS(object):
 
     def visit_Index(self, node):
         return self.visit(node.value)
+
+    #specifics
+    def visit_Range(self, args):
+        return f"[...Array({args}).keys()]"
+
 
 def convert_py2js(s, context=None):
     """
