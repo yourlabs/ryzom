@@ -207,3 +207,21 @@ def test_transpile_body():
     def foo():
         print('a')
     assert py2js.transpile_body(foo) == "console.log('a');\n"
+
+
+def test_py2js_mixin():
+    class Test(py2js.Mixin):
+        _id = 'test'
+
+        def on_form_submit(event):
+            event.preventDefault()
+
+        def py2js():
+            getElementById(self._id).addEventListener(
+                'submit', self.on_form_submit)
+
+    assert Test().render_js() == '''function Test_on_form_submit(event) {
+    event.preventDefault();
+};
+getElementById("test").addEventListener('submit',Test_on_form_submit);
+'''

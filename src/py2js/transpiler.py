@@ -123,7 +123,7 @@ class JS(object):
                     sub.visit(tree)
                     self.write(sub.read())
 
-        self._context = context
+        self._context = context or {}
 
     def new_dummy(self):
         dummy = "__dummy%d__" % self.dummy
@@ -720,4 +720,4 @@ def transpile_body(obj, **context):
     src = inspect.getsource(obj)
     src = '\n'.join(src.split('\n')[1:])
     src = textwrap.dedent(src)
-    return convert_py2js(src)
+    return transpile(src, **context)
