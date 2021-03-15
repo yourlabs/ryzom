@@ -1,4 +1,4 @@
-from .transpiler import transpile, transpile_body
+from .transpiler import transpile, transpile_body, transpile_class
 
 
 class Mixin:

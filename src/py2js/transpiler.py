@@ -698,3 +698,13 @@ def transpile_body(obj, **context):
     src = '\n'.join(src.split('\n')[1:])
     src = textwrap.dedent(src)
     return transpile(src, **context)
+
+
+def transpile_class(cls, superclass=None, **context):
+    src = inspect.getsource(cls)
+    if superclass:
+        lines = src.split('\n')
+        lines[0] = lines[0].replace(':', f'({superclass}):')
+        src = '\n'.join(lines)
+    src = textwrap.dedent(src)
+    return transpile(src, **context)

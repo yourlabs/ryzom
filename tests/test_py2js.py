@@ -241,3 +241,16 @@ def test_class():
     };
 }
 '''
+
+
+def test_transpile_class():
+    class MyComponent:
+        def __init__(self):
+            self.something = 'test'
+
+    assert py2js.transpile_class(MyComponent, 'HTMLElement') == '''class MyComponent extends HTMLElement {
+    function constructor() {
+        this.something = 'test';
+    };
+}
+'''
