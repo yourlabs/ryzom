@@ -1,3 +1,8 @@
+"""
+Tests for py2js.
+
+For ryzom.js tests (including bundle), see test_js.py
+"""
 import os
 
 import pytest
@@ -247,11 +252,3 @@ def test_transpile_class():
         superclass='HTMLElement',
     )
     assert_equals_fixture('test_transpile_class', result)
-
-
-def test_HTMLElement():
-    class MyComponent(py2js.HTMLElementMixin):
-        class HTMLElement:
-            def __init__(self):
-                self.test = '1'
-    assert_equals_fixture('test_HTMLElement', MyComponent().render_js())
