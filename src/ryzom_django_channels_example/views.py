@@ -2,6 +2,7 @@ from django import forms
 from django.urls import path, reverse
 from django.views import generic
 
+import py2js
 from py2js.renderer import JS
 from ryzom.components import ReactiveComponentMixin, SubscribeComponentMixin
 from ryzom_django_channels.views import ReactiveMixin, register
@@ -10,27 +11,24 @@ from ryzom_django_mdc.components import *
 from .models import Message, Room
 
 
-class AjaxFormMixin:
-    def render_js(self):
-        def handle_submit():
-            async def on_form_submit(event):
-                event.preventDefault()
+class AjaxFormMixin(py2js.Mixin):
+    async def on_form_submit(event):
+        event.preventDefault()
 
-                form = event.target
+        form = event.target
 
-                await fetch(form.action, {
-                    'method': form.method,
-                    'body': new.FormData(form)
-                }).then(
-                    lambda response : print(response)
-                )
+        await fetch(form.action, {
+            'method': form.method,
+            'body': new.FormData(form)
+        }).then(
+            lambda response : print(response)
+        )
 
-                form.reset()
+        form.reset()
 
-            form = getElementByUuid(form_id)
-            form.addEventListener('submit', on_form_submit)
-
-        return JS(handle_submit, dict(form_id=self._id))
+    def py2js(self):
+        form = getElementByUuid(self._id)
+        form.addEventListener('submit', self.on_form_submit)
 
 
 class MessageFormComponent(AjaxFormMixin, Form):

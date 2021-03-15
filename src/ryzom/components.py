@@ -8,8 +8,6 @@ import importlib
 import re
 import uuid
 
-from py2js.renderer import autoexec
-
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -336,7 +334,7 @@ class Component(metaclass=ComponentMetaclass):
             'content': content,
             'parent': parent_id,
             'position': self.position,
-            'script': autoexec(self.render_js()),
+            'script': self.render_js(),
             'attrs': self.attrs
         }
 
@@ -376,7 +374,7 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
             self.setup_reactive()
 
-            if render_js_str := autoexec(self.render_js()):
+            if render_js_str := self.render_js():
                 self.scripts.append(render_js_str)
 
             html += self.children_to_html(**kwargs)
@@ -448,7 +446,7 @@ class Component(metaclass=ComponentMetaclass):
         js_str = str(self.render_js())
 
         if js_str:
-            js_str = autoexec(js_str)
+            js_str = js_str
 
         if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
             for c in self.content:
