@@ -589,7 +589,7 @@ class JS(object):
                 raise JSError("keyword arguments are not supported")
 
             try:
-                js_args = ",".join([ self.visit(arg) for arg in node.args ])
+                js_args = ",".join([str(self.visit(arg)) for arg in node.args ])
             except:
                 raise
 

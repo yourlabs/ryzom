@@ -635,6 +635,10 @@ function _list(seq) {
     this.__init__(seq);
 }
 
+function getElementByUuid(uuid) {
+  return document.querySelector("[ryzom-id='"+uuid+"']")
+}
+
 _list.__name__ = 'list';
 _list.prototype.__class__ = _list;
 
