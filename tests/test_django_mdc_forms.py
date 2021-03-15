@@ -10,7 +10,7 @@ from ryzom import html
 from ryzom_django_example.views import ExampleForm
 
 ryzom_id_re = re.compile(r'(?<=ryzom-id=")([^"]*)')
-re_uuid = re.compile(r'getElementByUuid\(["a-z0-9]*\)')
+re_uuid = re.compile(r'"[a-z0-9]{32}"')
 csrf_re = r'[<][^<]*name="csrfmiddlewaretoken"[^>]*[>]'
 
 
@@ -30,7 +30,7 @@ def assert_equals_fixture(name, result):
         f'{name}.html',
     )
     result = re.sub(ryzom_id_re, '', str(result))
-    result = re.sub(re_uuid, 'getElementByUuid()', str(result))
+    result = re.sub(re_uuid, '""', str(result))
     result = re.sub(csrf_re, 'csrfmiddlewaretoken', result)
     if not os.path.exists(path):
         result = re.sub(ryzom_id_re, '', str(result))

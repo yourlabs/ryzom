@@ -194,14 +194,7 @@ Send</span>
 
 <script type="text/javascript">
 
-mdc.autoInit();function change_event() {
-    function update_name(event) {
-        var file_name = document.querySelector("#id_document").value;
-        var label = getElementByUuid();
-        label.innerHTML = (file_name || 'No file selected');
-    }
-    document.querySelector("#id_document").addEventListener('change',update_name);
-}
+mdc.autoInit();MDCFileField_set_update_name("id_document","");
 </script>
 
 </body>
