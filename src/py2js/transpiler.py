@@ -608,6 +608,8 @@ class JS(object):
                 if name not in self._functions:
                     self._functions[name] = value
                 return name
+            else:
+                return f'{value}'
 
         value = self.visit(node.value)
 
