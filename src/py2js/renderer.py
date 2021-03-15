@@ -86,5 +86,5 @@ def JS(obj, ctx=None):
 
 def autoexec(js):
     if js:
-        return '\n(' + str(js)[:-2] + ')();\n'
+        return '\n(' + str(js)[:-1] + ')();\n'
     return ''

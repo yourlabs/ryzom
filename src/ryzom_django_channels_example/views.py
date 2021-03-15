@@ -1,4 +1,4 @@
-from django import forms
+from django import forms, http
 from django.urls import path, reverse
 from django.views import generic
 
@@ -43,37 +43,40 @@ class MessageFormComponent(AjaxFormMixin, Form):
             **context)
 
 
+class DeleteButton(Component):
+    tag = 'delete-button'
+
+    def __init__(self, *content, **attrs):
+        content = content or (MDCButtonOutlined(MDCIcon('delete')),)
+        super().__init__(*content, **attrs)
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.delete.bind(this))
+
+        async def delete(self, event):
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+
+            print('url', this.attributes['delete-url'].value)
+            await fetch(this.attributes['delete-url'].value, {
+                method: 'delete',
+                headers: {'X-CSRFTOKEN': csrf.value},
+            }).then(
+                lambda response: print(response)
+            )
+
+
 class MessageItem(MDCListItem):
     def __init__(self, obj):
         self.obj = obj
-        self.btn = MDCButtonOutlined(MDCIcon('delete'))
 
         super().__init__(
             Span(obj.user or 'Anonymous', ' says: ', obj.message),
-            self.btn,
-            _id=f'message-{obj.id}')
-
-    def render_js(self):
-        def delete_message():
-            def handle_response(response):
-                console.log(response.status)
-
-            async def exec_delete(event):
-                csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
-                request = new.Request(delete_url)
-                request.headers['X-CSRFTOKEN'] = csrf.value
-                request['method'] = 'delete'
-
-                await fetch(request).then(
-                    lambda response : print(response)
-                )
-
-            btn = getElementByUuid(btn_id)
-            btn.addEventListener('click', exec_delete)
-
-        return JS(delete_message, dict(
-            btn_id=self.btn._id,
-            delete_url=reverse('message_delete', args=[self.obj.id])))
+            DeleteButton(
+                delete_url=reverse('message_delete', args=[self.obj.id]),
+            ),
+            _id=f'message-{obj.id}',
+        )
 
 
 class ChatRoom(MDCList, SubscribeComponentMixin):
@@ -133,6 +136,7 @@ class Head(Head):
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         '/static/py2js.js',
         '/static/ryzom.js',
+        '/reactive/bundle.js',
     ]
 
 
@@ -236,7 +240,23 @@ class ChatDeleteView(generic.DeleteView):
         return path('message/<pk>/delete', cls.as_view(), name='message_delete')
 
 
+
+class BundleView(generic.View):
+    def get(self, *args, **kwargs):
+        from ryzom.js import bundle
+        response = http.HttpResponse(
+                bundle('ryzom_django_channels_example.views'),
+        )
+        response['Content-Type'] = 'text/javascript'
+        return response
+
+    @classmethod
+    def as_url(cls):
+        return path('bundle.js', cls.as_view())
+
+
 urlpatterns = [
     ChatView.as_url(),
     ChatDeleteView.as_url(),
+    BundleView.as_url(),
 ]

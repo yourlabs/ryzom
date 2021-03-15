@@ -12,10 +12,11 @@ class Mixin:
 class HTMLElementMixin:
     HTMLElement = None
 
-    def render_js(self):
-        if self.HTMLElement:
+    @classmethod
+    def render_js(cls):
+        if cls.HTMLElement:
             return transpile_class(
-                self.HTMLElement,
+                cls.HTMLElement,
                 superclass='HTMLElement',
-                newname=type(self).__name__,
+                newname=cls.__name__,
             )
