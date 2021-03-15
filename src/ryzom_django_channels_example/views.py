@@ -61,6 +61,7 @@ class DeleteButton(Component):
             await fetch(this.attributes['delete-url'].value, {
                 method: 'delete',
                 headers: {'X-CSRFTOKEN': csrf.value},
+                redirect: 'manual',
             }).then(
                 lambda response: print(response)
             )
