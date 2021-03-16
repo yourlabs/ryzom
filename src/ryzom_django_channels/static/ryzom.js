@@ -43,7 +43,7 @@
   };
 
   registerComponent = function(component, DOMelem) {
-    window.components[component._id] = DOMelem;
+    window.components[component.id] = DOMelem;
   };
 
   getElementByUuid = function(uuid) {
@@ -69,7 +69,7 @@
     }
 
     if (component.publication) {
-      ryzom.subscribe(component.publication, component.subscription, component._id, function(r, e) {
+      ryzom.subscribe(component.publication, component.subscription, component.id, function(r, e) {
         if (e) { console.log(e); }
       });
     };
@@ -115,12 +115,12 @@
 
   removeDOM = function(params) {
     var parentNode = getElementByUuid(params.parent);
-    var node = getElementByUuid(params._id);
+    var node = getElementByUuid(params.id);
     parentNode.removeChild(node);
   };
 
   changeDOM = function(params) {
-    var prev_node = getElementByUuid(params._id);
+    var prev_node = getElementByUuid(params.id);
     var cur_node = createDOMelement(params);
     var parent = getElementByUuid(params.parent);
     parent.removeChild(prev_node);
@@ -215,8 +215,8 @@
           else if (data.type == 'Success')
             result = data;
 
-          ws.callbacks[data._id](result, error);
-          delete ws.callbacks[data._id]
+          ws.callbacks[data.id](result, error);
+          delete ws.callbacks[data.id]
       };
     };
 
@@ -233,9 +233,9 @@
     ws_connect();
 
   ws_send = function(data, cb) {
-    var _id = ID();
-    data._id = _id;
-    ws.callbacks[_id] = cb;
+    var id = ID();
+    data.id = id;
+    ws.callbacks[id] = cb;
     if (initialized)
       ws.send(JSON.stringify(data));
     else {

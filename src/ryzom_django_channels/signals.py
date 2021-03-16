@@ -19,7 +19,7 @@ def _ddp_insert_change(sender, **kwargs):
     whenever a Publishable model's save() method is called.
     This function will update the queryset of all subscriptions
     associated with the sender model and send insert, remove or change
-    message for each _id that was added or removed from the old
+    message for each id that was added or removed from the old
     queryset to the new one.
     '''
     if Publishable not in sender.mro():
@@ -65,10 +65,10 @@ def _ddp_insert_change(sender, **kwargs):
                 # using loops for now but shouldn't be usefull as we
                 # are handling only one entry, the queryset shouldn't
                 # move by more that one in and/or one out
-                for _id in diff['removed']:
-                    send_remove(sub, sender, template, _id)
-                for _id in diff['inserted']:
-                    send_insert(sub, sender, template, _id)
+                for id in diff['removed']:
+                    send_remove(sub, sender, template, id)
+                for id in diff['inserted']:
+                    send_insert(sub, sender, template, id)
 
 
 @receiver(post_delete)
@@ -78,7 +78,7 @@ def _ddp_delete(sender, **kwargs):
     whenever a Publishable model's delete() method is called.
     This function will update the queryset of all subscriptions
     associated with the sender model and send insert and remove
-    message for each _id that was added or removed from the old
+    message for each id that was added or removed from the old
     queryset to the new one.
     '''
     if Publishable not in sender.mro():
@@ -106,7 +106,7 @@ def _ddp_delete(sender, **kwargs):
                     'removed': set(old_qs).difference(set(new_qs))
                 }
 
-                for _id in diff['removed']:
-                    send_remove(sub, sender, template, _id)
-                for _id in diff['inserted']:
-                    send_insert(sub, sender, template, _id)
+                for id in diff['removed']:
+                    send_remove(sub, sender, template, id)
+                for id in diff['inserted']:
+                    send_insert(sub, sender, template, id)
