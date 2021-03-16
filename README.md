@@ -21,19 +21,20 @@ Source project for an NGO defending democracy, with an online voting platform
 secured with homomorphic encryption, basically a Django project built on top of
 microsoft/electionguard-python.
 
-It's **not** ready for general use, but should hopefully be pretty soon...
-after all, this project has been under R&D sponsored by YourLabs for years now
-and it's about time!
-
 ## Demo
+
+While Django is not a requirement for Ryzom, we currently only have a demo app
+in Django:
 
 ```
 git clone https://yourlabs.io/oss/ryzom.git
 sudo -u postgres createdb -O $UTF -E UTF8 ryzom_django_example
 cd ryzom
-pip install -e .
+pip install -e .[django,channels]
 ./manage.py migrate
 ./manage.py runserver
+# open localhost:8000 for a basic form
+# open localhost:8000/reactive for databinding with django channels
 
 # to run tests:
 py.test
