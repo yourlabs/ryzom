@@ -1,6 +1,7 @@
 from django.utils.safestring import mark_safe
 
 from ryzom.html import *
+from .bundle import CSSBundle, JSBundle
 
 
 def component_html(path, *args, **kwargs):
@@ -24,3 +25,10 @@ class ErrorList(Ul):
         super().__init__(
             *[Li(e) for e in content]
         )
+
+
+class Html(Html):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.head.stylesheets.append(CSSBundle().attrs.href)
+        self.body.scripts.append(JSBundle().attrs.src)

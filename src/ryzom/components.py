@@ -139,7 +139,7 @@ class ComponentMetaclass(type):
 
         for base in bases:
             if base_attrs := getattr(base, 'attrs', None):
-                attrs.update(base_attrs)
+                attrs.update({k: v for k, v in base_attrs.items() if k != 'style'})
             if extra_scripts := getattr(base, 'scripts', None):
                 scripts.extend(extra_scripts)  # scripts are a dict!
             if extra_stylesheets := getattr(base, 'stylesheets', None):
@@ -149,6 +149,11 @@ class ComponentMetaclass(type):
             attrs.update(class_attrs['attrs'])
         if 'style' in class_attrs:
             attrs.update(dict(style=class_attrs['style']))
+        if attrs.get('style', None):
+            if not attrs.get('class', ''):
+                attrs['class'] = name
+            else:
+                attrs['class'] += f' {name}'
         class_attrs['attrs'] = attrs
 
         if extra_stylesheets := class_attrs.get('stylesheets', None):
@@ -232,6 +237,9 @@ class Component(metaclass=ComponentMetaclass):
 
         # create an instance attribute from the class attribute
         self.__dict__['attrs'] = copy.deepcopy(getattr(self, 'attrs', {}))
+        # remove class defined style attribute because it is bundled
+        if 'style' in self.attrs:
+            self.attrs.pop('style')
 
         # update with kwargs
         self.attrs.update(attrs)
@@ -431,7 +439,6 @@ class Component(metaclass=ComponentMetaclass):
         if isinstance(self, ReactiveComponentMixin):
             if hasattr(self, 'register'):
                 self.create_registration()
-
 
     def render(self, **kwargs):
         if 'view' in kwargs:

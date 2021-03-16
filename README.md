@@ -84,8 +84,7 @@ yourdiv.render() == '<div class="something new" data-something="foo">hi</div>'
 
 #### Styles
 
-Style attributes will also merge, they may be declared within attrs or on their
-own too.
+Styles may be declared within attrs or on their own too.
 
 ```py
 class Foo(Div):
@@ -102,7 +101,9 @@ class Foo(Div):
     attrs = dict(style='margin-top: 1px')
 ```
 
-They are inheritable like attributes.
+- Class style attributes will be extracted into a CSS bundle.
+- Instance style attributes will be rendered inline.
+- Every component that has a style will also render a class attribute.
 
 ### JavaScript
 
@@ -181,11 +182,28 @@ class YourComponent(py2js.Mixin, Div):
         alert('submit!')
 
     def py2js(self):
-        getElementByUuid(self.id).addEventListener('submit', self.on_form_submit)
+        getElementByUuid(self._id).addEventListener('submit', self.on_form_submit)
 ```
 
 This will make your component also render the addEventListener statement in a
 script tag, and the bundle will package the on_form_submit function.
+
+### Bundles
+
+The component will depend on their CSS and JS bundles. Without Django, you can
+do it manually as such:
+
+```py
+from ryzom import bundle
+
+your_components_modules = [
+    'ryzom_mdc.html',
+    'your.html',
+]
+
+css_bundle = bundle.css(*your_components_modules)
+js_bundle = bundle.js(*your_components_modules)
+```
 
 ### Django
 
@@ -273,6 +291,36 @@ class YourModelForm(Form):
         )
 
 ```
+
+#### Bundles
+
+`ryzom_django` app provides 3 commands:
+
+- `ryzom_css`: output the CSS bundle
+- `ryzom_js`: output the JS bundle
+- `ryzom_bundle`: write `bundle.js` and `bundle.css` in `ryzom_bundle/static`
+
+As well as 2 views, `JSBundleView` and `CSSBundleView` that you can use in
+development, include them in your `urls.py` as such:
+
+```py
+from django.conf import settings
+
+if settings.DEBUG:
+    urlpatterns.append(
+        path('bundles/', include('ryzom_django.bundle')),
+    )
+```
+
+For production, you may write the bundles before running collectstatic as such:
+
+```sh
+./manage.py ryzom_bundle
+./manage.py collectstatic
+```
+
+Then, make sure you use the `Html` component from `ryzom_django` or any
+`ryzom_django_*` app, which will include them automatically.
 
 #### Forms
 

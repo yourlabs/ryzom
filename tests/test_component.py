@@ -84,22 +84,6 @@ def test_attr_instance():
     assert Test1.attrs.x == 'x'
 
 
-def test_attr_style():
-    test = Test1()
-    test.attrs.style = 'display: none; color: blue'
-    assert test.attrs.style == dict(display='none', color='blue')
-
-    class C1(html.Component):
-        attrs = dict(style='display: none; color: blue')
-    assert C1.attrs.style == dict(display='none', color='blue')
-
-    class C2(C1):
-        attrs = dict(style='display: block')
-
-    assert C1.attrs.style == dict(display='none', color='blue')
-    assert C2.attrs.style == dict(display='block', color='blue')
-
-
 def test_attr_class():
     class C1(html.Component):
         attrs = dict(cls='foo')
@@ -153,23 +137,6 @@ class RedWhite(BlueWhite):
     style = dict(
         color='red',
     )
-
-
-def test_component_style():
-    assert BlueWhite().attrs.style.background_color == 'white'
-    assert BlueWhite().attrs.style.color == 'blue'
-    assert RedWhite().attrs.style.background_color == 'white'
-    assert RedWhite().attrs.style.color == 'red'
-
-    # test that we don't have side effects from instance to class
-    comp = RedWhite()
-    comp.attrs.style.color = 'yellow'
-    assert comp.attrs.style.color == 'yellow'
-    assert RedWhite().attrs.style.color == 'red'
-
-    comp = RedWhite(style='background-color: black; color: green')
-    assert comp.attrs.style.background_color == 'black'
-    assert comp.attrs.style.color == 'green'
 
 
 def test_component_scripts_stylesheets():
