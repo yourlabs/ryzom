@@ -104,9 +104,92 @@ class Foo(Div):
 
 They are inheritable like attributes.
 
+### JavaScript
+
+This repository provides a py2js fork that you may use to write JavaScript in
+Python. There are two ways you can write js in Python: the "jQuery way" and the
+WebComponent way.
+
+You must however understand that our purpose is to write JS in Python, rather
+than supporting Python in JS like the Transcrypt project. In our case, we will
+restrict ourselves to a subset of both the JS and Python language, so things
+like Python `__mro__` or even multiple inheritance won't be supported at all.
+
+However, you can still write JS in Python and generate a JS bundle.
+
+#### WebComponent: HTMLElement
+
+The following defines a custom HTMLElement with a JS HTMLElement class, it will
+generate a basic web component.
+
+```py
+class DeleteButton(Component):
+    tag = 'delete-button'
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.delete.bind(this))
+
+        async def delete(self, event):
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+            await fetch(this.attributes['delete-url'].value, {
+                method: 'delete',
+                headers: {'X-CSRFTOKEN': csrf.value},
+                redirect: 'manual',
+            }).then(lambda response: print(response))
+```
+
+This will generate the following JS, which will let the browser responsible for
+the components lifecycle, check window.customElement.define documentation for
+details.
+
+```js
+class DeleteButton extends HTMLElement {
+    connectedCallback() {
+        this.addEventListener('click',this.delete.bind(this));
+    }
+    async delete() {
+        var csrf = document.querySelector('[name="csrfmiddlewaretoken"]');
+        await fetch(this.attributes['delete-url'].value,{
+            method: 'delete',
+            headers: {'X-CSRFTOKEN': csrf.value},
+            redirect: 'manual'
+        }).then(
+            (response) => {return console.log(response)}
+        );
+    }
+}
+
+window.customElements.define("delete-button", DeleteButton);
+```
+
+And that's pretty rock'n'roll if you ask me.
+
+**BUT** there is a catch: currently, you **must** set the first argument to
+`self` like in Python, so that the transpiler knows that this function is a
+class method and that it shouldn't render with the `function ` prefix that
+doesn't work in ES6 classes.
+
+#### The jQuery way
+
+You can do it "the jQuery way" by defining a py2js method in your
+component with the py2js.Mixin:
+
+```py
+class YourComponent(py2js.Mixin, Div):
+    def on_form_submit():
+        alert('submit!')
+
+    def py2js(self):
+        getElementByUuid(self.id).addEventListener('submit', self.on_form_submit)
+```
+
+This will make your component also render the addEventListener statement in a
+script tag, and the bundle will package the on_form_submit function.
+
 ### Django
 
-##### `INSTALLED_APPS`
+#### `INSTALLED_APPS`
 
 Add to `settings.INSTALLED_APPS`:
 
@@ -116,7 +199,7 @@ Add to `settings.INSTALLED_APPS`:
 'ryzom_django_mdc', # enable MDC form rendering
 ```
 
-##### `TEMPLATES`
+#### `TEMPLATES`
 
 While ryzom offers to register components to template names, `ryzom_django`
 offers the template backend to make any use of that with Django, add the
@@ -149,7 +232,7 @@ This template backend will allow two usages:
 - using components import path in dotted-style for `template_name`,
   ie. `template_name = 'yourapp.components.SomeThing'`
 
-##### Register templates for views
+#### Register templates for views
 
 Currently, `ryzom_django` will auto-discover (import) any app's `components.py`
 file. As such, this is where you can define all your view templates
@@ -191,9 +274,9 @@ class YourModelForm(Form):
 
 ```
 
-##### Forms
+#### Forms
 
-###### API
+##### API
 
 ryzom_django.forms patches django.forms.BaseForm with 2 new methods:
 
