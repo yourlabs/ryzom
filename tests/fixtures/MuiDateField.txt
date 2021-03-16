@@ -1,1 +1,0 @@
-<div ryzom-id="uuid"><div class="mui-textfield mui-textfield--float-label" ryzom-id="uuid"><input required id="id_date_field" name="date_field" type="text" value="20-01-2019" ryzom-id="uuid"><label for="id_date_field">Date field:</label></div></div>

@@ -5,6 +5,11 @@ urlpatterns = [
     path('', include('ryzom_django_example.views')),
 ]
 
+if settings.DEBUG:
+    urlpatterns.append(
+        path('bundles/', include('ryzom_django.bundle')),
+    )
+
 if settings.CHANNELS_ENABLE:
     urlpatterns.append(
         path('reactive/', include('ryzom_django_channels_example.views')),

@@ -137,7 +137,6 @@ class Head(Head):
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         '/static/py2js.js',
         '/static/ryzom.js',
-        '/reactive/bundle.js',
     ]
 
 
@@ -241,23 +240,7 @@ class ChatDeleteView(generic.DeleteView):
         return path('message/<pk>/delete', cls.as_view(), name='message_delete')
 
 
-
-class BundleView(generic.View):
-    def get(self, *args, **kwargs):
-        from ryzom.js import bundle
-        response = http.HttpResponse(
-                bundle('ryzom_django_channels_example.views'),
-        )
-        response['Content-Type'] = 'text/javascript'
-        return response
-
-    @classmethod
-    def as_url(cls):
-        return path('bundle.js', cls.as_view())
-
-
 urlpatterns = [
     ChatView.as_url(),
     ChatDeleteView.as_url(),
-    BundleView.as_url(),
 ]

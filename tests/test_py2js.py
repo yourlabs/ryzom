@@ -11,11 +11,11 @@ import py2js
 from py2js.renderer import JS
 
 
-def assert_equals_fixture(name, result):
+def assert_equals_fixture(name, result, suffix='.js'):
     path = os.path.join(
         os.path.dirname(__file__),
         'fixtures',
-        f'{name}.js',
+        f'{name}{suffix}',
     )
     if not os.path.exists(path):
         with open(path, 'w') as f:

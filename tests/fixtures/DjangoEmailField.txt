@@ -1,1 +1,0 @@
-<div ryzom-id="uuid"><label for="id_email_field">Email field:</label><input required id="id_email_field" name="email_field" type="email" value="test@example.com" ryzom-id="uuid"></div>

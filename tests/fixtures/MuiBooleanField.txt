@@ -1,1 +1,0 @@
-<div ryzom-id="uuid"><div class="mui-checkbox" ryzom-id="uuid"><label for="id_boolean_field" ryzom-id="uuid"><input required id="id_boolean_field" name="boolean_field" type="checkbox" ryzom-id="uuid">Boolean field:</label></div></div>

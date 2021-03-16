@@ -1,6 +1,11 @@
 from django.middleware.csrf import get_token
 
 from ryzom_mdc import *
+from ryzom_django import html as ryzom_django
+
+
+class Html(ryzom_django.Html, Html):
+    pass
 
 
 class CSRFInput(Input):

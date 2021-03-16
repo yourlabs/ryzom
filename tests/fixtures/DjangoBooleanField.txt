@@ -1,1 +1,0 @@
-<div ryzom-id="uuid"><label for="id_boolean_field">Boolean field:</label><input required id="id_boolean_field" name="boolean_field" type="checkbox" ryzom-id="uuid"></div>
