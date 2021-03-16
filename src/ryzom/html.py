@@ -86,7 +86,6 @@ class Head(Component):
                 content='width=device-width, initial-scale=1.0',
             ),
             Meta(charset='utf-8'),
-            Title(getattr(self, 'title', 'No title')),
         ]
 
 
@@ -101,5 +100,9 @@ class Html(Component):
 
         self.body = self.body_class(*content)
         self.body.scripts += self.scripts
+
+        if title := getattr(self, 'title', None):
+            self.title = Title(title)
+            self.head.addchild(self.title)
 
         super().__init__(self.head, self.body)

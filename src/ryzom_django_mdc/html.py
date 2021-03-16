@@ -4,7 +4,7 @@ from ryzom_mdc import *
 from ryzom_django import html as ryzom_django
 
 
-class Html(Html, ryzom_django.Html):
+class Html(ryzom_django.Html, Html):
     pass
 
 
