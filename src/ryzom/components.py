@@ -180,7 +180,7 @@ class Component(metaclass=ComponentMetaclass):
     is considered as a child of the <html> tag, this is not guaranteed
     to be kept in a near future, because it's totally useless.
     Being a childnode of <body> seem a lot more meaningful.
-    If no _id is specified, a random (but still unique) one will be
+    If no id is specified, a random (but still unique) one will be
     generated.
 
     :param str tag: The HTML tag of the component
@@ -191,7 +191,7 @@ class Component(metaclass=ComponentMetaclass):
             (click, hover, ...)
     :param str parent: The id of the component that contains the \
             current instance
-    :param str _id: The _id of the current instance (must be unique)
+    :param str id: The id of the current instance (must be unique)
     '''
 
     __publication = None
@@ -210,7 +210,7 @@ class Component(metaclass=ComponentMetaclass):
         cls = type(self)
         self.content = list(content) or []
 
-        self._id = attrs.pop('_id', uuid.uuid1().hex)
+        self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
         self.__dict__['tag'] = getattr(self, 'tag', None)
@@ -281,7 +281,7 @@ class Component(metaclass=ComponentMetaclass):
                 content of the current instance
         '''
         component.position = len(self.content)
-        component.parent = self._id
+        component.parent = self.id
         self.content.append(component)
 
     def addchildren(self, components):
@@ -312,7 +312,7 @@ class Component(metaclass=ComponentMetaclass):
 
         This methods returns a dict representation of the current
         instance. I handles subscriptions that will have this component
-        instance _id as parent attribute.
+        instance id as parent attribute.
         Recursively sets the content as dict too (maybe recursiveness is not
         a good thing to do without any control of how deep can the tree be,
         there's a risk of stack overflow that we must keep in mind)
@@ -334,10 +334,10 @@ class Component(metaclass=ComponentMetaclass):
         if isinstance(self.parent, str):
             parent_id = self.parent
         else:
-            parent_id = self.parent._id
+            parent_id = self.parent.id
 
         return {
-            '_id': self._id,
+            'id': self.id,
             'tag': self.tag,
             'content': content,
             'parent': parent_id,
@@ -371,7 +371,7 @@ class Component(metaclass=ComponentMetaclass):
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self._id}"'])
+        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self.id}"'])
         html = ''
 
         if getattr(self, 'selfclose', False):
@@ -497,7 +497,7 @@ class SubscribeComponentMixin(ReactiveBase):
         subscription = Subscription.objects.create(
             client=self.view.client,
             publication=publication,
-            subscriber_id=self._id,
+            subscriber_id=self.id,
             subscriber_module=self.__module__,
             subscriber_class=self.__class__.__name__,
             options=self.subscribe_options,
@@ -530,16 +530,16 @@ class ReactiveComponentMixin(ReactiveBase):
         ).first()
 
         if existent:
-            existent.subscriber_id = self._id
-            existent.subscriber_parent = self.parent._id
+            existent.subscriber_id = self.id
+            existent.subscriber_parent = self.parent.id
             existent.save()
 
         else:
             Registration.objects.create(
                 name=self.get_register(),
                 client=self.view.client,
-                subscriber_id=self._id,
-                subscriber_parent=self.parent._id,
+                subscriber_id=self.id,
+                subscriber_parent=self.parent.id,
             )
 
     def get_register(self):

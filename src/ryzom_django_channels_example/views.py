@@ -27,7 +27,7 @@ class AjaxFormMixin(py2js.Mixin):
         form.reset()
 
     def py2js(self):
-        form = getElementByUuid(self._id)
+        form = getElementByUuid(self.id)
         form.addEventListener('submit', self.on_form_submit)
 
 
@@ -76,7 +76,7 @@ class MessageItem(MDCListItem):
             DeleteButton(
                 delete_url=reverse('message_delete', args=[self.obj.id]),
             ),
-            _id=f'message-{obj.id}',
+            id=f'message-{obj.id}',
         )
 
 
@@ -97,7 +97,7 @@ class ChatRoom(MDCList, SubscribeComponentMixin):
 class RoomItem(MDCListItem):
     def __init__(self, room):
         super().__init__(room.name,
-            _id=f'room-{room.id}',
+            id=f'room-{room.id}',
             tag='a',
             href=f'/reactive/?room={room.name}')
 

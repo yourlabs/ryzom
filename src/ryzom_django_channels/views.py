@@ -39,7 +39,7 @@ class RegisterManager:
         from channels.layers import get_channel_layer
         channel = get_channel_layer()
         for registration in self.queryset:
-            content._id = registration.subscriber_id
+            content.id = registration.subscriber_id
             content.parent = registration.subscriber_parent
             channel_name = registration.client.channel
             if channel_name:
@@ -211,10 +211,10 @@ class ReactiveView(View):
                 component.create_subscription(self)
                 pub = component.publication
                 sub = component.subscription
-                script += f'ryzom.subscribe("{pub}", "{sub.id}", "{component._id}",'
+                script += f'ryzom.subscribe("{pub}", "{sub.id}", "{component.id}",'
                 script += 'function(r,e){if (e) {console.log(e);}});\n'
             for event, cb in component.events.items():
-                script += f'getElementByUuid("{component._id}").'
+                script += f'getElementByUuid("{component.id}").'
                 script += f'addEventListener("{event}",' + \
                           f'function(e){{{cb}}});\n'
 

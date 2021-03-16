@@ -217,7 +217,7 @@ class MDCFileField(py2js.Mixin, Div):
         self.input_id = html_input.attrs['id']
         self.btn.attrs['for'] = self.input_id
         self.selected_text = Span('No file selected')
-        self.label_id = self.selected_text._id
+        self.label_id = self.selected_text.id
         super().__init__(
             Span(
                 html_input,
@@ -268,8 +268,8 @@ class MDCSplitDateTime(Div):
         helper = MDCTextFieldHelperLine(error, 'alert')
         label = self.content[1]
         label.attrs['class'] += ' mdc-text-field--invalid'
-        label.attrs['aria-describedby'] = helper._id
-        label.attrs['aria-controls'] = helper._id
+        label.attrs['aria-describedby'] = helper.id
+        label.attrs['aria-controls'] = helper.id
 
         self.content.append(helper)
 
@@ -337,7 +337,7 @@ class MDCSnackBar(py2js.Mixin, Div):
 
 
     def py2js(self):
-        elem = getElementByUuid(self._id)
+        elem = getElementByUuid(self.id)
         sb = new.mdc.snackbar.MDCSnackbar(elem)
         sb.open()
 
@@ -473,7 +473,7 @@ class MDCCheckboxListItem(py2js.Mixin, Li):
             elem.click()
 
     def py2js(self):
-        elem = getElementByUuid(self._id)
+        elem = getElementByUuid(self.id)
         elem.onclick = self.click_input
 
 
@@ -517,7 +517,7 @@ class MDCMultipleChoicesCheckbox(py2js.Mixin, Ul):
             unchecked.forEach(enable)
 
     def py2js(self):
-        input_list = getElementByUuid(self._id)
+        input_list = getElementByUuid(self.id)
         input_list.addEventListener('change', self.update_inputs)
 
 
