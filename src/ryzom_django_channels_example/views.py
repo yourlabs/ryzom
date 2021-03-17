@@ -4,7 +4,7 @@ from django.views import generic
 
 import py2js
 from py2js.renderer import JS
-from ryzom.components import ReactiveComponentMixin, SubscribeComponentMixin
+from ryzom_django_channels.components import ReactiveComponentMixin, SubscribeComponentMixin
 from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.components import *
 
@@ -80,7 +80,7 @@ class MessageItem(MDCListItem):
         )
 
 
-class ChatRoom(MDCList, SubscribeComponentMixin):
+class ChatRoom(SubscribeComponentMixin, MDCList):
     publication = 'messages'
 
     def __init__(self, room_id):
@@ -114,7 +114,7 @@ class RoomForm(Div):
         )
 
 
-class RoomList(MDCList, SubscribeComponentMixin):
+class RoomList(SubscribeComponentMixin, MDCList):
     publication = 'rooms'
 
     def __init__(self, order_by):
@@ -138,6 +138,12 @@ class Head(Head):
         '/static/py2js.js',
         '/static/ryzom.js',
     ]
+
+    def __init__(self, *content, **context):
+        super().__init__(
+            JSBundle(),
+            CSSBundle()
+        )
 
 
 class Body(Body):
