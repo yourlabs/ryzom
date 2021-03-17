@@ -77,7 +77,7 @@ class Publication(models.Model):
 class Subscription(models.Model):
     '''
     A subscription is an object representing the relation between
-    a client and a publication. It also stores the _id of the component
+    a client and a publication. It also stores the id of the component
     that subscribes to a given publication, and the queryset
     computed from that publication query. This queryset is computed
     per-subscription to permit user specific sets

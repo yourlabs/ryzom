@@ -183,7 +183,7 @@ class MdcIcon(Component):
 
 class MdcList(Component):
     """ Allow tag to be overridden via context.
-        
+
     """
     def __init__(self, *content, **context):
         context.setdefault('tag', 'ul')
@@ -313,10 +313,10 @@ class Appbar(Component):
     :parameters: see :class:`Component`
     '''
     def __init_(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
+                 parent='body', id=None, context=None):
         return Div(content,
                    attr={'class': "mui-appbar"},
-                   events, parent, _id)
+                   events, parent, id)
 
 
 class Button(Component):
@@ -328,11 +328,11 @@ class Button(Component):
     :parameters: see :class:`Component`
     '''
     def __init_(self, content=None, attr=None,
-                 events=None, parent='body', _id=None, context=None):
+                 events=None, parent='body', id=None, context=None):
         attr = attr or {}
         cls = attr.setdefault('class', '')
         attr['class'] = f"mui-btn {cls}"
-        return Button(content, attr, events, parent, _id)
+        return Button(content, attr, events, parent, id)
 
 
 class Container(Component):
@@ -344,10 +344,10 @@ class Container(Component):
     :parameters: see :class:`Component`
     '''
     def __init_(self, content=None, attr=None, events=None,
-                 parent='body', _id=None, context=None):
+                 parent='body', id=None, context=None):
         return Div(content,
                    attr={'class': "mui-container"},
-                   events, parent, _id)
+                   events, parent, id)
 """
 
 

@@ -89,7 +89,7 @@ class Consumer(JsonWebsocketConsumer):
         In a near future, login and logout could be handled too,
         unless we use another way to do it, by method call or anything else
         A message should have:
-        - an '_id' key, which is used to find the right
+        - an 'id' key, which is used to find the right
         callback function the client defined
         - a 'type' key, one of the known message types described above
         - a 'params' key, which is used as a parameter, specific to
@@ -101,13 +101,13 @@ class Consumer(JsonWebsocketConsumer):
 
         data = json.loads(text_data)
         msg_type = None
-        if not data.get('_id', None):
+        if not data.get('id', None):
             return
         try:
             msg_type = data['type']
         except KeyError:
             self.send(json.dumps({
-                '_id': data['_id'],
+                'id': data['id'],
                 'type': 'Error',
                 'params': {
                     'name': 'Bad message',
@@ -124,7 +124,7 @@ class Consumer(JsonWebsocketConsumer):
             if func:
                 if data.get('params', None) is None:
                     self.send(json.dumps({
-                        '_id': data.get('_id'),
+                        'id': data.get('id'),
                         'type': 'Error',
                         'params': {
                             'name': 'Bad format',
@@ -135,7 +135,7 @@ class Consumer(JsonWebsocketConsumer):
                     func(data)
         else:
             self.send(json.dumps({
-                '_id': data['_id'],
+                'id': data['id'],
                 'type': 'Error',
                 'params': {
                     'name': 'Bad message type',
@@ -145,7 +145,7 @@ class Consumer(JsonWebsocketConsumer):
 
     def recv_ping(self, data):
         self.send(json.dumps({
-            '_id': data['_id'],
+            'id': data['id'],
             'type': 'pong'
         }))
 
@@ -159,7 +159,7 @@ class Consumer(JsonWebsocketConsumer):
             client.user = user
             client.save()
             self.send(json.dumps({
-                '_id': data['_id'],
+                'id': data['id'],
                 'type': 'Success',
                 'params': {
                     'token': f'{client.token}'
@@ -167,7 +167,7 @@ class Consumer(JsonWebsocketConsumer):
             }))
         else:
             self.send(json.dumps({
-                '_id': data['_id'],
+                'id': data['id'],
                 'type': 'Error',
                 'params': {
                     'name': 'Credentials mismatch',
@@ -201,13 +201,13 @@ class Consumer(JsonWebsocketConsumer):
                     cview.oncreate(to_url)
                 if (cview.onurl(to_url)):
                     self.send(json.dumps({
-                        '_id': data['_id'],
+                        'id': data['id'],
                         'type': 'Success',
                         'params': []
                     }))
                 else:
                     data = {
-                        '_id': data['_id'],
+                        'id': data['id'],
                         'type': 'Error',
                         'params': ''
                     }
@@ -223,7 +223,7 @@ class Consumer(JsonWebsocketConsumer):
         Methods return value should be serializable, it will be sent
         to the client as parameter for the callback
         '''
-        to_send = {'_id': data['_id']}
+        to_send = {'id': data['id']}
         params = data['params']
         method = Methods.get(params['name'])
         if method is None:
@@ -267,14 +267,14 @@ class Consumer(JsonWebsocketConsumer):
         '''
         This method is meant to be called by the DDP dispacher.
         It send a DDP remove message to the client with the parent
-        and _id of the component to remove as params
+        and id of the component to remove as params
         '''
         self.send(json.dumps({
             'type': 'DDP',
             'params': {
                 'type': 'remove',
                 'params': {
-                    '_id': data['_id'],
+                    'id': data['id'],
                     'parent': data['parent']
                 }
             }
@@ -298,13 +298,13 @@ class Consumer(JsonWebsocketConsumer):
         subscribe message handler.
         Creates a new subscription for the current Client.
         'subscribe' params should contain:
-        - an '_id' key, which refer to the component that asks for
+        - an 'id' key, which refer to the component that asks for
         a subscription
         - a 'name' key, corresponding to the name of the publication
         this subscription is about
         '''
         params = data['params']
-        to_send = {'_id': data['_id']}
+        to_send = {'id': data['id']}
         client = Client.objects.get(channel=self.channel_name)
         print(f'GOT SUBSCRIBE FOR CLIENT {client}')
         for key in ['name', 'sub_id']:
@@ -361,7 +361,7 @@ class Consumer(JsonWebsocketConsumer):
         '''
         params = data['params']
         self.send(json.dumps({
-            '_id': data['_id'],
+            'id': data['id'],
             'type': 'unsubscribed',
             'message': 'Got unsub',
             'params': {

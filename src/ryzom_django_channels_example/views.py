@@ -4,7 +4,7 @@ from django.views import generic
 
 import py2js
 from py2js.renderer import JS
-from ryzom.components import ReactiveComponentMixin, SubscribeComponentMixin
+from ryzom_django_channels.components import ReactiveComponentMixin, SubscribeComponentMixin
 from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.components import *
 
@@ -27,7 +27,7 @@ class AjaxFormMixin(py2js.Mixin):
         form.reset()
 
     def py2js(self):
-        form = getElementByUuid(self._id)
+        form = getElementByUuid(self.id)
         form.addEventListener('submit', self.on_form_submit)
 
 
@@ -76,11 +76,11 @@ class MessageItem(MDCListItem):
             DeleteButton(
                 delete_url=reverse('message_delete', args=[self.obj.id]),
             ),
-            _id=f'message-{obj.id}',
+            id=f'message-{obj.id}',
         )
 
 
-class ChatRoom(MDCList, SubscribeComponentMixin):
+class ChatRoom(SubscribeComponentMixin, MDCList):
     publication = 'messages'
 
     def __init__(self, room_id):
@@ -97,7 +97,7 @@ class ChatRoom(MDCList, SubscribeComponentMixin):
 class RoomItem(MDCListItem):
     def __init__(self, room):
         super().__init__(room.name,
-            _id=f'room-{room.id}',
+            id=f'room-{room.id}',
             tag='a',
             href=f'/reactive/?room={room.name}')
 
@@ -114,7 +114,7 @@ class RoomForm(Div):
         )
 
 
-class RoomList(MDCList, SubscribeComponentMixin):
+class RoomList(SubscribeComponentMixin, MDCList):
     publication = 'rooms'
 
     def __init__(self, order_by):
@@ -138,6 +138,12 @@ class Head(Head):
         '/static/py2js.js',
         '/static/ryzom.js',
     ]
+
+    def __init__(self, *content, **context):
+        super().__init__(
+            JSBundle(),
+            CSSBundle()
+        )
 
 
 class Body(Body):

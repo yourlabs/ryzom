@@ -10,7 +10,7 @@ from ryzom import bundle
 from ryzom import html
 
 
-class CSSBundle(html.Style):
+class CSSBundle(html.Stylesheet):
     def __init__(self, **attrs):
         if settings.DEBUG:
             attrs['href'] = reverse('bundle_css')

@@ -180,7 +180,7 @@ class Component(metaclass=ComponentMetaclass):
     is considered as a child of the <html> tag, this is not guaranteed
     to be kept in a near future, because it's totally useless.
     Being a childnode of <body> seem a lot more meaningful.
-    If no _id is specified, a random (but still unique) one will be
+    If no id is specified, a random (but still unique) one will be
     generated.
 
     :param str tag: The HTML tag of the component
@@ -191,7 +191,7 @@ class Component(metaclass=ComponentMetaclass):
             (click, hover, ...)
     :param str parent: The id of the component that contains the \
             current instance
-    :param str _id: The _id of the current instance (must be unique)
+    :param str id: The id of the current instance (must be unique)
     '''
 
     __publication = None
@@ -210,7 +210,7 @@ class Component(metaclass=ComponentMetaclass):
         cls = type(self)
         self.content = list(content) or []
 
-        self._id = attrs.pop('_id', uuid.uuid1().hex)
+        self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
         self.__dict__['tag'] = getattr(self, 'tag', None)
@@ -281,7 +281,7 @@ class Component(metaclass=ComponentMetaclass):
                 content of the current instance
         '''
         component.position = len(self.content)
-        component.parent = self._id
+        component.parent = self.id
         self.content.append(component)
 
     def addchildren(self, components):
@@ -312,7 +312,7 @@ class Component(metaclass=ComponentMetaclass):
 
         This methods returns a dict representation of the current
         instance. I handles subscriptions that will have this component
-        instance _id as parent attribute.
+        instance id as parent attribute.
         Recursively sets the content as dict too (maybe recursiveness is not
         a good thing to do without any control of how deep can the tree be,
         there's a risk of stack overflow that we must keep in mind)
@@ -334,10 +334,10 @@ class Component(metaclass=ComponentMetaclass):
         if isinstance(self.parent, str):
             parent_id = self.parent
         else:
-            parent_id = self.parent._id
+            parent_id = self.parent.id
 
         return {
-            '_id': self._id,
+            'id': self.id,
             'tag': self.tag,
             'content': content,
             'parent': parent_id,
@@ -371,7 +371,7 @@ class Component(metaclass=ComponentMetaclass):
     def to_html(self, **kwargs):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self._id}"'])
+        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self.id}"'])
         html = ''
 
         if getattr(self, 'selfclose', False):
@@ -380,7 +380,6 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-            self.setup_reactive()
 
             if render_js_str := self.render_js():
                 self.scripts.append(render_js_str)
@@ -393,7 +392,7 @@ class Component(metaclass=ComponentMetaclass):
                 for src in self.stylesheets:
                     if not src:
                         continue
-                    if src.endswith('.css'):
+                    if src.endswith('.css') or src.startswith('http'):
                         filestyles.append(src)
                     else:
                         rawstyles += src
@@ -411,7 +410,7 @@ class Component(metaclass=ComponentMetaclass):
                 for src in self.scripts:
                     if not src:
                         continue
-                    if src.endswith('.js'):
+                    if src.endswith('.js') or src.startswith('http'):
                         filescripts.append(src)
                     else:
                         rawscripts += src
@@ -428,17 +427,6 @@ class Component(metaclass=ComponentMetaclass):
 
         return html
 
-    def setup_reactive(self):
-        if isinstance(self, ReactiveBase):
-            self.set_view()
-
-        if isinstance(self, SubscribeComponentMixin):
-            if hasattr(self, 'publication'):
-                self.create_subscription()
-
-        if isinstance(self, ReactiveComponentMixin):
-            if hasattr(self, 'register'):
-                self.create_registration()
 
     def render(self, **kwargs):
         if 'view' in kwargs:
@@ -461,92 +449,6 @@ class Component(metaclass=ComponentMetaclass):
                     js_str += c.render_js_tree(lvl+1)
 
         return js_str
-
-
-class ReactiveBase:
-    view = None
-
-    def set_view(self):
-        if not hasattr(self, 'view') or self.view is None:
-            parent = self.parent or self
-            while parent and parent.parent:
-                if hasattr(parent, 'view'):
-                    break
-                parent = parent.parent
-            try:
-                self.view = parent.view
-            except AttributeError:
-                raise AttributeError('The current view cannot be found')
-
-        if not hasattr(self.view, 'client'):
-            raise AttributeError(
-                'The current view has no attribute "client".'
-                ' Maybe you forgot to call view.get_token()'
-                ' in your main component?')
-
-        return self.view
-
-
-class SubscribeComponentMixin(ReactiveBase):
-    subscribe_options = {}
-
-    def create_subscription(self):
-        from ryzom_django_channels.models import Publication, Subscription
-
-        publication = Publication.objects.get(name=self.publication)
-        subscription = Subscription.objects.create(
-            client=self.view.client,
-            publication=publication,
-            subscriber_id=self._id,
-            subscriber_module=self.__module__,
-            subscriber_class=self.__class__.__name__,
-            options=self.subscribe_options,
-        )
-
-        self.get_content(publication, subscription)
-
-    def get_content(self, publication, subscription):
-        template = publication.get_template()
-
-        content = []
-        for obj in subscription.get_queryset():
-            content.append(template(obj))
-
-        self.content = content
-
-    @classmethod
-    def get_queryset(self, qs, opts):
-        return qs
-
-
-class ReactiveComponentMixin(ReactiveBase):
-    register = None
-
-    def create_registration(self):
-        from ryzom_django_channels.models import Registration
-        existent = Registration.objects.filter(
-            name=self.get_register(),
-            client=self.view.client
-        ).first()
-
-        if existent:
-            existent.subscriber_id = self._id
-            existent.subscriber_parent = self.parent._id
-            existent.save()
-
-        else:
-            Registration.objects.create(
-                name=self.get_register(),
-                client=self.view.client,
-                subscriber_id=self._id,
-                subscriber_parent=self.parent._id,
-            )
-
-    def get_register(self):
-        if self.register is None:
-            raise AttributeError(f'{self}.register is not defined')
-
-        return self.register
 
 
 class CTree(Component):
