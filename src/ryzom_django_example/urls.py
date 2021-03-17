@@ -3,12 +3,8 @@ from django.urls import include, path
 
 urlpatterns = [
     path('', include('ryzom_django_example.views')),
+    path('bundles/', include('ryzom_django.bundle')),
 ]
-
-if settings.DEBUG:
-    urlpatterns.append(
-        path('bundles/', include('ryzom_django.bundle')),
-    )
 
 if settings.CHANNELS_ENABLE:
     urlpatterns.append(
