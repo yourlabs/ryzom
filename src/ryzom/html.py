@@ -20,7 +20,7 @@ BASIC_TAGS = (
     'cite', 'code', 'colgroup', 'content', 'contributors.txt', 'data',
     'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl',
     'dt', 'em', 'fieldset', 'figcaption', 'figure', 'font', 'footer',
-    'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
+    'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
     'header', 'Heading_Elements', 'hgroup', 'i', 'iframe', 'image',
     'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'listing',
     'main', 'map', 'mark', 'marquee', 'menu', 'menu#context_menu', 'menuitem',
@@ -47,6 +47,11 @@ for tag in SELFCLOSE_TAGS:
         (Component,),
         {'tag': tag, 'selfclose': True},
     )
+
+
+class Form(Component):
+    tag = 'form'
+    attrs = {'enctype': 'multipart/form-data'}
 
 
 class Script(Component):
