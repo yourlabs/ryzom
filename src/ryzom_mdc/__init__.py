@@ -826,16 +826,17 @@ class MDCLayoutGridCell(Div):
     attrs = {'class': 'mdc-layout-grid__cell'}
 
 
-class Body(Body):
-    attrs = {'cls': 'mdc-typography'}
+class Body(py2js.Mixin, Body):
+    attrs = {'class': 'mdc-typography'}
+
+    def py2js(self):
+        mdc.autoInit()
 
 
 class Html(Html):
-    tag = 'html'
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
         '/static/py2js.js',
-        'mdc.autoInit();',
     ]
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',

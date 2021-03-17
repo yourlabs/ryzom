@@ -4,28 +4,26 @@ from django import http
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views import generic
-from django.urls import include, path, reverse
+from django.urls import include, path, reverse_lazy
 
 from ryzom import bundle
 from ryzom import html
 
 
+if settings.DEBUG:
+    CSS_BUNDLE_URL = reverse_lazy('bundle_css')
+    JS_BUNDLE_URL = reverse_lazy('bundle_js')
+else:
+    CSS_BUNDLE_URL = staticfiles_storage.url('bundle.css')
+    JS_BUNDLE_URL = staticfiles_storage.url('bundle.js')
+
+
 class CSSBundle(html.Stylesheet):
-    def __init__(self, **attrs):
-        if settings.DEBUG:
-            attrs['href'] = reverse('bundle_css')
-        else:
-            attrs['href'] = staticfiles_storage.url('bundle.css')
-        super().__init__(**attrs)
+    attrs = dict(href=CSS_BUNDLE_URL)
 
 
 class JSBundle(html.Script):
-    def __init__(self, **attrs):
-        if settings.DEBUG:
-            attrs['src'] = reverse('bundle_js')
-        else:
-            attrs['src'] = staticfiles_storage.url('bundle.js')
-        super().__init__(**attrs)
+    attrs = dict(src=JS_BUNDLE_URL)
 
 
 def get_component_modules():

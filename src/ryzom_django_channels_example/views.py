@@ -6,7 +6,7 @@ import py2js
 from py2js.renderer import JS
 from ryzom_django_channels.components import ReactiveComponentMixin, SubscribeComponentMixin
 from ryzom_django_channels.views import ReactiveMixin, register
-from ryzom_django_mdc.components import *
+from ryzom_django_mdc.html import *
 
 from .models import Message, Room
 
@@ -127,37 +127,16 @@ class RoomList(SubscribeComponentMixin, MDCList):
         return qs.order_by(opts['order_by'])
 
 
-class Head(Head):
-    stylesheets = [
-        'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
-    ]
-
-    scripts = [
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
-        '/static/py2js.js',
-        '/static/ryzom.js',
-    ]
-
-    def __init__(self, *content, **context):
-        super().__init__(
-            JSBundle(),
-            CSSBundle()
-        )
-
-
 class Body(Body):
-    stylesheets = [
-        'form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
-        + '.mdc-list-item__text {display: flex; justify-content: space-between;',
-    ]
-
-    scripts = ['mdc.autoInit();']
-
     def __init__(self, view, *content):
-        super().__init__(*content)
-        self.scripts += [view.get_token()]
+        super().__init__(
+            Style(
+                'form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
+                + '.mdc-list-item__text {display: flex; justify-content: space-between;',
+            ),
+            Script(view.get_token()),
+            *content,
+        )
 
 
 class ReactiveTitle(ReactiveComponentMixin, H1):
@@ -168,34 +147,32 @@ class ReactiveTitle(ReactiveComponentMixin, H1):
 
 
 @template('home')
-class Home(Component):
-    tag = 'html'
+class Home(Html):
+    scripts = ['/static/ryzom.js']
+    body_class = Body
 
     def __init__(self, *content, view, form, **context):
         current_room_name = view.request.GET.get('room', 'general')
         current_room = Room.objects.filter(name=current_room_name).first()
         message_count = current_room.message_set.count() if current_room else 0
         super().__init__(
-            Head(),
-            Body(
-                view,
-                ReactiveTitle(f'{current_room_name} - {message_count} messages'),
-                A('test forms', href='form/'),
+            view,
+            ReactiveTitle(f'{current_room_name} - {message_count} messages'),
+            A('test forms', href='form/'),
+            Div(
                 Div(
-                    Div(
-                        RoomForm(
-                            view.request.GET.get('order_by', 'name')),
-                        style='min-width: 20%'),
-                    Div(
-                        ChatRoom(current_room_name),
-                        MessageFormComponent(
-                            view=view,
-                            form=form,
-                            style='width:100%'),
-                        style='flex-grow: 1; height: 100%;'),
-                    style='display:flex; flex-flow: row wrap;'),
-                *content,
-            )
+                    RoomForm(
+                        view.request.GET.get('order_by', 'name')),
+                    style='min-width: 20%'),
+                Div(
+                    ChatRoom(current_room_name),
+                    MessageFormComponent(
+                        view=view,
+                        form=form,
+                        style='width:100%'),
+                    style='flex-grow: 1; height: 100%;'),
+                style='display:flex; flex-flow: row wrap;'),
+            *content,
         )
 
 

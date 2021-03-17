@@ -20,7 +20,7 @@ BASIC_TAGS = (
     'cite', 'code', 'colgroup', 'content', 'contributors.txt', 'data',
     'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl',
     'dt', 'em', 'fieldset', 'figcaption', 'figure', 'font', 'footer',
-    'form', 'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
+    'frame', 'frameset', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head',
     'header', 'Heading_Elements', 'hgroup', 'i', 'iframe', 'image',
     'ins', 'isindex', 'kbd', 'keygen', 'label', 'legend', 'li', 'listing',
     'main', 'map', 'mark', 'marquee', 'menu', 'menu#context_menu', 'menuitem',
@@ -47,6 +47,11 @@ for tag in SELFCLOSE_TAGS:
         (Component,),
         {'tag': tag, 'selfclose': True},
     )
+
+
+class Form(Component):
+    tag = 'form'
+    attrs = {'enctype': 'multipart/form-data'}
 
 
 class Script(Component):
@@ -95,14 +100,19 @@ class Html(Component):
     head_class = Head
 
     def __init__(self, *content, **context):
-        self.head = self.head_class(*context.get('extra_head', []))
-        self.head.stylesheets += self.stylesheets
-
+        self.head = self.head_class(*context.pop('extra_head', []))
         self.body = self.body_class(*content)
-        self.body.scripts += self.scripts
+
+        for src in self.stylesheets:
+            if src:
+                self.head.content.append(Stylesheet(href=src))
+
+        for src in self.scripts:
+            if src:
+                self.head.content.append(Script(src=src))
 
         if title := getattr(self, 'title', None):
-            self.title = Title(title)
+            self.__dict__['title'] = Title(title)
             self.head.addchild(self.title)
 
         super().__init__(self.head, self.body)

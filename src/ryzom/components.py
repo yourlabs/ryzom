@@ -357,14 +357,11 @@ class Component(metaclass=ComponentMetaclass):
     def children_to_html(self, **kwargs):
         html = ''
         for c in self.content:
-            html += (
-                c.to_html(**kwargs)
-                if getattr(c, 'to_html', None) else str(c)
-            )
-            if hasattr(c, 'scripts'):
-                self.scripts += c.scripts
-            if hasattr(c, 'stylesheets'):
-                self.stylesheets += c.stylesheets
+            if hasattr(c, 'to_html'):
+                newline = '' if getattr(c, 'tag', None) == 'text' else '\n'
+                html += newline + c.to_html(**kwargs)
+            else:
+                html += str(c)
 
         return html
 
@@ -380,50 +377,18 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-
-            if render_js_str := self.render_js():
-                self.scripts.append(render_js_str)
-
             html += self.children_to_html(**kwargs)
-
-            if self.tag in ('body', 'head'):
-                filestyles = []
-                rawstyles = ''
-                for src in self.stylesheets:
-                    if not src:
-                        continue
-                    if src.endswith('.css') or src.startswith('http'):
-                        filestyles.append(src)
-                    else:
-                        rawstyles += src
-
-                for src in filestyles:
-                    html += f'<link rel="stylesheet" href="{src}"/>\n'
-
-                if self.tag == 'body' and rawstyles:
-                    html += '<style type="text/css">\n'
-                    html += rawstyles
-                    html += '</style>\n'
-
-                filescripts = []
-                rawscripts = ''
-                for src in self.scripts:
-                    if not src:
-                        continue
-                    if src.endswith('.js') or src.startswith('http'):
-                        filescripts.append(src)
-                    else:
-                        rawscripts += src
-
-                for src in filescripts:
-                    html += f'<script type="text/javascript" src="{src}"></script>\n'
-
-                if self.tag == 'body' and rawscripts:
-                    html += '<script type="text/javascript">\n'
-                    html += rawscripts
-                    html += '</script>\n'
-
-            html += f'</{self.tag}>'
+            if render_js_str := self.render_js():
+                html += '\n'.join([
+                    '\n<script type="text/javascript">',
+                    render_js_str.strip(),
+                    '</script>',
+                ])
+            if self.content and getattr(self.content[-1], 'tag', None) != 'text':
+                newline = '\n'
+            else:
+                newline = ''
+            html += f'{newline}</{self.tag}>'
 
         return html
 
