@@ -36,9 +36,11 @@ class ReactiveBase:
 
 
 class SubscribeComponentMixin(ReactiveBase):
-    subscribe_options = {}
-
     def reactive_setup(self):
+        subscribe_options = {}
+        if hasattr(self, 'subscribe_options'):
+            subscribe_options = self.subscribe_options
+
         super().reactive_setup()
 
         if hasattr(self, 'publication'):
