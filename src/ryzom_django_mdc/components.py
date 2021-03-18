@@ -1,3 +1,4 @@
+from ryzom_django.forms import widget_template
 from ryzom_django.html import *
 from ryzom_django_mdc.forms import (context_attrs, field_kwargs, widget_attrs,
                                     widget_context)
@@ -6,13 +7,15 @@ from ryzom_mdc import *
 from .html import *
 
 
-@template('django/forms/widgets/input.html')
-@template('django/forms/widgets/date.html')
-@template('django/forms/widgets/time.html')
-@template('django/forms/widgets/text.html')
-@template('django/forms/widgets/email.html')
-@template('django/forms/widgets/password.html')
-@template('django/forms/widgets/number.html')
+@widget_template(
+    'django/forms/widgets/input.html',
+    'django/forms/widgets/date.html',
+    'django/forms/widgets/time.html',
+    'django/forms/widgets/text.html',
+    'django/forms/widgets/email.html',
+    'django/forms/widgets/password.html',
+    'django/forms/widgets/number.html',
+)
 class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod
     def from_boundfield(cls, bf):
@@ -24,7 +27,7 @@ class MDCInputWidget(MDCTextFieldOutlined):
         )
 
 
-@template('django/forms/widgets/checkbox.html')
+@widget_template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
     def from_boundfield(cls, bf):
@@ -34,7 +37,7 @@ class MDCCheckboxWidget(MDCCheckboxField):
         )
 
 
-@template('django/forms/widgets/checkbox_select.html')
+@widget_template('django/forms/widgets/checkbox_select.html')
 class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
     @classmethod
     def from_boundfield(cls, bf):
@@ -60,7 +63,7 @@ class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
         )
 
 
-@template('django/forms/widgets/multiwidget.html')
+@widget_template('django/forms/widgets/multiwidget.html')
 class MultiWidget(CList):
     def __init__(self, **context):
         super().__init__(*[
@@ -77,7 +80,7 @@ class MultiWidget(CList):
         )
 
 
-@template('django/forms/widgets/splitdatetime.html')
+@widget_template('django/forms/widgets/splitdatetime.html')
 class SplitDateTimeWidget(MDCField):
     time_style = 'margin-bottom: 0; margin-top: 12px'
     date_style = 'margin-right: 12px; ' + time_style
@@ -103,7 +106,7 @@ class SplitDateTimeWidget(MDCField):
         )
 
 
-@template('django/forms/widgets/textarea.html')
+@widget_template('django/forms/widgets/textarea.html')
 class TextareaWidget(MDCTextareaFieldOutlined):
     @classmethod
     def from_boundfield(cls, bf):
@@ -120,7 +123,7 @@ class TextareaWidget(MDCTextareaFieldOutlined):
         )
 
 
-@template('django/forms/widgets/file.html')
+@widget_template('django/forms/widgets/file.html')
 class FileInputWidget(MDCField):
     @classmethod
     def from_boundfield(cls, bf):

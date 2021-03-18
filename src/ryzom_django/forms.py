@@ -5,9 +5,20 @@ from ryzom import html
 from .html import ErrorList
 
 
+widget_templates = dict()
+
+def widget_template(*names):
+    global widget_templates
+    def decorator(component):
+        for name in names:
+            widget_templates[name] = component
+        return component
+    return decorator
+
+
 def boundfield_to_component(bf):
     try:
-        template = html.templates[bf.field.widget.template_name]
+        template = widget_templates[bf.field.widget.template_name]
     except KeyError:
         return html.Text(str(bf))
     else:
