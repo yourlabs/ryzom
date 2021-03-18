@@ -14,7 +14,12 @@ def bundle(*modules):
                 continue
             if 'style' not in value.attrs:
                 continue
-            out.append('.' + value.__name__ + ' {')
+
+            line = '.' + value.__name__ + ' {'
+            if line in out:
+                continue  # already imported
+
+            out.append(line)
             for style_key, style_value in value.attrs.style.items():
                 out.append(f'  {style_key}: {style_value};')
             out.append('}')

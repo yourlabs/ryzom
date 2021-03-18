@@ -36,11 +36,15 @@ def functions(value):
 
 def bundle(*modules):
     out = []
+    done = []
     for module in modules:
         mod = importlib.import_module(module)
         for key, value in mod.__dict__.items():
+            if value in done:
+                continue
             if hasattr(value, 'HTMLElement') and hasattr(value, 'tag'):
                 out += webcomponent(value)
             if callable(getattr(value, 'py2js', None)):
                 out += functions(value)
+            done.append(value)
     return '\n'.join(out)
