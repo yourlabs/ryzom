@@ -11,7 +11,7 @@ from ryzom import bundle
 from ryzom import html
 
 
-if not settings.DEBUG or 'pytest' in sys.argv or 'py.test' in sys.argv:
+if not settings.DEBUG or sys.argv[0].replace('.', '').endswith('pytest'):
     # pytest tampers with the DEBUG setting by default
     # https://github.com/pytest-dev/pytest-django/issues/915
     CSS_BUNDLE_URL = staticfiles_storage.url('bundle.css')
