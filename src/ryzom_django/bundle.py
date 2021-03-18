@@ -1,4 +1,5 @@
 import importlib
+import sys
 
 from django import http
 from django.conf import settings
@@ -10,12 +11,14 @@ from ryzom import bundle
 from ryzom import html
 
 
-if settings.DEBUG:
-    CSS_BUNDLE_URL = reverse_lazy('bundle_css')
-    JS_BUNDLE_URL = reverse_lazy('bundle_js')
-else:
+if not settings.DEBUG or 'pytest' in sys.argv or 'py.test' in sys.argv:
+    # pytest tampers with the DEBUG setting by default
+    # https://github.com/pytest-dev/pytest-django/issues/915
     CSS_BUNDLE_URL = staticfiles_storage.url('bundle.css')
     JS_BUNDLE_URL = staticfiles_storage.url('bundle.js')
+else:
+    CSS_BUNDLE_URL = reverse_lazy('bundle_css')
+    JS_BUNDLE_URL = reverse_lazy('bundle_js')
 
 
 class CSSBundle(html.Stylesheet):
