@@ -394,7 +394,7 @@ class MDCCheckboxInput(Div):
                     cls='mdc-checkbox__checkmark'
                 ),
                 Div(cls='mdc-checkbox__mixedmark'),
-                cls='mdcdc-checkbox__background',
+                cls='mdc-checkbox__background',
             ),
         )
 
@@ -887,18 +887,12 @@ class MDCDataTableTable(Table):
 
 
 class MDCDataTableTbody(Tbody):
-    pass
-
+    attrs = {'class': 'mdc-data-table__content'}
 
 
 class MDCDataTableThead(Thead):
     def __init__(self, *content, tr=None, **attrs):
         super().__init__(*content, tr=tr or MDCDataTableTr(), **attrs)
-
-    def content_html(self, *content, **context):
-        for tr in content:
-            tr.attrs.addcls = 'mdc-data-table__header-row'
-        return super().content_html(*content, **context)
 
 
 class MDCDataTableTh(Th):

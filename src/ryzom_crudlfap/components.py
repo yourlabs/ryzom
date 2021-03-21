@@ -216,11 +216,12 @@ class ObjectList(Div):
 
         table = MDCDataTable(thead=thead, style='min-width: 100%; border-width: 0')
         for row in context['view'].table.paginated_rows:
+
+            checkboxinput = MDCCheckboxInput()
+            checkboxinput.attrs.addcls = 'mdc-data-table__row-checkbox'
             tr = MDCDataTableTr(
                 MDCDataTableTd(
-                    MDCCheckboxInput(
-                        addcls=f'mdc-data-table__row-checkbox'
-                    ),
+                    checkboxinput,
                     addcls='mdc-data-table__cell--checkbox',
                 )
             )
