@@ -373,18 +373,24 @@ class Component(metaclass=ComponentMetaclass):
     def publication(self, value=None):
         self.__publication = value
 
-    def children_to_html(self, **kwargs):
+    def content_html(self, *content, **context):
         html = ''
-        for c in self.content:
+        for c in content:
             if hasattr(c, 'to_html'):
                 newline = '' if getattr(c, 'tag', None) == 'text' else '\n'
-                html += newline + c.to_html(**kwargs)
+                html += newline + c.to_html(**context)
             else:
                 html += str(c)
 
         return html
 
-    def to_html(self, **kwargs):
+    def context(self, *content, **context):
+        for c in (content or self.content):
+            if hasattr(c, 'context'):
+                context = c.context(**context)
+        return context
+
+    def to_html(self, *content, **context):
         if self.tag == 'text':
             return f'{self.content}'
         attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self.id}"'])
@@ -396,7 +402,8 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-            html += self.children_to_html(**kwargs)
+            content = content or self.content
+            html += self.content_html(*content, **context)
             if render_js_str := self.render_js():
                 html += '\n'.join([
                     '\n<script type="text/javascript">',
@@ -412,11 +419,12 @@ class Component(metaclass=ComponentMetaclass):
         return html
 
 
-    def render(self, **kwargs):
-        if 'view' in kwargs:
-            self.view = kwargs['view']
-
-        return self.to_html()
+    def render(self, *content, **context):
+        if 'view' in context:
+            self.view = context['view']
+        content = content or self.content
+        context = self.context(*content, **context)
+        return self.to_html(*content, **context)
 
     def render_js(self):
         if hasattr(self, 'py2js'):
@@ -451,7 +459,7 @@ class CTree(Component):
 
 class CList(Component):
     def to_html(self, **kwargs):
-        return self.children_to_html(**kwargs)
+        return self.content_html(*self.content, **kwargs)
 
     def to_obj(self, context=None):
         content = [

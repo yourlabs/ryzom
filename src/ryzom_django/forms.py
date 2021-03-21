@@ -26,8 +26,8 @@ def boundfield_to_component(bf):
 forms.BoundField.to_component = boundfield_to_component
 
 
-def boundfield_to_html(bf):
-    return bf.to_component().to_html()
+def boundfield_to_html(bf, **context):
+    return bf.to_component().to_html(**context)
 forms.BoundField.to_html = boundfield_to_html
 
 
@@ -51,9 +51,9 @@ forms.BaseForm.non_field_error_component = ErrorList
 forms.BaseForm.to_component = form_to_component
 
 
-def form_to_html(form):
+def form_to_html(form, **context):
     form_component = form.to_component()
-    html = form_component.to_html()
+    html = form_component.to_html(**context)
     form.scripts = form_component.scripts
     form.stylesheets = form_component.stylesheets
     return html
