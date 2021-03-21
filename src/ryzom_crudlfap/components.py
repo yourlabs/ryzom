@@ -1,8 +1,14 @@
 from django.conf import settings
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 
 from crudlfap import shortcuts as crudlfap
 from ryzom_django_mdc.html import *
+
+
+import django_tables2 as tables
+from crudlfap.mixins import crud
+from crudlfap.mixins import table
 
 
 class UpolyMiddleware:
@@ -156,12 +162,15 @@ class ObjectList(Div):
         return super().context(*content, **context)
 
     def to_html(self, **context):
-        basecls = 'mdc-data-table__header-row-checkbox '
-        selected = 'mdc-checkbox--selected' if True else ''
-        checkboxinput = MDCCheckboxInput()
-        checkboxinput.attrs.addcls = basecls + selected
+        table_checkbox = MDCCheckboxInput()
+        table_checkbox.attrs.addcls = 'mdc-data-table__header-row-checkbox'
 
-        thead = MDCDataTableThead(tr=MDCDataTableTr(checkbox=True))
+        thead = MDCDataTableThead(tr=MDCDataTableHeaderTr(
+            MDCDataTableTh(
+                table_checkbox,
+                addcls='mdc-data-table__header-cell--checkbox',
+            )
+        ))
         for column in context['view'].table.columns:
             th = MDCDataTableTh(
                 wrapper=Div(
@@ -203,10 +212,19 @@ class ObjectList(Div):
                 ]
 
             thead.tr.addchild(th)
+        thead.tr.content[-1].attrs.style['text-align'] = 'right'
 
-        table = MDCDataTable(thead=thead)
+        table = MDCDataTable(thead=thead, style='min-width: 100%; border-width: 0')
         for row in context['view'].table.paginated_rows:
-            tr = MDCDataTableTr(checkbox=True)
+            tr = MDCDataTableTr(
+                MDCDataTableTd(
+                    MDCCheckboxInput(
+                        addcls=f'mdc-data-table__row-checkbox'
+                    ),
+                    addcls='mdc-data-table__cell--checkbox',
+                )
+            )
+
             for column, cell in row.items():
                 # todo: localize values
                 tr.addchild(MDCDataTableTd(cell))
@@ -307,116 +325,57 @@ class mdcAppContent(Div):
         )
 
 
-class mdcIcon(Component):
-    tag = 'i'
+class RyzomColumn(tables.Column):
+    empty_values = ()
 
-    def __init__(self, name):
-        super().__init__(
-            name,
-            cls='material-icons mdc-list-item__graphic',
-            aria_hidden='true',
+    def __init__(self, **kwargs):
+        kwargs.setdefault('default', True)
+        super().__init__(**kwargs)
+
+    def render(self, record, table, value, **kwargs):
+        from crudlfap.site import site
+        views = site[type(record)].get_menu(
+            'object',
+            table.request,
+            object=record
         )
-
-
-class mdcList(Component):
-    def __init__(self, *content, **attrs):
-        attrs.setdefault('cls', '')
-        attrs['cls'] += ' mdc-list'
-        attrs.setdefault('tag', 'ul')
-        super().__init__(*content, **attrs)
-
-    def to_html(self, **context):
-        for i, component in enumerate(self.content):
-            component.attrs['tabindex'] = i
-        return super().to_html(**context)
-
-
-class mdcListItem(Component):
-    def __init__(self, *content, icon=None, **attrs):
-        attrs.setdefault('tag', 'li')
-        super().__init__(
-            Span(cls='mdc-list-item__ripple'),
-            mdcIcon(icon) if icon else '',
-            Span(*content, cls='mdc-list-item__text'),
-            cls='mdc-list-item',
-            **attrs,
-        )
-
-
-class mdcButton(Div):
-    def __init__(self, label, *args, **kwargs):
-        label = label or name.capitalize()
-        kwargs.setdefault('tag', 'button')
-        kwargs.setdefault('cls', 'mdc-button mdc-button--touch mdc-button--raised')
-        super().__init__(
-            Component(
-                Span(cls='mdc-button__ripple'),
-                *args,
-                Span(label, cls='mdc-button__label'),
-                Span(cls='mdc-button__touch'),
-                **kwargs,
-            ),
-            cls='mdc-touch-target-wrapper',
-            data_mdc_auto_init='MDCRipple',
-        )
-
-
-class mdcTextField(Div):
-    def __init__(
-        self, name, label=None, value=None, type=None, errors=None, help=None,
-        required=False,
-    ):
-        label = label or name.capitalize()
-        cls = 'mdc-text-field mdc-text-field--filled'
-        if errors:
-            cls += ' mdc-text-field--invalid'
-            help = '. '.join(errors)
-
-        input_attrs = dict(
-            name=name,
-            value=value or '',
-            type=type,
-            aria_labelledby=f'{name}-label',
-            cls='mdc-text-field__input'
-        )
-        if required:
-            input_attrs['required'] = 'required'
-
-        if help:
-            input_attrs.update(dict(
-                aria_labelledby=f'{name}_helper_id',
-                aria_controls=f'{name}_helper_id',
-                aria_describedby=f'{name}_helper_id',
-            ))
-
-        content = [
-            Label(
-                Span(cls='mdc-text-field__ripple'),
-                Input(**input_attrs),
-                Span(
-                    label,
-                    id=f'{name}-label',
-                    cls='mdc-floating-label',
-                ),
-                Span(cls='mdc-line-ripple'),
-                cls=cls,
-                data_mdc_auto_init='MDCTextField',
-            ),
+        buttons = [
+            A(
+                f'<button class="material-icons mdc-icon-button" ryzom-id="308bade28a8c11ebad3800e18cb957e9" style="color: {v.color}"--mdc-ripple-fg-size:28px; --mdc-ripple-fg-scale:1.7142857142857142; --mdc-ripple-left:10px; --mdc-ripple-top:10px;">{geticon(v)}</button>',
+                title=v.title.capitalize(),
+                href=v.url + '?next=' + table.request.path_info,
+                style='text-decoration: none',
+            )
+            for v in views
         ]
+        request = table.request
+        return mark_safe(Div(*buttons, style='display:flex;flex-direction:row-reverse').render())
 
-        if help:
-            content.append(Div(
-                Div(
-                    help,
-                    cls='mdc-text-field-helper-text',
-                    id=f'{name}_helper_id',
-                    aria_hidden='true',
-                    style='color: var(--mdc-theme-error, #b00020)',
-                ),
-                cls='mdc-text-field-helper-line',
-            ))
 
-        super().__init__(*content)
+def action_column(table):
+    return dict(
+        crudlfap=RyzomColumn(
+            verbose_name=_('Actions'),
+            orderable=False,
+        )
+    )
+table.TableMixin.get_table_meta_action_columns = action_column
+
+
+def field_display(view,  name):
+    value_getter = '_'.join(['get', name, 'display'])
+    if hasattr(view.object, value_getter):
+        return getattr(view.object, value_getter)()
+    value = getattr(view.object, name)
+    if hasattr(value, 'get_absolute_url'):
+        return A(
+            str(value),
+            href=value.get_absolute_url(),
+        ).render()
+    return value
+
+
+crud.DetailMixin.get_field_display = field_display
 
 
 class mdcSwitch(Component):
