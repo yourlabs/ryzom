@@ -11,7 +11,7 @@ from ryzom_django_mdc.html import *
 from .models import Message, Room
 
 
-class AjaxFormMixin(py2js.Mixin):
+class AjaxFormMixin:
     async def on_form_submit(event):
         event.preventDefault()
 

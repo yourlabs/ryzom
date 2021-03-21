@@ -8,6 +8,8 @@ import importlib
 import re
 import uuid
 
+from py2js.transpiler import transpile_body
+
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -215,7 +217,8 @@ class Component(metaclass=ComponentMetaclass):
             if not hasattr(value, 'to_html'):
                 continue
             setattr(self, key, value)
-            value.attrs.setdefault('slot', key)
+            if hasattr(value, 'attrs'):
+                value.attrs.setdefault('slot', key)
             self.content.append(attrs.pop(key))
 
         self.id = attrs.get('id', uuid.uuid1().hex)
@@ -416,6 +419,8 @@ class Component(metaclass=ComponentMetaclass):
         return self.to_html()
 
     def render_js(self):
+        if hasattr(self, 'py2js'):
+            return transpile_body(self.py2js, self=self)
         return ''
 
     def render_js_tree(self, lvl=0):

@@ -608,6 +608,8 @@ class JS(object):
                 if name not in self._functions:
                     self._functions[name] = value
                 return name
+            elif str(value) in self.name_map:
+                return self.name_map[str(value)]
             elif isinstance(value, (int, float)):
                 return f'{value}'
             else:

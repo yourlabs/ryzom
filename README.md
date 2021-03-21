@@ -186,15 +186,18 @@ doesn't work in ES6 classes.
 #### The jQuery way
 
 You can do it "the jQuery way" by defining a py2js method in your
-component with the py2js.Mixin:
+component:
 
 ```py
-class YourComponent(py2js.Mixin, Div):
-    def on_form_submit():
+class YourComponent(Div):
+    def nested_injection():
         alert('submit!')
 
+    def on_form_submit():
+        self.nested_injection()
+
     def py2js(self):
-        getElementByUuid(self._id).addEventListener('submit', self.on_form_submit)
+        getElementByUuid(self.id).addEventListener('submit', self.on_form_submit)
 ```
 
 This will make your component also render the addEventListener statement in a

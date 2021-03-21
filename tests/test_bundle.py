@@ -22,8 +22,11 @@ class OtherComponent(Component):
     tag = 'div'
     attrs = dict(style=dict(margin=0))
 
+    def nested_injection():
+        print('hi')
+
     def on_form_submit():
-        print('hi!')
+        self.nested_injection()
 
     def py2js(self):
         self.on_form_submit()

@@ -17,20 +17,28 @@ def webcomponent(value):
     ]
 
 
+def _functions(transpiler, **context):
+    out = []
+    for name, func in transpiler._functions.items():
+        func_src = textwrap.dedent(inspect.getsource(func))
+        func_ast = ast.parse(func_src)
+        func_ast.body[0].name = name
+        func_js = JS()
+        func_js._context = context
+        func_js.visit(func_ast)
+        out.append(func_js.read())
+        if func_js._functions:
+            out += _functions(func_js)
+    return out
+
+
 def functions(value):
     out = []
     tree = ast.parse(textwrap.dedent(inspect.getsource(value.py2js)))
     transpiler = JS()
     transpiler._context = dict(self=value)
     transpiler.visit(tree)
-    for name, func in transpiler._functions.items():
-        func_src = textwrap.dedent(inspect.getsource(func))
-        func_ast = ast.parse(func_src)
-        func_ast.body[0].name = name
-        func_js = JS()
-        func_js._context = dict(self=value)
-        func_js.visit(func_ast)
-        out.append(func_js.read())
+    out += _functions(transpiler, self=value)
     return out
 
 

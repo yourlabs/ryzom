@@ -1,5 +1,3 @@
-import py2js
-from py2js.renderer import JS
 from ryzom.html import *
 
 
@@ -211,7 +209,7 @@ class MDCFormField(Div):
         super().__init__(*content, **self.attrs, **kwargs)
 
 
-class MDCFileField(py2js.Mixin, Div):
+class MDCFileField(Div):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
         self.btn = MDCButtonLabelOutlined(label, False)
         self.input_id = html_input.attrs['id']
@@ -308,7 +306,7 @@ class MDCListItem(Li):
         )
 
 
-class MDCSnackBar(py2js.Mixin, Div):
+class MDCSnackBar(Div):
     def __init__(self, msg, status='success'):
         super().__init__(
             Div(
@@ -431,7 +429,7 @@ class MDCCheckboxSelectField(MDCField):
             self.help_text.attrs.style.margin_top = '-10px'
 
 
-class MDCCheckboxListItem(py2js.Mixin, Li):
+class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
         self.input_id = id
         if checked:
@@ -477,7 +475,7 @@ class MDCCheckboxListItem(py2js.Mixin, Li):
         elem.onclick = self.click_input
 
 
-class MDCMultipleChoicesCheckbox(py2js.Mixin, Ul):
+class MDCMultipleChoicesCheckbox(Ul):
     def __init__(self, name, choices, n=1, **kwargs):
         self.max = n
         alabel = kwargs.pop('aria-label', 'Label')
