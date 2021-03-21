@@ -165,3 +165,12 @@ def test_component_scripts_stylesheets():
         'bar.css',
         'foobar.css',
     ]
+
+
+def test_component_slots():
+    comp = html.Div(foo=html.Div('foo'), bar=html.Div('bar'))
+    foo = html.Div('foo', slot='foo')
+    bar = html.Div('bar', slot='bar')
+    assert comp.foo == foo
+    assert comp.bar == bar
+    assert comp.content == [foo, bar]
