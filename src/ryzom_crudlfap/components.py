@@ -15,7 +15,6 @@ class UpolyMiddleware:
         return response
 
 
-
 def geticon(arg):
     return getattr(arg, 'material_icon', getattr(arg, 'icon', None))
 
@@ -23,7 +22,7 @@ def geticon(arg):
 class A(A):
     attrs = dict(
         up_target='#main, .mdc-top-app-bar__title',
-        up_transition='cross-fade',
+        #up_transition='cross-fade',
     )
 
 
@@ -157,10 +156,65 @@ class ObjectList(Div):
         return super().context(*content, **context)
 
     def to_html(self, **context):
-        return super().to_html(
-            MDCDataTable(),
-            **context,
-        )
+        basecls = 'mdc-data-table__header-row-checkbox '
+        selected = 'mdc-checkbox--selected' if True else ''
+        checkboxinput = MDCCheckboxInput()
+        checkboxinput.attrs.addcls = basecls + selected
+
+        thead = MDCDataTableThead(tr=MDCDataTableTr(checkbox=True))
+        for column in context['view'].table.columns:
+            th = MDCDataTableTh(
+                wrapper=Div(
+                    cls='mdc-data-table__header-cell-wrapper',
+                    label=Div(
+                        cls='mdc-data-table__header-cell-label',
+                        style='font-weight: 500',
+                        text=Text(column.header),
+                    ),
+                )
+            )
+
+            # sorting
+            if column.orderable:
+                th.attrs.addcls = 'mdc-data-table__header-cell--with-sort'
+                sort = context['view'].request.GET.get('sort', '')
+                if sort == column.order_by_alias:
+                    th.attrs.addcls = 'mdc-data-table__header-cell--sorted'
+                elif sort == '-' + column.order_by_alias:
+                    th.attrs.addcls = 'mdc-data-table__header-cell--sorted'
+                th.wrapper.content += [
+                    A(
+                        cls='mdc-icon-button material-icons mdc-data-table__sort-icon-button',
+                        aria_label='Sort by dessert',
+                        aria_describedby='dessert-status-label',
+                        href='?&sort=' + column.order_by_alias.next,
+                        text=Text(
+                            'arrow_upward'
+                            if sort == column.order_by_alias and sort.startswith('-')
+                            else 'arrow_downward'
+                        ),
+                        up_target='table',
+                    ),
+                    Div(
+                        cls='mdc-data-table__sort-status-label',
+                        aria_hidden='true',
+                        id='dessert-status-label',
+                    ),
+                ]
+
+            thead.tr.addchild(th)
+
+        table = MDCDataTable(thead=thead)
+        for row in context['view'].table.paginated_rows:
+            tr = MDCDataTableTr(checkbox=True)
+            for column, cell in row.items():
+                # todo: localize values
+                tr.addchild(MDCDataTableTd(cell))
+                # if is numeric
+                #td.attrs.addcls = 'mdc-data-table__header-cell--numeric'
+            table.tbody.addchild(tr)
+
+        return super().to_html(table, **context)
 
 
 class mdcTopAppBar(Header):

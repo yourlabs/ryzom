@@ -13,7 +13,7 @@ else:
 
 
 try:
-    import crudlfap
+    from crudlfap.settings import CRUDLFAP_TEMPLATE_BACKEND
 except ImportError:
     CRUDLFAP_ENABLE = False
 else:
@@ -54,6 +54,27 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Enable Ryzom template backend
+TEMPLATES = [
+    {
+        'BACKEND': 'ryzom_django.template_backend.Ryzom',
+        'NAME': 'ryzom',
+    },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
 if CHANNELS_ENABLE:
     # Enable Reactive components models
     INSTALLED_APPS += [
@@ -80,27 +101,7 @@ if CRUDLFAP_ENABLE:
     )
     LOGIN_REDIRECT_URL = '/crudlfap'
     MIDDLEWARE.append('ryzom_crudlfap.components.UpolyMiddleware')
-
-# Enable Ryzom template backend
-TEMPLATES = [
-    {
-        'BACKEND': 'ryzom_django.template_backend.Ryzom',
-        'NAME': 'ryzom',
-    },
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
+    TEMPLATES.append(CRUDLFAP_TEMPLATE_BACKEND)
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
 WS_URLPATTERNS = ROOT_URLCONF

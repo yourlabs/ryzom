@@ -371,16 +371,18 @@ class MDCHelpText(Div):
     )
 
 
+class MDCInputCheckboxNativeControl(Input):
+    attrs = {'class': 'mdc-checkbox__native-control'}
+
+
 class MDCCheckboxInput(Div):
     """The actual input HTML element (widget)."""
-    def __init__(self, **kwargs):
-        kwargs.setdefault('type', 'checkbox')
+    def __init__(self, **attrs):
+        attrs.setdefault('type', 'checkbox')
         super().__init__(
-            Input(
-                cls='mdc-checkbox__native-control',
-                **kwargs
-            ),
-            Div(
+            cls='mdc-checkbox',
+            input=MDCInputCheckboxNativeControl(**attrs),
+            checkbox=Div(
                 Component(
                     Component(
                         tag='path', fill='none',
@@ -392,7 +394,6 @@ class MDCCheckboxInput(Div):
                 Div(cls='mdc-checkbox__mixedmark'),
                 cls='mdc-checkbox__background',
             ),
-            cls='mdc-checkbox',
         )
 
 
@@ -839,34 +840,85 @@ class MDCCard(Div):
 class MDCDataTable(Div):
     attrs = {'class': 'mdc-data-table', 'data-mdc-auto-init': 'MDCDataTable'}
 
-    def to_html(self, *content, **context):
-        return super().to_html(
-            MDCDataTableContainer(),
-            MDCDataTablePagination(),
+    def __init__(self, *content, container=None, pagination=None, table=None,
+            tbody=None, thead=None, **attrs):
+
+        super().__init__(
+            container=container or MDCDataTableContainer(
+                table=table or MDCDataTableTable(
+                    thead=thead,
+                    tbody=tbody,
+                )
+            ),
+            pagination=pagination or MDCDataTablePagination(),
+            **attrs,
+        )
+        self.table = self.container.table
+        self.tbody = self.table.tbody
+        self.thead = self.table.thead
+
+
+class MDCDataTableTable(Table):
+    attrs = {'class': 'mdc-data-table__table'}
+
+    def __init__(self, *content, thead=None, tbody=None, **attrs):
+        super().__init__(
+            *content,
+            thead=thead or MDCDataTableThead(),
+            tbody=tbody or MDCDataTableTbody(),
+            **attrs,
         )
 
-
-class MDCDataTableContainer(Div):
-    attrs = {'class': 'mdc-data-table__table-container'}
-
     def to_html(self, *content, **context):
-        return super().to_html('''
-  <table class="mdc-data-table__table" aria-label="Dessert calories">
-    <thead>
-      <tr class="mdc-data-table__header-row">
-        <th class="mdc-data-table__header-cell mdc-data-table__header-cell--checkbox" role="columnheader" scope="col">
-          <div class="mdc-checkbox mdc-data-table__header-row-checkbox mdc-checkbox--selected">
-            <input type="checkbox" class="mdc-checkbox__native-control" aria-label="Toggle all rows"/>
-            <div class="mdc-checkbox__background">
-              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
-                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
-              </svg>
-              <div class="mdc-checkbox__mixedmark"></div>
-            </div>
-            <div class="mdc-checkbox__ripple"></div>
-          </div>
-        </th>
+        self.attrs.arial_label = context['view'].title
+        return super().to_html(*content, **context)
 
+
+
+class MDCDataTableTbody(Tbody):
+    pass
+
+
+
+class MDCDataTableThead(Thead):
+    def __init__(self, *content, tr=None, **attrs):
+        super().__init__(*content, tr=tr or MDCDataTableTr(), **attrs)
+
+    def content_html(self, *content, **context):
+        for tr in content:
+            tr.attrs.addcls = 'mdc-data-table__header-row'
+        return super().content_html(*content, **context)
+
+
+class MDCDataTableTh(Th):
+    attrs = {
+        'class': 'mdc-data-table__header-cell',
+        'role': 'columnheader',
+        'scope': 'col',
+    }
+
+
+class MDCDataTableTr(Tr):
+    def __init__(self, *content, checkbox=None, **context):
+        if checkbox is not None:
+            self.checkbox = MDCCheckboxInput()
+            self.checkbox.attrs.addcls = 'mdc-data-table__header-row-checkbox'
+            if checkbox:
+                self.checkbox.attrs.addcls = 'mdc-checkbox--selected'
+
+            self.checkboxcol = MDCDataTableTh(
+                self.checkbox,
+                addcls='mdc-data-table__header-cell--checkbox',
+            )
+            content = [self.checkboxcol] + list(content)
+        super().__init__(*content, **context)
+
+
+class MDCDataTableTd(Td):
+    pass
+
+
+thead = '''
       <th
         class="mdc-data-table__header-cell mdc-data-table__header-cell--with-sort"
         role="columnheader"
@@ -924,8 +976,9 @@ class MDCDataTableContainer(Div):
       >
         Comments
       </th>
-      </tr>
-    </thead>
+      '''
+
+tbody  = '''
     <tbody class="mdc-data-table__content">
       <tr data-row-id="u0" class="mdc-data-table__row">
         <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
@@ -972,8 +1025,16 @@ class MDCDataTableContainer(Div):
       <td class="mdc-data-table__cell">Super tasty</td>
       </tr>
     </tbody>
-  </table>
-        ''')
+        '''
+
+class MDCDataTableContainer(Div):
+    attrs = {'class': 'mdc-data-table__table-container'}
+
+    def __init__(self, *content, table=None, **attrs):
+        return super().__init__(
+            table=table or MDCDataTableTable(),
+            **attrs,
+        )
 
 
 class MDCDataTablePagination(Div):

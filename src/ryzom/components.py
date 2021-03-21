@@ -390,10 +390,14 @@ class Component(metaclass=ComponentMetaclass):
                 context = c.context(**context)
         return context
 
-    def to_html(self, *content, **context):
+    def to_html(self, *content, attrs=None, **context):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self.id}"'])
+
+        attrs = ' '.join([
+            (attrs or self.attrs).to_html(),
+            f'ryzom-id="{self.id}"'
+        ])
         html = ''
 
         if getattr(self, 'selfclose', False):
