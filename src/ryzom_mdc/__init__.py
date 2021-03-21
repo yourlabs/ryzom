@@ -298,9 +298,13 @@ class MDCList(Div):
 class MDCListItem(Li):
     attrs = {'class': 'mdc-list-item'}
 
-    def __init__(self, *content, **attrs):
+    def __init__(self, *content, icon=None, **attrs):
+        if icon and not isinstance(icon, Component):
+            icon = MDCIcon(icon, addcls='mdc-list-item__graphic')
+
         super().__init__(
             Span(cls='mdc-list-item__ripple'),
+            icon or '',
             Span(*content, cls='mdc-list-item__text'),
             **attrs,
         )
@@ -517,6 +521,10 @@ class MDCMultipleChoicesCheckbox(Ul):
     def py2js(self):
         input_list = getElementByUuid(self.id)
         input_list.addEventListener('change', self.update_inputs)
+
+
+class MDCIconButton(A):
+    attrs = dict(cls='material-icons mdc-top-app-bar__navigation-icon mdc-icon-button')
 
 
 class MdcTopAppBar(Component):
@@ -824,7 +832,229 @@ class MDCLayoutGridCell(Div):
     attrs = {'class': 'mdc-layout-grid__cell'}
 
 
-class Body(py2js.Mixin, Body):
+class MDCCard(Div):
+    attrs = {'class': 'mdc-card'}
+
+
+class MDCDataTable(Div):
+    attrs = {'class': 'mdc-data-table', 'data-mdc-auto-init': 'MDCDataTable'}
+
+    def to_html(self, *content, **context):
+        return super().to_html(
+            MDCDataTableContainer(),
+            MDCDataTablePagination(),
+        )
+
+
+class MDCDataTableContainer(Div):
+    attrs = {'class': 'mdc-data-table__table-container'}
+
+    def to_html(self, *content, **context):
+        return super().to_html('''
+  <table class="mdc-data-table__table" aria-label="Dessert calories">
+    <thead>
+      <tr class="mdc-data-table__header-row">
+        <th class="mdc-data-table__header-cell mdc-data-table__header-cell--checkbox" role="columnheader" scope="col">
+          <div class="mdc-checkbox mdc-data-table__header-row-checkbox mdc-checkbox--selected">
+            <input type="checkbox" class="mdc-checkbox__native-control" aria-label="Toggle all rows"/>
+            <div class="mdc-checkbox__background">
+              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
+              </svg>
+              <div class="mdc-checkbox__mixedmark"></div>
+            </div>
+            <div class="mdc-checkbox__ripple"></div>
+          </div>
+        </th>
+
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--with-sort"
+        role="columnheader"
+        scope="col"
+        aria-sort="none"
+        data-column-id="dessert"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <div class="mdc-data-table__header-cell-label">
+            Dessert
+          </div>
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by dessert" aria-describedby="dessert-status-label">arrow_upward</button>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="dessert-status-label">
+          </div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort mdc-data-table__header-cell--sorted"
+        role="columnheader"
+        scope="col"
+        aria-sort="ascending"
+        data-column-id="carbs"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by carbs" aria-describedby="carbs-status-label">arrow_upward</button>
+          <div class="mdc-data-table__header-cell-label">
+            Carbs (g)
+          </div>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="carbs-status-label"></div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort"
+        role="columnheader"
+        scope="col"
+        aria-sort="none"
+        data-column-id="protein"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by protein" aria-describedby="protein-status-label">arrow_upward</button>
+          <div class="mdc-data-table__header-cell-label">
+            Protein (g)
+          </div>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="protein-status-label"></div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell"
+        role="columnheader"
+        scope="col"
+        data-column-id="comments"
+      >
+        Comments
+      </th>
+      </tr>
+    </thead>
+    <tbody class="mdc-data-table__content">
+      <tr data-row-id="u0" class="mdc-data-table__row">
+        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
+          <div class="mdc-checkbox mdc-data-table__row-checkbox">
+            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
+            <div class="mdc-checkbox__background">
+              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
+              </svg>
+              <div class="mdc-checkbox__mixedmark"></div>
+            </div>
+            <div class="mdc-checkbox__ripple"></div>
+          </div>
+        </td>
+      <td class="mdc-data-table__cell">Frozen yogurt</td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        20
+      </td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        4.0
+      </td>
+      <td class="mdc-data-table__cell">Super tasty</td>
+      </tr>
+      <tr data-row-id="u0" class="mdc-data-table__row">
+        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
+          <div class="mdc-checkbox mdc-data-table__row-checkbox">
+            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
+            <div class="mdc-checkbox__background">
+              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
+              </svg>
+              <div class="mdc-checkbox__mixedmark"></div>
+            </div>
+            <div class="mdc-checkbox__ripple"></div>
+          </div>
+        </td>
+      <td class="mdc-data-table__cell">Frozen yogurt</td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        24
+      </td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        4.0
+      </td>
+      <td class="mdc-data-table__cell">Super tasty</td>
+      </tr>
+    </tbody>
+  </table>
+        ''')
+
+
+class MDCDataTablePagination(Div):
+    attrs = {'class': 'mdc-data-table__table-pagination'}
+
+    def to_html(self, *content, **context):
+        return super().to_html('''
+  <div class="mdc-data-table__pagination-trailing">
+    <div class="mdc-data-table__pagination-rows-per-page">
+      <div class="mdc-data-table__pagination-rows-per-page-label">
+        Rows per page
+      </div>
+
+      <div class="mdc-select mdc-select--outlined mdc-select--no-label mdc-data-table__pagination-rows-per-page-select">
+        <div class="mdc-select__anchor" role="button" aria-haspopup="listbox"
+              aria-labelledby="demo-pagination-select" tabindex="0">
+          <span class="mdc-select__selected-text-container">
+            <span id="demo-pagination-select" class="mdc-select__selected-text">10</span>
+          </span>
+          <span class="mdc-select__dropdown-icon">
+            <svg
+                class="mdc-select__dropdown-icon-graphic"
+                viewBox="7 10 10 5">
+              <polygon
+                  class="mdc-select__dropdown-icon-inactive"
+                  stroke="none"
+                  fill-rule="evenodd"
+                  points="7 10 12 15 17 10">
+              </polygon>
+              <polygon
+                  class="mdc-select__dropdown-icon-active"
+                  stroke="none"
+                  fill-rule="evenodd"
+                  points="7 15 12 10 17 15">
+              </polygon>
+            </svg>
+          </span>
+          <span class="mdc-notched-outline mdc-notched-outline--notched">
+            <span class="mdc-notched-outline__leading"></span>
+            <span class="mdc-notched-outline__trailing"></span>
+          </span>
+        </div>
+
+        <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
+          <ul class="mdc-list">
+            <li class="mdc-list-item mdc-list-item--selected" aria-selected="true" role="option" data-value="10">
+              <span class="mdc-list-item__text">10</span>
+            </li>
+            <li class="mdc-list-item" role="option" data-value="25">
+              <span class="mdc-list-item__text">25</span>
+            </li>
+            <li class="mdc-list-item" role="option" data-value="100">
+              <span class="mdc-list-item__text">100</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mdc-data-table__pagination-navigation">
+      <div class="mdc-data-table__pagination-total">
+        1‑10 of 100
+      </div>
+      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-first-page="true" disabled>
+        <div class="mdc-button__icon">first_page</div>
+      </button>
+      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-prev-page="true" disabled>
+        <div class="mdc-button__icon">chevron_left</div>
+      </button>
+      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-next-page="true">
+        <div class="mdc-button__icon">chevron_right</div>
+      </button>
+      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-last-page="true">
+        <div class="mdc-button__icon">last_page</div>
+      </button>
+    </div>
+  </div>
+        ''')
+
+
+class Body(Body):
     attrs = {'class': 'mdc-typography'}
 
     def py2js(self):
