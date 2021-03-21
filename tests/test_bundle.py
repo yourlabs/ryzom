@@ -11,7 +11,13 @@ from .test_py2js import assert_equals_fixture
 
 class MyComponent(Component):
     tag = 'foo-bar'
-    style = dict(padding=0)
+    style = dict(
+        padding=0,
+        p=dict(
+            margin=0,
+            ul=dict(list_style_type='none'),
+        ),
+    )
 
     class HTMLElement:
         def connectedCallback(self):

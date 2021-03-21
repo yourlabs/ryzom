@@ -1,6 +1,12 @@
 .MyComponent {
   padding: 0;
 }
+.MyComponent p {
+  margin: 0;
+}
+.MyComponent p ul {
+  list_style_type: none;
+}
 .OtherComponent {
   margin: 0;
 }
