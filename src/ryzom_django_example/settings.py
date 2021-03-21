@@ -79,6 +79,7 @@ if CRUDLFAP_ENABLE:
         TEMPLATE_ENGINE='ryzom',
     )
     LOGIN_REDIRECT_URL = '/crudlfap'
+    MIDDLEWARE.append('ryzom_crudlfap.components.UpolyMiddleware')
 
 # Enable Ryzom template backend
 TEMPLATES = [
