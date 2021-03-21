@@ -210,6 +210,14 @@ class Component(metaclass=ComponentMetaclass):
         cls = type(self)
         self.content = list(content) or []
 
+        for key in [*attrs.keys()]:
+            value = attrs[key]
+            if not hasattr(value, 'to_html'):
+                continue
+            setattr(self, key, value)
+            value.attrs.setdefault('slot', key)
+            self.content.append(attrs.pop(key))
+
         self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
