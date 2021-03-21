@@ -210,6 +210,14 @@ class Component(metaclass=ComponentMetaclass):
         cls = type(self)
         self.content = list(content) or []
 
+        for key in [*attrs.keys()]:
+            value = attrs[key]
+            if not hasattr(value, 'to_html'):
+                continue
+            setattr(self, key, value)
+            value.attrs.setdefault('slot', key)
+            self.content.append(attrs.pop(key))
+
         self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
@@ -247,6 +255,14 @@ class Component(metaclass=ComponentMetaclass):
         self.position = 0
 
         self.preparecontent()
+
+    def __eq__(self, other):
+        if self.attrs != other.attrs or self.tag != other.tag:
+            return False
+        for my_content, other_content in zip(self.content, other.content):
+            if my_content != other_content:
+                return False
+        return True
 
     def preparecontent(self):
         '''Set the parent and position of children

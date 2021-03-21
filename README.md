@@ -60,6 +60,14 @@ Most components should instanciate with `*content` as first argument, and you
 can pass as many children as needed there. These goes into `self.content` which
 you can also change after instanciation.
 
+You may also pass component as keyword arguments, in which case they will be
+have a "slot" attribute and be assigned to self:
+
+```py
+yourdiv = Div(main=P('content'))
+yourdiv.main == P('content', slot='main')
+```
+
 #### Attributes
 
 HTML tags also have attributes which we have a Pythonic API for:
@@ -67,6 +75,9 @@ HTML tags also have attributes which we have a Pythonic API for:
 ```py
 Div('hi', cls='x', data_y='z').render() == '<div class="x" data-y="z">hi</div>'
 ```
+
+If you don't like to have the attrs after the content of the element, then keep
+in mind you can also pass content components as keyword arguments.
 
 Declarative and inheritance are supported too:
 
