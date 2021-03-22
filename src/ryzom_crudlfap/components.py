@@ -143,18 +143,29 @@ class Home(Div):
         return super().to_html(H1('Welcome to Ryzom-CRUDLFA+'), **context)
 
 
-@template('crudlfap/detail.html', App)
+@template('crudlfap/detail.html', App, NarrowCard)
 class ObjectDetail(Div):
     def to_html(self, **context):
-        table = Table()
+        table = MDCDataTable()
+        table.thead.attrs.style.display = 'none'
+        table.table.attrs.style.width = '100%'
+        table.attrs.data_mdc_auto_init = False
 
         for field in context['view'].display_fields:
-            table.addchild(Tr(
-                Th(field['field'].verbose_name.capitalize()),
-                Td(field['value']),
+            table.tbody.addchild(MDCDataTableTr(
+                MDCDataTableTh(field['field'].verbose_name.capitalize()),
+                MDCDataTableTd(field['value']),
             ))
 
         return super().to_html(table, **context)
+
+    def context(self, *content, **context):
+        context['page-menu'] = context['view'].router.get_menu(
+            'object',
+            context['view'].request,
+            object=context['view'].object,
+        )
+        return super().context(*content, **context)
 
 
 @template('crudlfap/list.html', App)
