@@ -166,7 +166,7 @@ class Home(Html):
                     style='min-width: 20%'),
                 Div(
                     ChatRoom(current_room_name),
-                    MessageFormComponent(
+                    message_form=MessageFormComponent(
                         view=view,
                         form=form,
                         style='width:100%'),

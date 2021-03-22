@@ -428,7 +428,6 @@ class Component(metaclass=ComponentMetaclass):
 
         return html
 
-
     def render(self, *content, **context):
         if 'view' in context:
             self.view = context['view']
