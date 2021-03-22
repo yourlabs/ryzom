@@ -39,7 +39,7 @@ class Main(Main):
             menu = context['page-menu']
 
             for v in menu:
-                if v == context['view']:
+                if v.urlname == context['view'].urlname:
                     continue
 
                 button = A(
@@ -47,6 +47,7 @@ class Main(Main):
                         v.title.capitalize(),
                         icon=geticon(v),
                         tag='span',
+                        style=f'margin: 10px; color: {getattr(v, "color", "inherit")}',
                     ),
                     href=v.url,
                     style='text-decoration: none',
