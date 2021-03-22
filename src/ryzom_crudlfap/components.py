@@ -44,7 +44,7 @@ class Main(Main):
 
                 button = A(
                     MDCTextButton(
-                        v.title.capitalize(),
+                        v.label.capitalize(),
                         icon=geticon(v),
                         tag='span',
                         style=f'margin: 10px; color: {getattr(v, "color", "inherit")}',
