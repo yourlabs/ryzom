@@ -1128,7 +1128,7 @@ class Html(Html):
     ]
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
     ]
     body_class = Body
