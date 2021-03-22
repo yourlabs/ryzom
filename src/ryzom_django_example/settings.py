@@ -44,6 +44,15 @@ INSTALLED_APPS = [
     'ryzom_django_mdc',
 ]
 
+if CHANNELS_ENABLE:
+    # Enable Reactive components models
+    INSTALLED_APPS += [
+        'ryzom_django_channels',
+        'ryzom_django_channels_example',
+        'channels',
+        'channels_redis',
+    ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -53,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 # Enable Ryzom template backend
 TEMPLATES = [

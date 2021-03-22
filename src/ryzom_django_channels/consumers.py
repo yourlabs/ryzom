@@ -16,8 +16,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from ryzom.methods import Methods
-from ryzom.request import Request
+from ryzom_django_channels.methods import Methods
 from ryzom_django_channels.models import Client, Publication, Subscription
 
 

@@ -12,8 +12,6 @@ class Room(Publishable, models.Model):
     def rooms(cls, user):
         return cls.objects.all()
 
-Room.rooms(None)
-
 
 class Message(Publishable, models.Model):
     user = models.ForeignKey(
@@ -34,8 +32,3 @@ class Message(Publishable, models.Model):
     @publish('ryzom_django_channels_example.views.MessageItem')
     def messages(cls, user):
         return cls.objects.all()
-
-
-Message.messages(None)
-
-
