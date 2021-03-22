@@ -102,7 +102,7 @@ class App(Html):
 #        )
 
 
-class NarrowCard(MDCCard):
+class NarrowCard(Div):
     style = {
         'max-width': '25em',
         'margin': 'auto',
@@ -118,6 +118,7 @@ class NarrowCard(MDCCard):
 
 
 @template('crudlfap/form.html', App, NarrowCard)
+@template('crudlfap/update.html', App, NarrowCard)
 @template('crudlfap/create.html', App, NarrowCard)
 @template('registration/login.html', App, NarrowCard)
 class FormTemplate(Form):
