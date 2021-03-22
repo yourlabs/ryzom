@@ -250,7 +250,7 @@ class ObjectList(Div):
                         Option(
                             str(i),
                             value=i,
-                            selected=context['view'].request.GET.get('per_page', '') == str(i)
+                            selected=context['view'].table.page.paginator.per_page == i
                         )
                         for i in (3, 5, 7, 10, 25, 100)
                     ])
