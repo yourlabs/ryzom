@@ -32,9 +32,13 @@ class A(A):
     )
 
 
+class PageMenu(Div):
+    pass
+
+
 class Main(Main):
     def to_html(self, *content, **context):
-        buttons = []
+        page_menu = PageMenu(cls='mdc-elevation--z4', style='margin-bottom: 10px')
         if 'page-menu' in context:
             menu = context['page-menu']
 
@@ -53,8 +57,9 @@ class Main(Main):
                     style='text-decoration: none',
                 )
 
-                buttons.append(button)
-        return super().to_html(*buttons, *content, *self.content, **context)
+                page_menu.addchild(button)
+            page_menu.content.append('<div class="mdc-elevation-overlay"></div><div class="mdc-button__ripple"></div>')
+        return super().to_html(page_menu, *content, *self.content, **context)
 
 
 class Body(Body):
