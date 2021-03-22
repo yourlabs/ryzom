@@ -17,7 +17,7 @@ class UpolyMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
-        response['X-Up-Location'] = request.path_info
+        response['X-Up-Location'] = request.path_info + '?' + request.GET.urlencode()
         return response
 
 
@@ -187,22 +187,27 @@ class ObjectList(Div):
             if column.orderable:
                 th.attrs.addcls = 'mdc-data-table__header-cell--with-sort'
                 sort = context['view'].request.GET.get('sort', '')
-                if sort == column.order_by_alias:
+                if column.is_ordered:
                     th.attrs.addcls = 'mdc-data-table__header-cell--sorted'
-                elif sort == '-' + column.order_by_alias:
-                    th.attrs.addcls = 'mdc-data-table__header-cell--sorted'
+                get = context['view'].request.GET.copy()
+                get['sort'] = column.order_by_alias.next
+                href = ''.join([
+                    context['view'].request.path_info,
+                    '?',
+                    get.urlencode(),
+                ])
                 th.wrapper.content += [
                     A(
                         cls='mdc-icon-button material-icons mdc-data-table__sort-icon-button',
                         aria_label='Sort by dessert',
                         aria_describedby='dessert-status-label',
-                        href='?&sort=' + column.order_by_alias.next,
+                        up_target='table',
+                        href=href,
                         text=Text(
                             'arrow_upward'
-                            if sort == column.order_by_alias and sort.startswith('-')
+                            if column.order_by_alias.is_descending
                             else 'arrow_downward'
                         ),
-                        up_target='table',
                     ),
                     Div(
                         cls='mdc-data-table__sort-status-label',
@@ -232,6 +237,41 @@ class ObjectList(Div):
                 # if is numeric
                 #td.attrs.addcls = 'mdc-data-table__header-cell--numeric'
             table.tbody.addchild(tr)
+
+        if context['view'].table.page and context['view'].table.paginator.num_pages > 1:
+            pagination = MDCDataTablePagination(
+                Div(
+                    Div(
+                        _('Rows per page'),
+                        cls='mdc-data-table__pagination-rows-per-page-label'
+                    ),
+                    select=MDCSelectPerPage(
+                        addcls='mdc-select--outlined mdc-select--no-label mdc-data-table__pagination-rows-per-page-select',
+                        select=Select(*[Option(str(i), value=i) for i in (3, 5, 7, 10, 25, 100)])
+                    ),
+                    cls='mdc-data-table__pagination-rows-per-page',
+                ),
+                navigation=Div('''
+                      <div class="mdc-data-table__pagination-total">
+                        1‑10 of 100
+                      </div>
+                      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-first-page="true" disabled>
+                        <div class="mdc-button__icon">first_page</div>
+                      </button>
+                      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-prev-page="true" disabled>
+                        <div class="mdc-button__icon">chevron_left</div>
+                      </button>
+                      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-next-page="true">
+                        <div class="mdc-button__icon">chevron_right</div>
+                      </button>
+                      <button class="mdc-icon-button material-icons mdc-data-table__pagination-button" data-last-page="true">
+                        <div class="mdc-button__icon">last_page</div>
+                      </button>
+                    ''',
+                    cls='mdc-data-table__pagination-navigation',
+                )
+            )
+            table.addchild(pagination)
 
         return super().to_html(table, **context)
 

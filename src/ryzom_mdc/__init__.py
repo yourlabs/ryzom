@@ -526,6 +526,81 @@ class MDCMultipleChoicesCheckbox(Ul):
         input_list.addEventListener('change', self.update_inputs)
 
 
+class MDCSelect(Div):
+    attrs = {'class': 'mdc-select mdc-select--filled', 'data-mdc-auto-init': 'MDCSelect'}
+
+    def __init__(self, select, *content, **attrs):
+        super().__init__(
+            '''
+            <div class="mdc-select__anchor" role="button" aria-haspopup="listbox"
+                  aria-labelledby="demo-pagination-select" tabindex="0">
+              <span class="mdc-select__selected-text-container">
+                <span id="demo-pagination-select" class="mdc-select__selected-text">10</span>
+              </span>
+              <span class="mdc-select__dropdown-icon">
+                <svg
+                    class="mdc-select__dropdown-icon-graphic"
+                    viewBox="7 10 10 5">
+                  <polygon
+                      class="mdc-select__dropdown-icon-inactive"
+                      stroke="none"
+                      fill-rule="evenodd"
+                      points="7 10 12 15 17 10">
+                  </polygon>
+                  <polygon
+                      class="mdc-select__dropdown-icon-active"
+                      stroke="none"
+                      fill-rule="evenodd"
+                      points="7 15 12 10 17 15">
+                  </polygon>
+                </svg>
+              </span>
+              <span class="mdc-notched-outline mdc-notched-outline--notched">
+                <span class="mdc-notched-outline__leading"></span>
+                <span class="mdc-notched-outline__trailing"></span>
+              </span>
+            </div>
+
+            <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
+              <ul class="mdc-list">
+            ''',
+            *[
+                f'''
+                <li class="mdc-list-item {'mdc-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
+                  <span class="mdc-list-item__text">{option.attrs.value}</span>
+                </li>
+                '''
+                for option in select.content
+            ],
+            '''
+              </ul>
+            </div>
+            ''',
+            **attrs,
+        )
+
+
+class MDCSelectPerPage(MDCSelect):
+    tag = 'mdc-select-per-page'
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('MDCSelect:change', this.change.bind(this))
+
+        async def change(self, event):
+            url = new.URL(document.location)
+            if url.search.indexOf('per_page=') > 0:
+                search = url.search.replace(
+                    new.RegExp('per_page=[^&]*'),
+                    'per_page=' + event.detail.value,
+                )
+            else:
+                search = '?per_page=' + event.detail.value
+
+            up.visit(url.pathname + search, {target: '.mdc-data-table'})
+
+
+
 class MDCIconButton(A):
     attrs = dict(cls='material-icons mdc-top-app-bar__navigation-icon mdc-icon-button')
 
@@ -842,7 +917,7 @@ class MDCCard(Div):
 class MDCDataTable(Div):
     attrs = {'class': 'mdc-data-table', 'data-mdc-auto-init': 'MDCDataTable'}
 
-    def __init__(self, *content, container=None, pagination=None, table=None,
+    def __init__(self, *content, container=None, table=None,
             tbody=None, thead=None, **attrs):
 
         super().__init__(
@@ -852,7 +927,6 @@ class MDCDataTable(Div):
                     tbody=tbody,
                 )
             ),
-            pagination=pagination or MDCDataTablePagination(),
             **attrs,
         )
         self.table = self.container.table
@@ -1035,9 +1109,9 @@ class MDCDataTableContainer(Div):
 
 
 class MDCDataTablePagination(Div):
-    attrs = {'class': 'mdc-data-table__table-pagination'}
+    attrs = {'class': 'mdc-data-table__pagination'}
 
-    def to_html(self, *content, **context):
+    def to_html2(self, *content, **context):
         return super().to_html('''
   <div class="mdc-data-table__pagination-trailing mdc-data-table__row">
     <div class="mdc-data-table__pagination-rows-per-page">
