@@ -107,6 +107,7 @@ class NarrowCard(MDCCard):
         'max-width': '25em',
         'margin': 'auto',
         'padding': '1em',
+        'margin-top': '2em',
         'button': {
             'width': '100%',
         },
@@ -116,8 +117,8 @@ class NarrowCard(MDCCard):
     }
 
 
-@template('crudlfap/form.html', App)
-@template('crudlfap/create.html', App)
+@template('crudlfap/form.html', App, NarrowCard)
+@template('crudlfap/create.html', App, NarrowCard)
 @template('registration/login.html', App, NarrowCard)
 class FormTemplate(Form):
     attrs = dict(
@@ -127,8 +128,10 @@ class FormTemplate(Form):
 
     def to_html(self, view, form, **context):
         return super().to_html(
+            H3(view.title),
             form,
             CSRFInput(view.request),
+            back,
             MDCButton(getattr(view, 'title_submit', _('Submit'))),
         )
 
