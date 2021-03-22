@@ -238,6 +238,9 @@ class ChatDeleteView(generic.DeleteView):
         register('page_title').update(
             ReactiveTitle(f'{msg.room.name} - {message_count} messages'))
 
+        if not message_count and room.name != 'general':
+            room.delete()
+
         return reverse('home')
 
     @classmethod
