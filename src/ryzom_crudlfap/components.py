@@ -254,86 +254,85 @@ class ObjectList(Div):
                 #td.attrs.addcls = 'mdc-data-table__header-cell--numeric'
             table.tbody.addchild(tr)
 
-        if context['view'].table.page and context['view'].table.paginator.num_pages > 1:
-            perpage = Div(
-                Div(
-                    _('Rows per page'),
-                    cls='mdc-data-table__pagination-rows-per-page-label'
-                ),
-                select=MDCSelectPerPage(
-                    addcls='mdc-select--outlined mdc-select--no-label mdc-data-table__pagination-rows-per-page-select',
-                    select=Select(*[
-                        Option(
-                            str(i),
-                            value=i,
-                            selected=context['view'].table.page.paginator.per_page == i
-                        )
-                        for i in (3, 5, 7, 10, 25, 100)
-                    ])
-                ),
-                cls='mdc-data-table__pagination-rows-per-page',
-            )
+        perpage = Div(
+            Div(
+                _('Rows per page'),
+                cls='mdc-data-table__pagination-rows-per-page-label'
+            ),
+            select=MDCSelectPerPage(
+                addcls='mdc-select--outlined mdc-select--no-label mdc-data-table__pagination-rows-per-page-select',
+                select=Select(*[
+                    Option(
+                        str(i),
+                        value=i,
+                        selected=context['view'].table.page.paginator.per_page == i
+                    )
+                    for i in (3, 5, 7, 10, 25, 100)
+                ])
+            ),
+            cls='mdc-data-table__pagination-rows-per-page',
+        )
 
-            def pageurl(n):
-                get = context['view'].request.GET.copy()
-                get['page'] = n
-                return context['view'].request.path_info + '?' + get.urlencode()
+        def pageurl(n):
+            get = context['view'].request.GET.copy()
+            get['page'] = n
+            return context['view'].request.path_info + '?' + get.urlencode()
 
-            page = context['view'].table.page
-            navigation = Div(
-                Div(
-                    cls='mdc-data-table__pagination-total',
-                    text=Text(''.join([
-                        str(page.start_index()),
-                        '-',
-                        str(page.paginator.per_page * page.number),
-                        ' / ',
-                        str(page.paginator.count),
-                    ]))
+        page = context['view'].table.page
+        navigation = Div(
+            Div(
+                cls='mdc-data-table__pagination-total',
+                text=Text(''.join([
+                    str(page.start_index()),
+                    '-',
+                    str(page.paginator.per_page * page.number),
+                    ' / ',
+                    str(page.paginator.count),
+                ]))
+            ),
+            A(
+                cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
+                disabled=page.number == 1,
+                href=pageurl(1),
+                icon=Div(cls='mdc-button__icon', text=Text('first_page')),
+                up_target='.mdc-data-table',
+            ),
+            A(
+                cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
+                disabled=not page.has_previous(),
+                icon=Div(cls='mdc-button__icon', text=Text('chevron_left')),
+                href=pageurl(
+                    page.number - 1
+                    if page.has_previous()
+                    else 1
                 ),
-                A(
-                    cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
-                    disabled=page.number == 1,
-                    href=pageurl(1),
-                    icon=Div(cls='mdc-button__icon', text=Text('first_page')),
-                    up_target='.mdc-data-table',
+                up_target='.mdc-data-table',
+            ),
+            A(
+                cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
+                disabled=not page.has_next(),
+                icon=Div(cls='mdc-button__icon', text=Text('chevron_right')),
+                href=pageurl(
+                    page.number + 1
+                    if page.has_next()
+                    else page.paginator.num_pages
                 ),
-                A(
-                    cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
-                    disabled=not page.has_previous(),
-                    icon=Div(cls='mdc-button__icon', text=Text('chevron_left')),
-                    href=pageurl(
-                        page.number - 1
-                        if page.has_previous()
-                        else 1
-                    ),
-                    up_target='.mdc-data-table',
-                ),
-                A(
-                    cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
-                    disabled=not page.has_next(),
-                    icon=Div(cls='mdc-button__icon', text=Text('chevron_right')),
-                    href=pageurl(
-                        page.number + 1
-                        if page.has_next()
-                        else page.paginator.num_pages
-                    ),
-                    up_target='.mdc-data-table',
-                ),
-                A(
-                    cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
-                    disabled=page.paginator.num_pages == page.number,
-                    icon=Div(cls='mdc-button__icon', text=Text('last_page')),
-                    href=pageurl(page.paginator.num_pages),
-                    up_target='.mdc-data-table',
-                ),
-                cls='mdc-data-table__pagination-navigation',
-            )
-            pagination = MDCDataTablePagination(
-                perpage=perpage,
-                navigation=navigation,
-            )
-            table.addchild(pagination)
+                up_target='.mdc-data-table',
+            ),
+            A(
+                cls='mdc-icon-button material-icons mdc-data-table__pagination-button',
+                disabled=page.paginator.num_pages == page.number,
+                icon=Div(cls='mdc-button__icon', text=Text('last_page')),
+                href=pageurl(page.paginator.num_pages),
+                up_target='.mdc-data-table',
+            ),
+            cls='mdc-data-table__pagination-navigation',
+        )
+        pagination = MDCDataTablePagination(
+            perpage=perpage,
+            navigation=navigation,
+        )
+        table.addchild(pagination)
 
         return super().to_html(table, **context)
 
