@@ -4,7 +4,11 @@ from django.views import generic
 
 import py2js
 from py2js.renderer import JS
-from ryzom_django_channels.components import ReactiveComponentMixin, SubscribeComponentMixin
+from ryzom_django_channels.components import (
+    ReactiveComponentMixin,
+    SubscribeComponentMixin,
+    model_template
+)
 from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.html import *
 
@@ -67,6 +71,7 @@ class DeleteButton(Component):
             )
 
 
+@model_template('message-item')
 class MessageItem(MDCListItem):
     def __init__(self, obj):
         self.obj = obj
@@ -82,22 +87,25 @@ class MessageItem(MDCListItem):
 
 class ChatRoom(SubscribeComponentMixin, MDCList):
     publication = 'messages'
+    model_template = 'message-item'
 
     def __init__(self, room_id):
         self.subscribe_options = dict(room_id=room_id)
         super().__init__()
 
     @classmethod
-    def get_queryset(cls, qs, opts):
-        room_message = qs.filter(room__name=opts['room_id'])
-        count = room_message.count()
+    def get_queryset(cls, user, qs, opts):
+        room_messages = qs.filter(room__name=opts['room_id'])
+        count = room_messages.count()
         start = max(count - 10, 0)
-        return qs.filter(room__name=opts['room_id'])[start:count]
+        return room_messages[start:count]
 
 
+@model_template('room-item')
 class RoomItem(MDCListItem):
     def __init__(self, room):
-        super().__init__(room.name,
+        super().__init__(
+            room.name,
             id=f'room-{room.id}',
             tag='a',
             href=f'/reactive/?room={room.name}')
@@ -117,13 +125,14 @@ class RoomForm(Div):
 
 class RoomList(SubscribeComponentMixin, MDCList):
     publication = 'rooms'
+    model_template = 'room-item'
 
     def __init__(self, order_by):
         self.subscribe_options = dict(order_by=order_by)
         super().__init__()
 
     @classmethod
-    def get_queryset(self, qs, opts):
+    def get_queryset(self, user, qs, opts):
         return qs.order_by(opts['order_by'])
 
 

@@ -59,19 +59,14 @@ class Publication(models.Model):
     name = models.CharField(max_length=255, unique=True)
     model_module = models.CharField(max_length=255)
     model_class = models.CharField(max_length=255)
-    template_module = models.CharField(max_length=255)
-    template_class = models.CharField(max_length=255)
 
-    def get_model(self):
-        return self._import(self.model_module, self.model_class)
-
-    def get_template(self):
-        return self._import(
-                self.template_module,
-                self.template_class)
-
-    def _import(self, mod, cls):
-        return getattr(importlib.import_module(mod), cls)
+    @property
+    def publish_function(self):
+        model = getattr(
+            importlib.import_module(self.model_module),
+            self.model_class
+        )
+        return getattr(model, self.name)
 
 
 class Subscription(models.Model):
@@ -94,6 +89,11 @@ class Subscription(models.Model):
     queryset = ArrayField(models.IntegerField(), default=list)
     options = JSONField(blank=True, null=True)
 
+    @property
+    def subscriber(self):
+        subscriber_mod = importlib.import_module(self.subscriber_module)
+        return getattr(subscriber_mod, self.subscriber_class)
+
     def get_queryset(self, opts=None):  # noqa: C901
         '''
         This method computes the publication query and create/update the
@@ -104,17 +104,12 @@ class Subscription(models.Model):
         More will come with special variables and function. Such as an $add
         to replace that ugly tupple i'm using for now.. to be discussed
         '''
-        model = self.publication.get_model()
 
-        subscriber_mod = importlib.import_module(self.subscriber_module)
-        subscriber_class = getattr(subscriber_mod, self.subscriber_class)
-
-        publish_function = getattr(model, self.publication.name)
-
-        queryset = publish_function(self.client.user)
+        queryset = self.publication.publish_function(self.client.user)
 
         opts = opts or self.options
-        queryset = subscriber_class.get_queryset(queryset, opts)
+        queryset = self.subscriber.get_queryset(
+            self.client.user, queryset, opts)
 
         self.options = opts
         self.queryset = list(queryset.values_list('id', flat=True))

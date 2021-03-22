@@ -4,6 +4,18 @@ from ryzom_django_channels.models import (
     Registration
 )
 
+
+model_templates = dict()
+
+
+def model_template(name):
+    global model_templates
+    def decorator(component):
+        model_templates[name] = component
+        return component
+    return decorator
+
+
 class ReactiveBase:
     view = None
 
@@ -36,6 +48,12 @@ class ReactiveBase:
 
 
 class SubscribeComponentMixin(ReactiveBase):
+    @property
+    def model_template(self):
+        raise AttributeError(
+            f'{self} is missing attribute "model_template"'
+        )
+
     def reactive_setup(self):
         if not hasattr(self, 'subscribe_options'):
             self.subscribe_options = {}
@@ -60,7 +78,7 @@ class SubscribeComponentMixin(ReactiveBase):
         self.get_content(publication, subscription)
 
     def get_content(self, publication, subscription):
-        template = publication.get_template()
+        template = model_templates[self.model_template]
 
         content = []
         for obj in subscription.get_queryset():

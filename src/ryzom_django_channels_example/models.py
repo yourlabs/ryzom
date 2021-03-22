@@ -8,7 +8,7 @@ from ryzom_django_channels.pubsub import Publishable, publish
 class Room(Publishable, models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    @publish('ryzom_django_channels_example.views.RoomItem')
+    @publish
     def rooms(cls, user):
         return cls.objects.all()
 
@@ -29,6 +29,6 @@ class Message(Publishable, models.Model):
     def __str__(self):
         return self.message
 
-    @publish('ryzom_django_channels_example.views.MessageItem')
+    @publish
     def messages(cls, user):
         return cls.objects.all()

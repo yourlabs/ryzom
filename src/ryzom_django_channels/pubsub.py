@@ -1,9 +1,3 @@
-'''
-Defines the Publishable class and the module level variable
-to_publish.
-'''
-
-
 class Publishable:
     '''
     The publishable class is meant to be inherited from
@@ -16,43 +10,32 @@ class Publishable:
     def publish(cls):
         for method in cls.__dict__.values():
             if getattr(method, '__publication__', False):
-                cls.create_publication(
-                    getattr(method, '__name__'),
-                    getattr(method, '__template__')
-                )
+                cls.create_publication(getattr(method, '__name__'))
 
     @classmethod
-    def create_publication(cls, name, template):
+    def create_publication(cls, name):
         from ryzom_django_channels.models import Publication
 
-        tmpl_mod, tmpl_cls = template.rsplit('.', 1)
-        kwargs = {
-            'model_module': cls.__module__,
-            'model_class': cls.__name__,
-            'template_module': tmpl_mod,
-            'template_class': tmpl_cls,
-        }
-        pub_exists = Publication.objects.filter(name=name).exists()
-        if pub_exists:
-            pub = Publication.objects.get(name=name)
+        model_params = dict(
+            model_module=cls.__module__,
+            model_class=cls.__name__,
+        )
+        if pub := Publication.objects.filter(name=name).first():
             changed = False
-            for k, v in kwargs.items():
+            for k, v in model_params.items():
                 if getattr(pub, k, None) != v:
                     setattr(pub, k, v)
                     changed = True
             if changed:
                 pub.save()
         else:
-            Publication.objects.create(name=name, **kwargs)
+            Publication.objects.create(name=name, **model_params)
 
 
-def publish(component):
-    def func_wrapper(func):
-        @classmethod
-        def wrapper(*args):
-            return func(*args)
-        wrapper.__publication__ = True
-        wrapper.__template__ = component
-        wrapper.__name__ = func.__name__
-        return wrapper
-    return func_wrapper
+def publish(func):
+    @classmethod
+    def wrapper(*args):
+        return func(*args)
+    wrapper.__publication__ = True
+    wrapper.__name__ = func.__name__
+    return wrapper
