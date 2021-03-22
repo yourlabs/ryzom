@@ -247,7 +247,14 @@ class ObjectList(Div):
                     ),
                     select=MDCSelectPerPage(
                         addcls='mdc-select--outlined mdc-select--no-label mdc-data-table__pagination-rows-per-page-select',
-                        select=Select(*[Option(str(i), value=i) for i in (3, 5, 7, 10, 25, 100)])
+                        select=Select(*[
+                            Option(
+                                str(i),
+                                value=i,
+                                selected=context['view'].request.GET.get('per_page', '') == str(i)
+                            )
+                            for i in (3, 5, 7, 10, 25, 100)
+                        ])
                     ),
                     cls='mdc-data-table__pagination-rows-per-page',
                 ),
