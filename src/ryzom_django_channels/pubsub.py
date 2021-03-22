@@ -2,12 +2,6 @@
 Defines the Publishable class and the module level variable
 to_publish.
 '''
-to_publish = []
-'''
-This variable is intented to be used only in the ryzom.apps
-AppConfig.ready() to populate the DB with publications
-at server startup.
-'''
 
 
 class Publishable:
