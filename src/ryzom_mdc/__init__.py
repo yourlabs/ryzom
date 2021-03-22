@@ -1196,6 +1196,8 @@ class Body(Body):
 class Html(Html):
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
+        'https://cdn.polyfill.io/v2/polyfill.min.js',
         '/static/py2js.js',
     ]
     stylesheets = [
