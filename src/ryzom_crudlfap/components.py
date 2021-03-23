@@ -27,7 +27,7 @@ def geticon(arg):
 
 class A(A):
     attrs = dict(
-        up_target='#main, .mdc-top-app-bar__title',
+        up_target='#main, .mdc-top-app-bar__title, #drawer .mdc-list',
         #up_transition='cross-fade',
     )
 
@@ -174,6 +174,20 @@ class FormTemplate(Form):
 class Home(Div):
     def to_html(self, **context):
         return super().to_html(H1('Welcome to Ryzom-CRUDLFA+'), **context)
+
+
+@template('registration/logged_out.html', App, NarrowCard)
+class LoggedOut(Div):
+    def to_html(self, **context):
+        return super().to_html(
+            H1(_('Log out')),
+            P(_('Thanks for spending some quality time with the Web site today.')),
+            A(
+                _('Log in again'),
+                href=crudlfap.site.views['login'].url,
+            ),
+            **context,
+        )
 
 
 @template('crudlfap/detail.html', App, NarrowCard)
