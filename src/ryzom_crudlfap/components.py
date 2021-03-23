@@ -415,7 +415,7 @@ class ObjectList(Div):
         if 'sort' in context['view'].request.GET:
             form.addchild(Input(
                 name='sort',
-                value=context['view'].request.GET['q'],
+                value=context['view'].request.GET['sort'],
                 type='hidden'
             ))
         if 'q' in context['view'].request.GET:
