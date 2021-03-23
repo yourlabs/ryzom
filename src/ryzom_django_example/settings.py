@@ -134,14 +134,15 @@ SERVER_METHODS = []
 
 ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_SERVER],
+if CHANNELS_ENABLE:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_SERVER],
+            },
         },
-    },
-}
+    }
 
 
 DATABASES = {
