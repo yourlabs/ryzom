@@ -57,7 +57,7 @@ class PageMenu(Div):
                 style='text-decoration: none',
             )
             if getattr(v, 'controller', None) == 'modal':
-                button.attrs.up_modal = '#main-inner'
+                button.attrs.up_modal = '.main-inner'
                 del button.attrs['up-target']
 
             content.append(button)
@@ -83,7 +83,7 @@ class Body(Body):
         self.main = Main(
             Div(
                 *content,
-                id='main-inner',
+                cls='main-inner',
             ),
             cls='main mdc-drawer-app-content',
             id='main',
@@ -107,7 +107,7 @@ class Body(Body):
 class App(Html):
     body_class = Body
     scripts = [
-        'https://unpkg.com/unpoly@0.62.1/dist/unpoly.min.js',
+        'https://unpkg.com/unpoly@0.62.1/dist/unpoly.js',
     ]
     stylesheets = [
         'https://unpkg.com/unpoly@0.62.1/dist/unpoly.min.css',
@@ -391,16 +391,19 @@ class ObjectList(Div):
                     type='hidden',
                 ))
 
-
-        filter_row = Div(
-            toggle=MDCDrawerToggle(
+        toggle = None
+        filterset = getattr(context['view'], 'filterset', None)
+        if filterset and filterset.form.fields:
+            toggle = MDCDrawerToggle(
                 Button(
                     'filter_list',
                     cls='material-icons mdc-icon-button',
                     style='--mdc-ripple-fg-size:28px; --mdc-ripple-top:10px;',
                 ),
                 data_drawer_id='page-drawer',
-            ),
+            )
+        filter_row = Div(
+            toggle=toggle,
             search=search_form or '',
             chips=Div(cls='mdc-chip-set', role='grid', style='display: inline-block')
         )
@@ -430,7 +433,8 @@ class ObjectList(Div):
                 del get[name]
             return context['view'].request.path_info + '?' + get.urlencode()
 
-        if filterset := getattr(context['view'], 'filterset', None):
+        drawer = None
+        if filterset and filterset.form.fields:
             for bf in filterset.form.visible_fields():
                 filterfield = MDCFilterField(
                     label=bf.label,
@@ -465,23 +469,23 @@ class ObjectList(Div):
                     filterfield.widget.style.display = 'none'
                 form.addchild(filterfield)
 
-        drawer = Aside(
-            MDCDrawerToggle(
-                MDCButton(_('Close'), icon='close'),
-                data_drawer_id='page-drawer',
-                style='text-align: right',
-            ),
-            Div(
-                form,
-                cls='mdc-drawer-app-content',
-            ),
-            id='page-drawer',
-            cls='mdc-drawer mdc-drawer--dismissible',
-            style='padding: 1em',
-        )
+            drawer = Aside(
+                MDCDrawerToggle(
+                    MDCButton(_('Close'), icon='close'),
+                    data_drawer_id='page-drawer',
+                    style='text-align: right',
+                ),
+                Div(
+                    form,
+                    cls='mdc-drawer-app-content',
+                ),
+                id='page-drawer',
+                cls='mdc-drawer mdc-drawer--dismissible',
+                style='padding: 1em',
+            )
 
         return super().to_html(
-            drawer,
+            drawer or '',
             PageMenu(),
             Div(
                 filter_row,
@@ -606,7 +610,7 @@ class RyzomColumn(tables.Column):
                 tag='a',
             )
             if getattr(view, 'controller', None) == 'modal':
-                button.attrs.up_modal = '#main-inner'
+                button.attrs.up_modal = '.main-inner'
             else:
                 button.attrs['up-target'] = A.attrs['up-target']
             buttons.append(button)
