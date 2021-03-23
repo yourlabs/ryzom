@@ -1108,8 +1108,115 @@ class MDCDataTableContainer(Div):
         )
 
 
+class MDCDrawerToggle(Component):
+    tag = 'mdc-drawer-toggle'
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.toggle.bind(this))
+
+        def toggle(self):
+            drawer = document.getElementById(this.attributes['data-drawer-id'].value)
+            drawer = mdc.drawer.MDCDrawer.attachTo(drawer)
+            drawer.open = not drawer.open
+
+
+class ToggleNextElement(Component):
+    tag = 'toggle-element'
+    style = {
+        ' svg': {
+            'transition': 'all 0.5s ease',
+        },
+        '.open svg': {
+            'transform': 'rotate(180deg)',
+        }
+    }
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.click.bind(this))
+
+        def click(self, event):
+            element = this.nextElementSibling
+            if element.style.display == 'none':
+                element.style.display = 'block'
+                this.classList.add('open')
+            else:
+                element.style.display = 'none'
+                this.classList.remove('open')
+
+
+class MDCFilterField(Component):
+    style = {
+        ' h3': {
+            'display': 'flex',
+            'justify-content': 'space-between',
+        }
+    }
+
+    def __init__(self, label=None, widget=None, **attrs):
+        super().__init__(
+            label=ToggleNextElement(
+                H3(
+                    Span(label),
+                    Component(
+                        '<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>',
+                        tag='svg',
+                        width='26',
+                        height='26',
+                        viewBox='0 0 26 26',
+                        role='presentation',
+                        xmlns='http://www.w3.org/2000/svg',
+                        cls='gc-icon gc-icon--expand',
+                    ),
+                ),
+            ),
+            widget=Div(
+                widget,
+                style={'transition': 'all 1s ease'},
+            ),
+            **attrs,
+        )
+
+    @classmethod
+    def from_boundfield(cls, bf):
+        return cls(
+            label=bf.label,
+            field=bf.to_component(),
+        )
+
+
 class MDCDataTablePagination(Div):
     attrs = {'class': 'mdc-data-table__pagination'}
+
+
+class MDCChip(Div):
+    attrs = {'class': 'mdc-chip', 'role': 'row'}
+
+    def __init__(self, *content, icon=None, **attrs):
+        super().__init__(
+            MDCChipRipple(),
+            Gridcell(*content),
+            icon=Gridcell(icon) if icon else '',
+            **attrs
+        )
+
+
+class MDCChipRipple(Div):
+    attrs = {'class': 'mdc-chip__ripple'}
+
+
+class Gridcell(Span):
+    attrs = {'role': 'gridcell'}
+
+
+class InlineForm(Form):
+    style = {
+        'display': 'inline-block',
+        ' .MDCField': {
+            'display': 'inline-block',
+        },
+    }
 
 
 class Body(Body):

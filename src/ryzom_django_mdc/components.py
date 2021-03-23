@@ -18,9 +18,10 @@ from .html import *
 )
 class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod
-    def from_boundfield(cls, bf):
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
         return cls(
-            Input(**widget_attrs(bf)),
+            Input(**attrs),
             label=bf.label,
             help_text=bf.help_text,
             errors=bf.errors,
@@ -30,9 +31,10 @@ class MDCInputWidget(MDCTextFieldOutlined):
 @widget_template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
-    def from_boundfield(cls, bf):
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
         return cls(
-            MDCCheckboxInput(**widget_attrs(bf)),
+            MDCCheckboxInput(**attrs),
             **field_kwargs(bf),
         )
 
@@ -40,7 +42,7 @@ class MDCCheckboxWidget(MDCCheckboxField):
 @widget_template('django/forms/widgets/checkbox_select.html')
 class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
     @classmethod
-    def from_boundfield(cls, bf):
+    def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
         choices = []
         for group, options, index in context['optgroups']:
@@ -72,10 +74,11 @@ class MultiWidget(CList):
         ])
 
     @classmethod
-    def from_boundfield(cls, bf):
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_context(bf))
         return Div(
             Label(bf.label),
-            cls(**widget_context((bf))),
+            cls(**attrs),
             cls='mdc-form-field'
         )
 
@@ -86,10 +89,10 @@ class SplitDateTimeWidget(MDCField):
     date_style = 'margin-right: 12px; ' + time_style
 
     @classmethod
-    def from_boundfield(cls, bf):
+    def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
         return cls(
-            Label(bf.label),
+            Label(bf.label, style='display: block'),
             MDCFormField(
                 MDCTextFieldOutlined(
                     Input(**context_attrs(context['subwidgets'][0])),
@@ -109,8 +112,8 @@ class SplitDateTimeWidget(MDCField):
 @widget_template('django/forms/widgets/textarea.html')
 class TextareaWidget(MDCTextareaFieldOutlined):
     @classmethod
-    def from_boundfield(cls, bf):
-        attrs = widget_attrs(bf)
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
         return cls(
             Textarea(
                 attrs.pop('value', '') or '',
@@ -126,8 +129,8 @@ class TextareaWidget(MDCTextareaFieldOutlined):
 @widget_template('django/forms/widgets/file.html')
 class FileInputWidget(MDCField):
     @classmethod
-    def from_boundfield(cls, bf):
-        attrs = widget_attrs(bf)
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
         return cls(
             Label(bf.label),
             MDCFileField(

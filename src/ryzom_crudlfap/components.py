@@ -33,33 +33,42 @@ class A(A):
 
 
 class PageMenu(Div):
-    pass
+    attrs = dict(cls='mdc-elevation--z2', style='margin-bottom: 10px')
+
+    def to_html(self, *content, **context):
+        if 'page-menu' not in context:
+            return super().to_html(*content, **context)
+
+        content = list(content)
+        menu = context['page-menu']
+
+        for v in menu:
+            if v.urlname == context['view'].urlname:
+                continue
+
+            button = A(
+                MDCTextButton(
+                    v.label.capitalize(),
+                    icon=geticon(v),
+                    tag='span',
+                    style=f'margin: 10px; color: {getattr(v, "color", "inherit")}',
+                ),
+                href=v.url,
+                style='text-decoration: none',
+            )
+
+            content.append(button)
+
+        return super().to_html(
+            *content,
+            '<div class="mdc-elevation-overlay"></div><div class="mdc-button__ripple"></div>',
+            **context,
+        )
+
 
 
 class Main(Main):
-    def to_html(self, *content, **context):
-        page_menu = PageMenu(cls='mdc-elevation--z4', style='margin-bottom: 10px')
-        if 'page-menu' in context:
-            menu = context['page-menu']
-
-            for v in menu:
-                if v.urlname == context['view'].urlname:
-                    continue
-
-                button = A(
-                    MDCTextButton(
-                        v.label.capitalize(),
-                        icon=geticon(v),
-                        tag='span',
-                        style=f'margin: 10px; color: {getattr(v, "color", "inherit")}',
-                    ),
-                    href=v.url,
-                    style='text-decoration: none',
-                )
-
-                page_menu.addchild(button)
-            page_menu.content.append('<div class="mdc-elevation-overlay"></div><div class="mdc-button__ripple"></div>')
-        return super().to_html(page_menu, *content, *self.content, **context)
+    pass
 
 
 class Body(Body):
@@ -133,6 +142,15 @@ class FormTemplate(Form):
     )
 
     def to_html(self, view, form, **context):
+        back=''
+        if next_ := view.request.GET.get('next', ''):
+            back = A(
+                MDCButton(
+                    _('Back'),
+                    tag='span',
+                ),
+                href=next_,
+            )
         return super().to_html(
             H3(view.title),
             form,
@@ -278,6 +296,11 @@ class ObjectList(Div):
             cls='mdc-data-table__pagination-rows-per-page',
         )
 
+        url = '?'.join([
+            context['view'].request.path_info,
+            context['view'].request.GET.copy().urlencode(),
+        ])
+
         def pageurl(n):
             get = context['view'].request.GET.copy()
             get['page'] = n
@@ -339,7 +362,124 @@ class ObjectList(Div):
         )
         table.addchild(pagination)
 
-        return super().to_html(table, **context)
+        search_form = None
+        if search_form := getattr(context['view'], 'search_form', None):
+            search_form = InlineForm(
+                search_form,
+                method='get',
+                action=url,
+                up_autosubmit=True,
+                up_delay='200ms',
+                up_target='.mdc-data-table, .mdc-chip-set',
+            )
+            for k, v in context['view'].request.GET.items():
+                if k == 'q':
+                    continue
+                search_form.addchild(Input(
+                    name=k,
+                    value=v,
+                    type='hidden',
+                ))
+
+
+        filter_row = Div(
+            toggle=MDCDrawerToggle(
+                Button(
+                    'filter_list',
+                    cls='material-icons mdc-icon-button',
+                    style='--mdc-ripple-fg-size:28px; --mdc-ripple-top:10px;',
+                ),
+                data_drawer_id='page-drawer',
+            ),
+            search=search_form or '',
+            chips=Div(cls='mdc-chip-set', role='grid', style='display: inline-block')
+        )
+
+        form = Form(
+            method='get',
+            action=url,
+            up_autosubmit=True,
+            up_delay='200ms',
+            up_target='.mdc-drawer__content',
+        )
+        if 'sort' in context['view'].request.GET:
+            form.addchild(Input(
+                name='sort',
+                value=context['view'].request.GET['q'],
+                type='hidden'
+            ))
+        if 'q' in context['view'].request.GET:
+            form.addchild(Input(
+                name='q',
+                value=context['view'].request.GET['q'],
+                type='hidden'
+            ))
+        def remove_filter_url(name):
+            get = context['view'].request.GET.copy()
+            if name in get:
+                del get[name]
+            return context['view'].request.path_info + '?' + get.urlencode()
+
+        if filterset := getattr(context['view'], 'filterset', None):
+            for bf in filterset.form.visible_fields():
+                filterfield = MDCFilterField(
+                    label=bf.label,
+                    widget=bf.to_component()
+                )
+                value = context['view'].request.GET.get(bf.name, '')
+                if value:
+                    chip = MDCChip(
+                        Span(
+                            role='button',
+                            tabindex='0',
+                            cls='mdc-chip__primary-action',
+                            text=Span(
+                                bf.label,
+                                ': ',
+                                str(bf.form.cleaned_data[bf.name]),
+                                cls='mdc-chip__text',
+                            ),
+                        ),
+                        icon=I(
+                            'cancel',
+                            cls='material-icons mdc-chip__icon mdc-chip__icon--trailing',
+                            tabindex='-1',
+                            role='button',
+                        ),
+                        tag='a',
+                        href=remove_filter_url(bf.name),
+                        up_target='main',
+                    )
+                    filter_row.chips.addchild(chip)
+                else:
+                    filterfield.widget.style.display = 'none'
+                form.addchild(filterfield)
+
+        drawer = Aside(
+            MDCDrawerToggle(
+                MDCButton(_('Close'), icon='close'),
+                data_drawer_id='page-drawer',
+                style='text-align: right',
+            ),
+            Div(
+                form,
+                cls='mdc-drawer-app-content',
+            ),
+            id='page-drawer',
+            cls='mdc-drawer mdc-drawer--dismissible',
+            style='padding: 1em',
+        )
+
+        return super().to_html(
+            drawer,
+            PageMenu(),
+            Div(
+                filter_row,
+                table,
+                cls='mdc-drawer__content'
+            ),
+            **context,
+        )
 
 
 class mdcTopAppBar(Header):

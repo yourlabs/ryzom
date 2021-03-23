@@ -16,13 +16,13 @@ def widget_template(*names):
     return decorator
 
 
-def boundfield_to_component(bf):
+def boundfield_to_component(bf, **attrs):
     try:
         template = widget_templates[bf.field.widget.template_name]
     except KeyError:
         return html.Text(str(bf))
     else:
-        return template.from_boundfield(bf)
+        return template.from_boundfield(bf, **attrs)
 forms.BoundField.to_component = boundfield_to_component
 
 
