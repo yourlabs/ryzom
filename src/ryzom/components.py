@@ -281,19 +281,17 @@ class Component(metaclass=ComponentMetaclass):
         Moreover it sets the child's position attribute to its index
         in the current component's content list
         '''
-        # handle text node as content
-        if self.tag == 'text':
-            self.content = self.content[0]
-        else:
-            for i, c in enumerate(self.content):
-                if c is None:
-                    del self.content[i]
-                    i -= 1
-                    continue
-                if isinstance(c, (str, float, int)):
-                    self.content[i] = c = Text(c)
-                c.parent = self
-                c.position = i
+        for i, c in enumerate(self.content):
+            if c is None:
+                del self.content[i]
+                i -= 1
+                continue
+
+            if not hasattr(c, 'to_html'):
+                self.content[i] = c = Text(str(c))
+
+            c.parent = self
+            c.position = i
 
     def addchild(self, component):
         '''Add a child component
@@ -485,3 +483,6 @@ class Text(Component):
     Represents a text node
     '''
     tag = 'text'
+
+    def preparecontent(self):
+        self.content = self.content[0]

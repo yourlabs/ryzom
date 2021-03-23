@@ -68,6 +68,13 @@ yourdiv = Div(main=P('content'))
 yourdiv.main == P('content', slot='main')
 ```
 
+#### Special content
+
+Any content that does not define a `to_html` method will be casted to
+str and wrapped inside a `Text()` component.
+
+Any content that is `None` will be **removed from** `self.content`.
+
 #### Attributes
 
 HTML tags also have attributes which we have a Pythonic API for:
@@ -379,3 +386,45 @@ def to_component(self):
 
 An example Django project is available in `src/ryzom_django_example/`, example
 code is in the `urls.py` file.
+
+#### Supported API
+
+Low-levels documented in this section are subject to unfriendly change prior to
+v1 as we are still researching use cases, please use responsibly.
+
+We are trying to secure the following Component methods that you will like to
+override when refactoring code:
+
+- `Component.context(*content, **context)`: alter the context before rendering to bubble
+  up new context data from inner components to parent components, aiming to
+  solve the same problem we have blocks and extends in jinja templates.
+- `Component.content_html(*content, **context)`: render inner HTML
+- `Component.to_html(*content, **context)`: renders the outer and inner HTML
+
+#### Not thread safe
+
+Currently, components are not thread safe because much of its rendering code
+alters self in a way that will change how it would render again. Some core
+component code alters `self.content` during rendering, example in "Special
+content": "None" case.
+
+Thread safety is an active discussion topic whenever some thread-unsafe code is
+proposed for merge, but we are not yet certain that this is an issue because of
+all the better ways Python offers to organize code. For example:
+
+Wrap declarations in lambdas:
+
+```py
+class YourView:
+    to_button = lambda: YourButton()
+```
+
+Instead of:
+
+```py
+class YourView:
+    to_button = YourButton()
+```
+
+We are careful with thread safety in new developments, but it seems must
+convenient to just being able to alter `self` on the way.
