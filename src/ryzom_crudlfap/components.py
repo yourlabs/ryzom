@@ -57,7 +57,7 @@ class PageMenu(Div):
                 style='text-decoration: none',
             )
             if getattr(v, 'controller', None) == 'modal':
-                button.attrs.up_modal = 'main'
+                button.attrs.up_modal = '#main-inner'
                 del button.attrs['up-target']
 
             content.append(button)
