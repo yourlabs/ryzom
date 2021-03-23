@@ -2,7 +2,7 @@ import pytest
 
 from ryzom.html import Div, Text
 from ryzom import test
-from ryzom_mdc import *
+from ryzom_mdc.html import *
 
 
 class TestMdc(object):

@@ -1,3 +1,4 @@
+from django.middleware.csrf import get_token
 from django.utils.safestring import mark_safe
 
 from ryzom.html import *
@@ -30,3 +31,12 @@ class ErrorList(Ul):
 class Html(Html):
     scripts = [JS_BUNDLE_URL]
     stylesheets = [CSS_BUNDLE_URL]
+
+
+class CSRFInput(Input):
+    def __init__(self, request):
+        super().__init__(
+            type='hidden',
+            name='csrfmiddlewaretoken',
+            value=get_token(request)
+        )

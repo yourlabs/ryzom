@@ -6,5 +6,5 @@ class BaseConfig(AppConfig):
     name = 'ryzom_django'
 
     def ready(self):
-        autodiscover_modules('components')
+        autodiscover_modules('html')
         super().ready()

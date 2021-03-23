@@ -11,16 +11,6 @@ from crudlfap.mixins import crud
 from crudlfap.mixins import table
 
 
-class UpolyMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        response['X-Up-Location'] = request.path_info + '?' + request.GET.urlencode()
-        return response
-
-
 def geticon(arg):
     return getattr(arg, 'material_icon', getattr(arg, 'icon', None))
 

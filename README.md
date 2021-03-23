@@ -228,7 +228,7 @@ Add to `settings.INSTALLED_APPS`:
 
 ```py
 'ryzom',            # add py-builtins.js static file
-'ryzom_django',     # enable autodiscover of app_name.components
+'ryzom_django',     # enable autodiscover of app_name.html
 'ryzom_django_mdc', # enable MDC form rendering
 ```
 
@@ -263,11 +263,11 @@ This template backend will allow two usages:
 
 - overriding html template names with components,
 - using components import path in dotted-style for `template_name`,
-  ie. `template_name = 'yourapp.components.SomeThing'`
+  ie. `template_name = 'yourapp.html.SomeThing'`
 
 #### Register templates for views
 
-Currently, `ryzom_django` will auto-discover (import) any app's `components.py`
+Currently, `ryzom_django` will auto-discover (import) any app's `html.py`
 file. As such, this is where you can define all your view templates
 replacements with `ryzom.html.template`. For example, to set the default
 template for a `django.views.generic.ListView` with model `YourModel`:
