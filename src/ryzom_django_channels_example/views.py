@@ -97,7 +97,7 @@ class ChatRoom(SubscribeComponentMixin, MDCList):
 
     @classmethod
     def get_queryset(cls, user, qs, opts):
-        room_messages = qs.filter(room__name=opts['room_id'])
+        room_messages = qs.filter(room__name=opts['room_id']).order_by('created')
         count = room_messages.count()
         start = max(count - 10, 0)
         return room_messages[start:count]
