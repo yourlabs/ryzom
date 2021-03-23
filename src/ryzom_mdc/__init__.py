@@ -1,5 +1,3 @@
-import py2js
-from py2js.renderer import JS
 from ryzom.html import *
 
 
@@ -44,7 +42,7 @@ class MDCButtonOutlined(Button):
 
 
 class MDCButton(Button):
-    def __init__(self, text, p=True, icon=None, **kwargs):
+    def __init__(self, text=None, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
 
         if icon and isinstance(icon, str):
@@ -54,10 +52,12 @@ class MDCButton(Button):
         else:
             content = []
 
-        content.append(Span(text, cls='mdc-button__label'))
+        if text:
+            content.append(Span(text, cls='mdc-button__label'))
+        raised = 'mdc-button--raised' if kwargs.pop('raised', None) else ''
         super().__init__(
             *content,
-            cls=f'mdc-button mdc-button--raised {black}',
+            cls=f'mdc-button {raised} {black}',
             **kwargs
         )
 
@@ -211,7 +211,7 @@ class MDCFormField(Div):
         super().__init__(*content, **self.attrs, **kwargs)
 
 
-class MDCFileField(py2js.Mixin, Div):
+class MDCFileField(Div):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
         self.btn = MDCButtonLabelOutlined(label, False)
         self.input_id = html_input.attrs['id']
@@ -300,15 +300,19 @@ class MDCList(Div):
 class MDCListItem(Li):
     attrs = {'class': 'mdc-list-item'}
 
-    def __init__(self, *content, **attrs):
+    def __init__(self, *content, icon=None, **attrs):
+        if icon and not isinstance(icon, Component):
+            icon = MDCIcon(icon, addcls='mdc-list-item__graphic')
+
         super().__init__(
             Span(cls='mdc-list-item__ripple'),
+            icon or '',
             Span(*content, cls='mdc-list-item__text'),
             **attrs,
         )
 
 
-class MDCSnackBar(py2js.Mixin, Div):
+class MDCSnackBar(Div):
     def __init__(self, msg, status='success'):
         super().__init__(
             Div(
@@ -369,16 +373,18 @@ class MDCHelpText(Div):
     )
 
 
+class MDCInputCheckboxNativeControl(Input):
+    attrs = {'class': 'mdc-checkbox__native-control'}
+
+
 class MDCCheckboxInput(Div):
     """The actual input HTML element (widget)."""
-    def __init__(self, **kwargs):
-        kwargs.setdefault('type', 'checkbox')
+    def __init__(self, input=None, **attrs):
+        attrs.setdefault('type', 'checkbox')
         super().__init__(
-            Input(
-                cls='mdc-checkbox__native-control',
-                **kwargs
-            ),
-            Div(
+            cls='mdc-checkbox',
+            input=input or MDCInputCheckboxNativeControl(**attrs),
+            checkbox=Div(
                 Component(
                     Component(
                         tag='path', fill='none',
@@ -390,7 +396,6 @@ class MDCCheckboxInput(Div):
                 Div(cls='mdc-checkbox__mixedmark'),
                 cls='mdc-checkbox__background',
             ),
-            cls='mdc-checkbox',
         )
 
 
@@ -431,7 +436,7 @@ class MDCCheckboxSelectField(MDCField):
             self.help_text.attrs.style.margin_top = '-10px'
 
 
-class MDCCheckboxListItem(py2js.Mixin, Li):
+class MDCCheckboxListItem(Li):
     def __init__(self, title, id, checked=False, **kwargs):
         self.input_id = id
         if checked:
@@ -477,7 +482,7 @@ class MDCCheckboxListItem(py2js.Mixin, Li):
         elem.onclick = self.click_input
 
 
-class MDCMultipleChoicesCheckbox(py2js.Mixin, Ul):
+class MDCMultipleChoicesCheckbox(Ul):
     def __init__(self, name, choices, n=1, **kwargs):
         self.max = n
         alabel = kwargs.pop('aria-label', 'Label')
@@ -519,6 +524,85 @@ class MDCMultipleChoicesCheckbox(py2js.Mixin, Ul):
     def py2js(self):
         input_list = getElementByUuid(self.id)
         input_list.addEventListener('change', self.update_inputs)
+
+
+class MDCSelect(Div):
+    attrs = {'class': 'mdc-select mdc-select--filled', 'data-mdc-auto-init': 'MDCSelect'}
+
+    def __init__(self, select, *content, **attrs):
+        super().__init__(
+            '''
+            <div class="mdc-select__anchor" role="button" aria-haspopup="listbox"
+                  aria-labelledby="demo-pagination-select" tabindex="0">
+              <span class="mdc-select__selected-text-container">
+                <span id="demo-pagination-select" class="mdc-select__selected-text">10</span>
+              </span>
+              <span class="mdc-select__dropdown-icon">
+                <svg
+                    class="mdc-select__dropdown-icon-graphic"
+                    viewBox="7 10 10 5">
+                  <polygon
+                      class="mdc-select__dropdown-icon-inactive"
+                      stroke="none"
+                      fill-rule="evenodd"
+                      points="7 10 12 15 17 10">
+                  </polygon>
+                  <polygon
+                      class="mdc-select__dropdown-icon-active"
+                      stroke="none"
+                      fill-rule="evenodd"
+                      points="7 15 12 10 17 15">
+                  </polygon>
+                </svg>
+              </span>
+              <span class="mdc-notched-outline mdc-notched-outline--notched">
+                <span class="mdc-notched-outline__leading"></span>
+                <span class="mdc-notched-outline__trailing"></span>
+              </span>
+            </div>
+
+            <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
+              <ul class="mdc-list">
+            ''',
+            *[
+                f'''
+                <li class="mdc-list-item {'mdc-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
+                  <span class="mdc-list-item__text">{option.attrs.value}</span>
+                </li>
+                '''
+                for option in select.content
+            ],
+            '''
+              </ul>
+            </div>
+            ''',
+            **attrs,
+        )
+
+
+class MDCSelectPerPage(MDCSelect):
+    tag = 'mdc-select-per-page'
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('MDCSelect:change', this.change.bind(this))
+
+        async def change(self, event):
+            url = new.URL(document.location)
+            if url.search.indexOf('per_page=') > 0:
+                search = url.search.replace(
+                    new.RegExp('per_page=[^&]*'),
+                    'per_page=' + event.detail.value,
+                )
+            else:
+                search = '?per_page=' + event.detail.value
+
+            up.visit(url.pathname + search, {target: '.mdc-data-table'})
+
+
+
+class MDCIconButton(A):
+    attrs = dict(cls='material-icons mdc-top-app-bar__navigation-icon mdc-icon-button')
 
 
 class MdcTopAppBar(Component):
@@ -826,7 +910,316 @@ class MDCLayoutGridCell(Div):
     attrs = {'class': 'mdc-layout-grid__cell'}
 
 
-class Body(py2js.Mixin, Body):
+class MDCCard(Div):
+    attrs = {'class': 'mdc-card'}
+
+
+class MDCDataTable(Div):
+    attrs = {'class': 'mdc-data-table', 'data-mdc-auto-init': 'MDCDataTable'}
+
+    def __init__(self, *content, container=None, table=None,
+            tbody=None, thead=None, **attrs):
+
+        super().__init__(
+            container=container or MDCDataTableContainer(
+                table=table or MDCDataTableTable(
+                    thead=thead,
+                    tbody=tbody,
+                )
+            ),
+            **attrs,
+        )
+        self.table = self.container.table
+        self.tbody = self.table.tbody
+        self.thead = self.table.thead
+
+    def content_html(self, *content, **context):
+        return super().content_html(
+            *content,
+            **context
+        ).replace(
+            '<a href',
+            '<a up-target="#main, .mdc-top-app-bar__title" href',
+        )
+
+
+class MDCDataTableTable(Table):
+    attrs = {'class': 'mdc-data-table__table'}
+
+    def __init__(self, *content, thead=None, tbody=None, **attrs):
+        super().__init__(
+            *content,
+            thead=thead or MDCDataTableThead(),
+            tbody=tbody or MDCDataTableTbody(),
+            **attrs,
+        )
+
+    def to_html(self, *content, **context):
+        self.attrs.arial_label = context['view'].title
+        return super().to_html(*content, **context)
+
+
+
+class MDCDataTableTbody(Tbody):
+    attrs = {'class': 'mdc-data-table__content'}
+
+
+class MDCDataTableThead(Thead):
+    def __init__(self, *content, tr=None, **attrs):
+        super().__init__(*content, tr=tr or MDCDataTableTr(), **attrs)
+
+
+class MDCDataTableTh(Th):
+    attrs = {
+        'class': 'mdc-data-table__header-cell',
+        'role': 'columnheader',
+        'scope': 'col',
+    }
+
+
+class MDCDataTableHeaderTr(Tr):
+    attrs = {'class': 'mdc-data-table__header-row'}
+
+
+class MDCDataTableTr(Tr):
+    attrs = {'class': 'mdc-data-table__row'}
+
+
+class MDCDataTableTd(Td):
+    attrs = {'class': 'mdc-data-table__cell'}
+
+
+thead = '''
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--with-sort"
+        role="columnheader"
+        scope="col"
+        aria-sort="none"
+        data-column-id="dessert"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <div class="mdc-data-table__header-cell-label">
+            Dessert
+          </div>
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by dessert" aria-describedby="dessert-status-label">arrow_upward</button>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="dessert-status-label">
+          </div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort mdc-data-table__header-cell--sorted"
+        role="columnheader"
+        scope="col"
+        aria-sort="ascending"
+        data-column-id="carbs"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by carbs" aria-describedby="carbs-status-label">arrow_upward</button>
+          <div class="mdc-data-table__header-cell-label">
+            Carbs (g)
+          </div>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="carbs-status-label"></div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort"
+        role="columnheader"
+        scope="col"
+        aria-sort="none"
+        data-column-id="protein"
+      >
+        <div class="mdc-data-table__header-cell-wrapper">
+          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
+                  aria-label="Sort by protein" aria-describedby="protein-status-label">arrow_upward</button>
+          <div class="mdc-data-table__header-cell-label">
+            Protein (g)
+          </div>
+          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="protein-status-label"></div>
+        </div>
+      </th>
+      <th
+        class="mdc-data-table__header-cell"
+        role="columnheader"
+        scope="col"
+        data-column-id="comments"
+      >
+        Comments
+      </th>
+      '''
+
+tbody  = '''
+    <tbody class="mdc-data-table__content">
+      <tr data-row-id="u0" class="mdc-data-table__row">
+        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
+          <div class="mdc-checkbox mdc-data-table__row-checkbox">
+            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
+            <div class="mdc-checkbox__background">
+              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
+              </svg>
+              <div class="mdc-checkbox__mixedmark"></div>
+            </div>
+            <div class="mdc-checkbox__ripple"></div>
+          </div>
+        </td>
+      <td class="mdc-data-table__cell">Frozen yogurt</td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        20
+      </td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        4.0
+      </td>
+      <td class="mdc-data-table__cell">Super tasty</td>
+      </tr>
+      <tr data-row-id="u0" class="mdc-data-table__row">
+        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
+          <div class="mdc-checkbox mdc-data-table__row-checkbox">
+            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
+            <div class="mdc-checkbox__background">
+              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
+              </svg>
+              <div class="mdc-checkbox__mixedmark"></div>
+            </div>
+            <div class="mdc-checkbox__ripple"></div>
+          </div>
+        </td>
+      <td class="mdc-data-table__cell">Frozen yogurt</td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        24
+      </td>
+      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
+        4.0
+      </td>
+      <td class="mdc-data-table__cell">Super tasty</td>
+      </tr>
+    </tbody>
+        '''
+
+class MDCDataTableContainer(Div):
+    attrs = {'class': 'mdc-data-table__table-container'}
+
+    def __init__(self, *content, table=None, **attrs):
+        return super().__init__(
+            table=table or MDCDataTableTable(),
+            **attrs,
+        )
+
+
+class MDCDrawerToggle(Component):
+    tag = 'mdc-drawer-toggle'
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.toggle.bind(this))
+
+        def toggle(self):
+            drawer = document.getElementById(this.attributes['data-drawer-id'].value)
+            drawer = mdc.drawer.MDCDrawer.attachTo(drawer)
+            drawer.open = not drawer.open
+
+
+class ToggleNextElement(Component):
+    tag = 'toggle-element'
+    style = {
+        ' svg': {
+            'transition': 'all 0.5s ease',
+        },
+        '.open svg': {
+            'transform': 'rotate(180deg)',
+        }
+    }
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.click.bind(this))
+
+        def click(self, event):
+            element = this.nextElementSibling
+            if element.style.display == 'none':
+                element.style.display = 'block'
+                this.classList.add('open')
+            else:
+                element.style.display = 'none'
+                this.classList.remove('open')
+
+
+class MDCFilterField(Component):
+    style = {
+        ' h3': {
+            'display': 'flex',
+            'justify-content': 'space-between',
+        }
+    }
+
+    def __init__(self, label=None, widget=None, **attrs):
+        super().__init__(
+            label=ToggleNextElement(
+                H3(
+                    Span(label),
+                    Component(
+                        '<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>',
+                        tag='svg',
+                        width='26',
+                        height='26',
+                        viewBox='0 0 26 26',
+                        role='presentation',
+                        xmlns='http://www.w3.org/2000/svg',
+                        cls='gc-icon gc-icon--expand',
+                    ),
+                ),
+            ),
+            widget=Div(
+                widget,
+                style={'transition': 'all 1s ease'},
+            ),
+            **attrs,
+        )
+
+    @classmethod
+    def from_boundfield(cls, bf):
+        return cls(
+            label=bf.label,
+            field=bf.to_component(),
+        )
+
+
+class MDCDataTablePagination(Div):
+    attrs = {'class': 'mdc-data-table__pagination'}
+
+
+class MDCChip(Div):
+    attrs = {'class': 'mdc-chip', 'role': 'row'}
+
+    def __init__(self, *content, icon=None, **attrs):
+        super().__init__(
+            MDCChipRipple(),
+            Gridcell(*content),
+            icon=Gridcell(icon) if icon else '',
+            **attrs
+        )
+
+
+class MDCChipRipple(Div):
+    attrs = {'class': 'mdc-chip__ripple'}
+
+
+class Gridcell(Span):
+    attrs = {'role': 'gridcell'}
+
+
+class InlineForm(Form):
+    style = {
+        'display': 'inline-block',
+        ' .MDCField': {
+            'display': 'inline-block',
+        },
+    }
+
+
+class Body(Body):
     attrs = {'class': 'mdc-typography'}
 
     def py2js(self):
@@ -836,11 +1229,13 @@ class Body(py2js.Mixin, Body):
 class Html(Html):
     scripts = [
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
+        'https://cdn.polyfill.io/v2/polyfill.min.js',
         '/static/py2js.js',
     ]
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
-        'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap',
+        'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
         'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
     ]
     body_class = Body

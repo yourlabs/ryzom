@@ -1,3 +1,4 @@
+import pytest
 from ryzom import html
 
 
@@ -174,3 +175,16 @@ def test_component_slots():
     assert comp.foo == foo
     assert comp.bar == bar
     assert comp.content == [foo, bar]
+
+
+class Div(html.Div):
+    style = {'pop': 'me'}
+
+@pytest.mark.parametrize('El', [Div, html.Div])
+def test_style(El):
+    div = El(style='foo:bar')
+    assert div.attrs.style.foo == 'bar'
+    assert div.style.foo == 'bar'
+    div.attrs.style.foo = 'test'
+    assert div.style.foo == 'test'
+    assert div.attrs.style.foo == 'test'

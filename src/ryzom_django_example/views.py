@@ -23,7 +23,7 @@ class ExampleCard(html.Div):
 class ExampleFormViewComponent(html.Div):
     title = 'Example form view'
 
-    def __init__(self, *content, view, form, **context):
+    def to_html(self, view, form, **context):
         # view and form come from the default context, we're spreading them as
         # nice, required variables for this template.
 
@@ -44,15 +44,16 @@ class ExampleFormViewComponent(html.Div):
                 )
             ]
 
-        super().__init__(
-            *content,
+        content += [
             html.Form(
                 html.CSRFInput(view.request),
                 form,
                 html.MDCButton(form.submit_label),
                 method='POST',
-            ),
-        )
+            )
+        ]
+
+        return super().to_html(*content, **context)
 
 
 class ExampleForm(forms.Form):

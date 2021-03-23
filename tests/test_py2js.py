@@ -282,6 +282,9 @@ def test_transpile_class():
         def __init__(self):
             self.something = 'test'
 
+        def change(self, event):
+            print(event)
+
     result = py2js.transpile_class(
         MyComponent,
         newname='Test',

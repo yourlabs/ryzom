@@ -8,6 +8,8 @@ import importlib
 import re
 import uuid
 
+from py2js.transpiler import transpile_body
+
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -127,6 +129,7 @@ class CAttrs(HTMLPayload):
             if value is True:
                 result.append(key)
             elif value is not False:
+                value = str(value).replace('"', '')
                 result.append(f'{key}="{value}"')
         return ' '.join(result)
 
@@ -196,14 +199,17 @@ class Component(metaclass=ComponentMetaclass):
 
     __publication = None
 
+    def __getattribute__(self, name):
+        '''Bind style to attrs.style'''
+        if name == 'style':
+            return self.attrs.style
+        return super().__getattribute__(name)
+
     def __getattr__(self, name):
-        '''Instanciate attrs and/or style on the fly.'''
+        '''Instanciate attrs on the fly.'''
         if name == 'attrs':
             self.attrs = CAttrs()
             return self.attrs
-        elif name == 'style':
-            self.style = self.attrs.style = CStyle()
-            return self.style
         raise AttributeError(f'{self} object has no attribute {name}')
 
     def __init__(self, *content, **attrs):
@@ -215,7 +221,8 @@ class Component(metaclass=ComponentMetaclass):
             if not hasattr(value, 'to_html'):
                 continue
             setattr(self, key, value)
-            value.attrs.setdefault('slot', key)
+            if hasattr(value, 'attrs'):
+                value.attrs.setdefault('slot', key)
             self.content.append(attrs.pop(key))
 
         self.id = attrs.get('id', uuid.uuid1().hex)
@@ -243,11 +250,13 @@ class Component(metaclass=ComponentMetaclass):
 
         self.events = attrs.pop('events', {})
 
-        # create an instance attribute from the class attribute
-        self.__dict__['attrs'] = copy.deepcopy(getattr(self, 'attrs', {}))
+        class_attrs = copy.deepcopy(getattr(self, 'attrs', {}))
         # remove class defined style attribute because it is bundled
-        if 'style' in self.attrs:
-            self.attrs.pop('style')
+        if 'style' in class_attrs:
+            class_attrs.pop('style')
+
+        # create an instance attribute from the class attribute
+        self.__dict__['attrs'] = class_attrs
 
         # update with kwargs
         self.attrs.update(attrs)
@@ -370,21 +379,31 @@ class Component(metaclass=ComponentMetaclass):
     def publication(self, value=None):
         self.__publication = value
 
-    def children_to_html(self, **kwargs):
+    def content_html(self, *content, **context):
         html = ''
-        for c in self.content:
+        for c in content:
             if hasattr(c, 'to_html'):
                 newline = '' if getattr(c, 'tag', None) == 'text' else '\n'
-                html += newline + c.to_html(**kwargs)
+                html += newline + c.to_html(**context)
             else:
                 html += str(c)
 
         return html
 
-    def to_html(self, **kwargs):
+    def context(self, *content, **context):
+        for c in (content or self.content):
+            if hasattr(c, 'context'):
+                context = c.context(**context)
+        return context
+
+    def to_html(self, *content, attrs=None, **context):
         if self.tag == 'text':
             return f'{self.content}'
-        attrs = ' '.join([self.attrs.to_html(), f'ryzom-id="{self.id}"'])
+
+        attrs = ' '.join([
+            (attrs or self.attrs).to_html(),
+            f'ryzom-id="{self.id}"'
+        ])
         html = ''
 
         if getattr(self, 'selfclose', False):
@@ -393,7 +412,8 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
         else:
             html = f'<{self.tag} {attrs}>'
-            html += self.children_to_html(**kwargs)
+            content = content or self.content
+            html += self.content_html(*content, **context)
             if render_js_str := self.render_js():
                 html += '\n'.join([
                     '\n<script type="text/javascript">',
@@ -409,13 +429,16 @@ class Component(metaclass=ComponentMetaclass):
         return html
 
 
-    def render(self, **kwargs):
-        if 'view' in kwargs:
-            self.view = kwargs['view']
-
-        return self.to_html()
+    def render(self, *content, **context):
+        if 'view' in context:
+            self.view = context['view']
+        content = content or self.content
+        context = self.context(*content, **context)
+        return self.to_html(*content, **context)
 
     def render_js(self):
+        if hasattr(self, 'py2js'):
+            return transpile_body(self.py2js, self=self)
         return ''
 
     def render_js_tree(self, lvl=0):
@@ -446,7 +469,7 @@ class CTree(Component):
 
 class CList(Component):
     def to_html(self, **kwargs):
-        return self.children_to_html(**kwargs)
+        return self.content_html(*self.content, **kwargs)
 
     def to_obj(self, context=None):
         content = [

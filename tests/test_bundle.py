@@ -11,7 +11,16 @@ from .test_py2js import assert_equals_fixture
 
 class MyComponent(Component):
     tag = 'foo-bar'
-    style = dict(padding=0)
+    style = {
+        'padding': 0,
+        ' p': {
+            'margin': 0,
+            ' ul': {'list-style-type': 'none'},
+        },
+        ':hover': {
+            'margin': '10px'
+        }
+    }
 
     class HTMLElement:
         def connectedCallback(self):
@@ -22,8 +31,11 @@ class OtherComponent(Component):
     tag = 'div'
     attrs = dict(style=dict(margin=0))
 
+    def nested_injection():
+        print('hi')
+
     def on_form_submit():
-        print('hi!')
+        self.nested_injection()
 
     def py2js(self):
         self.on_form_submit()

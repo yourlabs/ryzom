@@ -100,8 +100,13 @@ class Html(Component):
     head_class = Head
 
     def __init__(self, *content, **context):
-        self.head = self.head_class(*context.pop('extra_head', []))
-        self.body = self.body_class(*content)
+        if 'head' not in context:
+            context['head'] = self.head_class(*context.pop('extra_head', []))
+
+        if 'body' not in context:
+            context['body'] = self.body_class(*content)
+
+        super().__init__(**context)
 
         for src in self.stylesheets:
             if src:
@@ -114,5 +119,3 @@ class Html(Component):
         if title := getattr(self, 'title', None):
             self.__dict__['title'] = Title(title)
             self.head.addchild(self.title)
-
-        super().__init__(self.head, self.body)

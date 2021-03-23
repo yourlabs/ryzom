@@ -3,8 +3,29 @@ import importlib
 from ryzom.components import Component
 
 
+def to_css(selector, style):
+    out = []
+
+    maincss = []
+    for style_key, style_value in style.items():
+        if isinstance(style_value, dict):
+            continue
+        maincss.append(f'  {style_key}: {style_value};')
+
+    if maincss:
+        out = [selector + ' {', *maincss, '}']
+
+    for sub_selector, sub_style in style.items():
+        if not isinstance(sub_style, dict):
+            continue
+        out += to_css(f'{selector}{sub_selector}', sub_style)
+
+    return out
+
+
 def bundle(*modules):
     out = []
+    done = []
     for module in modules:
         mod = importlib.import_module(module)
         for key, value in mod.__dict__.items():
@@ -14,13 +35,9 @@ def bundle(*modules):
                 continue
             if 'style' not in value.attrs:
                 continue
+            if value in done:
+                continue
 
-            line = '.' + value.__name__ + ' {'
-            if line in out:
-                continue  # already imported
-
-            out.append(line)
-            for style_key, style_value in value.attrs.style.items():
-                out.append(f'  {style_key}: {style_value};')
-            out.append('}')
+            out += to_css('.' + value.__name__, value.attrs.style)
+            done.append(value)
     return '\n'.join(out)

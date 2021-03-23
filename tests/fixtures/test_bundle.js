@@ -6,5 +6,9 @@ class MyComponent extends HTMLElement {
 
 window.customElements.define("foo-bar", MyComponent);
 function OtherComponent_on_form_submit() {
-    console.log('hi!');
+    OtherComponent_nested_injection();
+}
+
+function OtherComponent_nested_injection() {
+    console.log('hi');
 }

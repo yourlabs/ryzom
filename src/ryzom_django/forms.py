@@ -16,18 +16,18 @@ def widget_template(*names):
     return decorator
 
 
-def boundfield_to_component(bf):
+def boundfield_to_component(bf, **attrs):
     try:
         template = widget_templates[bf.field.widget.template_name]
     except KeyError:
         return html.Text(str(bf))
     else:
-        return template.from_boundfield(bf)
+        return template.from_boundfield(bf, **attrs)
 forms.BoundField.to_component = boundfield_to_component
 
 
-def boundfield_to_html(bf):
-    return bf.to_component().to_html()
+def boundfield_to_html(bf, **context):
+    return bf.to_component().to_html(**context)
 forms.BoundField.to_html = boundfield_to_html
 
 
@@ -46,14 +46,14 @@ def form_to_component(form):
     for bf in form.visible_fields():
         content.append(bf.to_component())
 
-    return html.CList(*content)
+    return html.CList(str(form.media), *content)
 forms.BaseForm.non_field_error_component = ErrorList
 forms.BaseForm.to_component = form_to_component
 
 
-def form_to_html(form):
+def form_to_html(form, **context):
     form_component = form.to_component()
-    html = form_component.to_html()
+    html = form_component.to_html(**context)
     form.scripts = form_component.scripts
     form.stylesheets = form_component.stylesheets
     return html

@@ -1,6 +1,15 @@
 .MyComponent {
   padding: 0;
 }
+.MyComponent p {
+  margin: 0;
+}
+.MyComponent p ul {
+  list-style-type: none;
+}
+.MyComponent:hover {
+  margin: 10px;
+}
 .OtherComponent {
   margin: 0;
 }
