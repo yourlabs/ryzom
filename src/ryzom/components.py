@@ -129,6 +129,7 @@ class CAttrs(HTMLPayload):
             if value is True:
                 result.append(key)
             elif value is not False:
+                value = value.replace('"', '')
                 result.append(f'{key}="{value}"')
         return ' '.join(result)
 
