@@ -19,15 +19,14 @@ def model_template(name):
 class ReactiveBase:
     view = None
 
-    def to_html(self, *content, **context):
-        self.reactive_setup()
-        return super(ReactiveBase, self).to_html(*content, **context)
+    def to_html(self, **context):
+        self.reactive_setup(**context)
+        return super(ReactiveBase, self).to_html(**context)
 
-    def reactive_setup(self):
-        self.set_view()
+    def reactive_setup(self, **context):
+        self.view = self.get_view(**context)
 
-    def set_view(self):
-        if not hasattr(self, 'view') or self.view is None:
+        if self.view is None:
             parent = self.parent or self
             while parent and parent.parent:
                 if hasattr(parent, 'view'):
@@ -44,7 +43,9 @@ class ReactiveBase:
                 ' Maybe you forgot to call view.get_token()'
                 ' in your main component?')
 
-        return self.view
+    def get_view(self, **context):
+        if 'view' in context:
+            return context['view']
 
 
 class SubscribeComponentMixin(ReactiveBase):
@@ -54,11 +55,11 @@ class SubscribeComponentMixin(ReactiveBase):
             f'{self} is missing attribute "model_template"'
         )
 
-    def reactive_setup(self):
+    def reactive_setup(self, **context):
         if not hasattr(self, 'subscribe_options'):
             self.subscribe_options = {}
 
-        super().reactive_setup()
+        super().reactive_setup(**context)
 
         if hasattr(self, 'publication'):
             self.create_subscription()
@@ -94,8 +95,8 @@ class SubscribeComponentMixin(ReactiveBase):
 class ReactiveComponentMixin(ReactiveBase):
     register = None
 
-    def reactive_setup(self):
-        super().reactive_setup()
+    def reactive_setup(self, **context):
+        super().reactive_setup(**context)
 
         if hasattr(self, 'register'):
             self.create_registration()

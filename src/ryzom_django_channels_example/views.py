@@ -76,8 +76,10 @@ class MessageItem(MDCListItem):
     def __init__(self, obj):
         self.obj = obj
 
+        username = obj.user.username if obj.user else 'Anonymous'
+
         super().__init__(
-            Span(obj.user or 'Anonymous', ' says: ', obj.message),
+            Span(username, ' says: ', obj.message),
             DeleteButton(
                 delete_url=reverse('message_delete', args=[self.obj.id]),
             ),
@@ -137,13 +139,12 @@ class RoomList(SubscribeComponentMixin, MDCList):
 
 
 class Body(Body):
-    def __init__(self, view, *content):
+    def __init__(self, *content, **context):
         super().__init__(
             Style(
                 'form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
                 + '.mdc-list-item__text {display: flex; justify-content: space-between;',
             ),
-            Script(view.get_token()),
             *content,
         )
 
@@ -160,12 +161,14 @@ class Home(Html):
     scripts = ['/static/ryzom.js']
     body_class = Body
 
-    def __init__(self, *content, view, form, **context):
+    def to_html(self, *content, view, form, **context):
         current_room_name = view.request.GET.get('room', 'general')
         current_room = Room.objects.filter(name=current_room_name).first()
         message_count = current_room.message_set.count() if current_room else 0
-        super().__init__(
-            view,
+
+        head, body = content
+
+        body.addchildren([
             ReactiveTitle(f'{current_room_name} - {message_count} messages'),
             A('test forms', href='form/'),
             Div(
@@ -181,7 +184,14 @@ class Home(Html):
                         style='width:100%'),
                     style='flex-grow: 1; height: 100%;'),
                 style='display:flex; flex-flow: row wrap;'),
-            *content,
+            Script(view.get_token()),
+            Script('mdc.autoInit();'),
+        ])
+
+        return super().to_html(
+            head,
+            body,
+            view=view
         )
 
 
