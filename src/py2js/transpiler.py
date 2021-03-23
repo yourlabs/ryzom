@@ -243,12 +243,12 @@ class JS(object):
 
             self._scope = []
         else:
-            _args = [arg.arg for arg in node.args.args if arg.arg != 'self']
+            _args = [arg for arg in node.args.args if arg.arg != 'self']
             defaults = [None]*(len(_args) - len(node.args.defaults)) + node.args.defaults
 
             args = []
             defaults2 = []
-            for arg, default in zip(node.args.args, defaults):
+            for arg, default in zip(_args, defaults):
                 if arg.arg == 'self':
                     continue
                 if not isinstance(arg, ast.arg):
