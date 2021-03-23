@@ -1,7 +1,7 @@
 test:
   image: yourlabs/python-arch
   script:
-  - apk add py3-wheel rust cargo
+  - pacman -Sy py3-wheel rust cargo
   - pip install django -e .[django,channels]
   - ./manage.py diffsettings
   - py.test -vv --cov src --strict -r fEsxXw
