@@ -100,8 +100,7 @@ if CRUDLFAP_ENABLE:
         TEMPLATE_ENGINE='ryzom',
     )
     LOGIN_REDIRECT_URL = '/crudlfap'
-    MIDDLEWARE.append('ryzom_crudlfap.components.UpolyMiddleware')
-    TEMPLATES.append(CRUDLFAP_TEMPLATE_BACKEND)
+    MIDDLEWARE.append('ryzom_unpoly.middleware.UnpolyMiddleware')
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
 WS_URLPATTERNS = ROOT_URLCONF
