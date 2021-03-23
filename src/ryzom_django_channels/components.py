@@ -19,9 +19,9 @@ def model_template(name):
 class ReactiveBase:
     view = None
 
-    def to_html(self, **kwargs):
+    def to_html(self, *content, **context):
         self.reactive_setup()
-        return super(ReactiveBase, self).to_html(**kwargs)
+        return super(ReactiveBase, self).to_html(*content, **context)
 
     def reactive_setup(self):
         self.set_view()

@@ -1,5 +1,5 @@
 function func() {
-    var toto = (10  +  5);
+    var toto = (10 + 5);
     console.log("toto");
     var tutu = {'a': 'tutu', 'b': 'test'}['a'];
     var titi = {'a': 'tutu', 'b': 'test'}["b"];

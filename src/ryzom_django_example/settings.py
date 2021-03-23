@@ -2,31 +2,28 @@ import os
 import socket
 from pathlib import Path
 
+REDIS_SERVER = None
+CHANNELS_ENABLE = False
+
 REDIS_SERVERS = [
     ('redis', 6379),
     ('127.0.0.1', 6379)
 ]
-REDIS_SERVER = None
 
 if 'CHANNELS_ENABLE' in os.environ:
     CHANNELS_ENABLE = bool(os.environ['CHANNELS_ENABLE'])
 
-if CHANNELS_ENABLE:
-    for server in REDIS_SERVERS:
-        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            result_of_check = a_socket.connect_ex(server)
-        except socket.gaierror:
-            continue
+for server in REDIS_SERVERS:
+    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        result_of_check = a_socket.connect_ex(server)
+    except socket.gaierror:
+        continue
 
-        if result_of_check == 0:
-            REDIS_SERVER = server
-            break
-
-if REDIS_SERVER is None:
-    CHANNELS_ENABLE = False
-
-
+    if result_of_check == 0:
+        REDIS_SERVER = server
+        CHANNELS_ENABLE = True
+        break
 
 try:
     from crudlfap.settings import CRUDLFAP_TEMPLATE_BACKEND
@@ -59,15 +56,6 @@ INSTALLED_APPS = [
     # Enable form rendering with MDC components
     'ryzom_django_mdc',
 ]
-
-if CHANNELS_ENABLE:
-    # Enable Reactive components models
-    INSTALLED_APPS += [
-        'ryzom_django_channels',
-        'ryzom_django_channels_example',
-        'channels',
-        'channels_redis',
-    ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -109,9 +97,6 @@ if CHANNELS_ENABLE:
         'channels',
         'channels_redis',
     ]
-
-    # Enable Reactive middleware
-    MIDDLEWARE.append('ryzom_django_channels.middleware.RyzomMiddleware')
 
 if CRUDLFAP_ENABLE:
     INSTALLED_APPS += [

@@ -160,10 +160,10 @@ def test_get_token(view):
 
 
 @db_reactive
-def test_subscription(sub_comp, token):
+def test_subscription(sub_comp, view, token):
     assert not Subscription.objects.count()
 
-    sub_comp.render()
+    sub_comp.render(view=view)
     sub = Subscription.objects.first()
     assert sub
     assert sub.client.token == find_token(token)
