@@ -56,6 +56,9 @@ class PageMenu(Div):
                 href=v.url,
                 style='text-decoration: none',
             )
+            if getattr(v, 'controller', None) == 'modal':
+                button.attrs.up_modal = 'main'
+                del button.attrs['up-target']
 
             content.append(button)
 
@@ -581,22 +584,27 @@ class RyzomColumn(tables.Column):
 
     def render(self, record, table, value, **kwargs):
         from crudlfap.site import site
+        buttons = []
         views = site[type(record)].get_menu(
             'object',
             table.request,
             object=record
         )
-        buttons = [
-            A(
-                f'<button class="material-icons mdc-icon-button" ryzom-id="308bade28a8c11ebad3800e18cb957e9" style="color: {v.color}"--mdc-ripple-fg-size:28px; --mdc-ripple-fg-scale:1.7142857142857142; --mdc-ripple-left:10px; --mdc-ripple-top:10px;">{geticon(v)}</button>',
-                title=v.title.capitalize(),
-                href=v.url + '?next=' + table.request.path_info,
+        for view in views:
+            button = Component(
+                f'<button class="material-icons mdc-icon-button" ryzom-id="308bade28a8c11ebad3800e18cb957e9" style="color: {view.color}; --mdc-ripple-fg-size:28px; --mdc-ripple-fg-scale:1.7142857142857142; --mdc-ripple-left:10px; --mdc-ripple-top:10px;">{geticon(view)}</button>',
+                title=view.title.capitalize(),
+                href=view.url + '?next=' + table.request.path_info,
                 style='text-decoration: none',
+                tag='a',
             )
-            for v in views
-        ]
-        request = table.request
-        return mark_safe(Div(*buttons, style='display:flex;flex-direction:row-reverse').render())
+            if getattr(view, 'controller', None) == 'modal':
+                button.attrs.up_modal = 'main'
+            else:
+                button.attrs['up-target'] = A.attrs['up-target']
+            buttons.append(button)
+        html = Div(*buttons, style='display:flex;flex-direction:row-reverse').render()
+        return mark_safe(html)
 
 
 def action_column(table):

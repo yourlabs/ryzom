@@ -938,8 +938,8 @@ class MDCDataTable(Div):
             *content,
             **context
         ).replace(
-            '<a ',
-            '<a up-target="#main, .mdc-top-app-bar__title" ',
+            '<a href',
+            '<a up-target="#main, .mdc-top-app-bar__title" href',
         )
 
 
