@@ -80,7 +80,14 @@ class Body(Body):
     def __init__(self, *content, **attrs):
         self.drawer = mdcDrawer(id='drawer')
         self.bar = mdcTopAppBar()
-        self.main = Main(*content, cls='main mdc-drawer-app-content', id='main')
+        self.main = Main(
+            Div(
+                *content,
+                id='main-inner',
+            ),
+            cls='main mdc-drawer-app-content',
+            id='main',
+        )
         self.debug = settings.DEBUG
         super().__init__(
             self.bar,
@@ -599,7 +606,7 @@ class RyzomColumn(tables.Column):
                 tag='a',
             )
             if getattr(view, 'controller', None) == 'modal':
-                button.attrs.up_modal = 'main'
+                button.attrs.up_modal = '#main-inner'
             else:
                 button.attrs['up-target'] = A.attrs['up-target']
             buttons.append(button)
