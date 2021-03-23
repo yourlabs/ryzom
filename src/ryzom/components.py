@@ -204,8 +204,7 @@ class Component(metaclass=ComponentMetaclass):
             self.attrs = CAttrs()
             return self.attrs
         elif name == 'style':
-            self.style = self.attrs.style = CStyle()
-            return self.style
+            return self.attrs.style
         raise AttributeError(f'{self} object has no attribute {name}')
 
     def __init__(self, *content, **attrs):
@@ -246,11 +245,16 @@ class Component(metaclass=ComponentMetaclass):
 
         self.events = attrs.pop('events', {})
 
-        # create an instance attribute from the class attribute
-        self.__dict__['attrs'] = copy.deepcopy(getattr(self, 'attrs', {}))
+        class_attrs = copy.deepcopy(getattr(self, 'attrs', {}))
         # remove class defined style attribute because it is bundled
-        if 'style' in self.attrs:
-            self.attrs.pop('style')
+        if 'style' in class_attrs:
+            class_attrs.pop('style')
+
+        # create an instance attribute from the class attribute
+        self.__dict__['attrs'] = class_attrs
+
+        # bind self.style
+        self.__dict__['style'] = self.attrs.style
 
         # update with kwargs
         self.attrs.update(attrs)
