@@ -46,7 +46,7 @@ def form_to_component(form):
     for bf in form.visible_fields():
         content.append(bf.to_component())
 
-    return html.CList(*content)
+    return html.CList(str(form.media), *content)
 forms.BaseForm.non_field_error_component = ErrorList
 forms.BaseForm.to_component = form_to_component
 
