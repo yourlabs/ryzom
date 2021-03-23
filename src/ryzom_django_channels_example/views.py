@@ -4,7 +4,11 @@ from django.views import generic
 
 import py2js
 from py2js.renderer import JS
-from ryzom_django_channels.components import ReactiveComponentMixin, SubscribeComponentMixin
+from ryzom_django_channels.components import (
+    ReactiveComponentMixin,
+    SubscribeComponentMixin,
+    model_template
+)
 from ryzom_django_channels.views import ReactiveMixin, register
 from ryzom_django_mdc.html import *
 
@@ -67,12 +71,15 @@ class DeleteButton(Component):
             )
 
 
+@model_template('message-item')
 class MessageItem(MDCListItem):
     def __init__(self, obj):
         self.obj = obj
 
+        username = obj.user.username if obj.user else 'Anonymous'
+
         super().__init__(
-            Span(obj.user or 'Anonymous', ' says: ', obj.message),
+            Span(username, ' says: ', obj.message),
             DeleteButton(
                 delete_url=reverse('message_delete', args=[self.obj.id]),
             ),
@@ -82,22 +89,25 @@ class MessageItem(MDCListItem):
 
 class ChatRoom(SubscribeComponentMixin, MDCList):
     publication = 'messages'
+    model_template = 'message-item'
 
     def __init__(self, room_id):
         self.subscribe_options = dict(room_id=room_id)
         super().__init__()
 
     @classmethod
-    def get_queryset(cls, qs, opts):
-        room_message = qs.filter(room__name=opts['room_id'])
-        count = room_message.count()
+    def get_queryset(cls, user, qs, opts):
+        room_messages = qs.filter(room__name=opts['room_id']).order_by('created')
+        count = room_messages.count()
         start = max(count - 10, 0)
-        return qs.filter(room__name=opts['room_id'])[start:count]
+        return room_messages[start:count]
 
 
+@model_template('room-item')
 class RoomItem(MDCListItem):
     def __init__(self, room):
-        super().__init__(room.name,
+        super().__init__(
+            room.name,
             id=f'room-{room.id}',
             tag='a',
             href=f'/reactive/?room={room.name}')
@@ -117,24 +127,24 @@ class RoomForm(Div):
 
 class RoomList(SubscribeComponentMixin, MDCList):
     publication = 'rooms'
+    model_template = 'room-item'
 
     def __init__(self, order_by):
         self.subscribe_options = dict(order_by=order_by)
         super().__init__()
 
     @classmethod
-    def get_queryset(self, qs, opts):
+    def get_queryset(self, user, qs, opts):
         return qs.order_by(opts['order_by'])
 
 
 class Body(Body):
-    def __init__(self, view, *content):
+    def __init__(self, *content, **context):
         super().__init__(
             Style(
                 'form div, form .mdc-text-field, .mdc-list-item__text {width: 100%;}'
                 + '.mdc-list-item__text {display: flex; justify-content: space-between;',
             ),
-            Script(view.get_token()),
             *content,
         )
 
@@ -151,12 +161,14 @@ class Home(Html):
     scripts = ['/static/ryzom.js']
     body_class = Body
 
-    def __init__(self, *content, view, form, **context):
+    def to_html(self, *content, view, form, **context):
         current_room_name = view.request.GET.get('room', 'general')
         current_room = Room.objects.filter(name=current_room_name).first()
         message_count = current_room.message_set.count() if current_room else 0
-        super().__init__(
-            view,
+
+        head, body = content
+
+        body.addchildren([
             ReactiveTitle(f'{current_room_name} - {message_count} messages'),
             A('test forms', href='form/'),
             Div(
@@ -166,13 +178,19 @@ class Home(Html):
                     style='min-width: 20%'),
                 Div(
                     ChatRoom(current_room_name),
-                    MessageFormComponent(
+                    message_form=MessageFormComponent(
                         view=view,
                         form=form,
                         style='width:100%'),
                     style='flex-grow: 1; height: 100%;'),
                 style='display:flex; flex-flow: row wrap;'),
-            *content,
+            Script(view.get_token()),
+            Script('mdc.autoInit();'),
+        ])
+
+        return super().to_html(
+            head,
+            body,
         )
 
 
@@ -228,6 +246,9 @@ class ChatDeleteView(generic.DeleteView):
         message_count = msg.room.message_set.count() - 1
         register('page_title').update(
             ReactiveTitle(f'{msg.room.name} - {message_count} messages'))
+
+        if not message_count and room.name != 'general':
+            room.delete()
 
         return reverse('home')
 

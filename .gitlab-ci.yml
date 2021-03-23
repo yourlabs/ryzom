@@ -9,7 +9,7 @@ test:
     paths:
       - .cache/pip
   variables:
-    CHANNELS_ENABLE: 1
+    CHANNELS_ENABLE: '1'
     DJANGO_SETTINGS_MODULE: ryzom_django_example.settings
     DEBUG: '1'
     PIP_ALLOW_EXTERNAL: 'true'
@@ -22,6 +22,7 @@ test:
     POSTGRES_USER: test
     POSTGRES_PASSWORD: test
   services:
+    - name: redis
     - name: postgres:latest
       command:
         - "postgres"

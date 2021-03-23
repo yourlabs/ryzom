@@ -16,8 +16,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from ryzom.methods import Methods
-from ryzom.request import Request
+from ryzom_django_channels.methods import Methods
 from ryzom_django_channels.models import Client, Publication, Subscription
 
 
@@ -42,25 +41,22 @@ class Consumer(JsonWebsocketConsumer):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
+        client = None
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
         if token:
-            user_token = Client.objects.filter(token=token).last()
-            if user_token:
-                user = user_token.user
-                if user:
-                    async_to_sync(login)(self.scope, user)
-                    self.scope['session'].save()
+            client = Client.objects.filter(token=token).last()
+            if client and client.user:
+                async_to_sync(login)(self.scope, client.user)
+                self.scope['session'].save()
 
         self.accept()
-        client = Client.objects.filter(token=token).first()
         if client and client.channel != self.channel_name:
             client.channel = self.channel_name
             client.user = user if isinstance(user, User) else None
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
         else:
-            print("WS: CLIENT DISCONNECTED - Reloading")
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):

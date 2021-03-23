@@ -306,7 +306,7 @@ class Component(metaclass=ComponentMetaclass):
                 content of the current instance
         '''
         component.position = len(self.content)
-        component.parent = self.id
+        component.parent = self
         self.content.append(component)
 
     def addchildren(self, components):
@@ -427,7 +427,6 @@ class Component(metaclass=ComponentMetaclass):
             html += f'{newline}</{self.tag}>'
 
         return html
-
 
     def render(self, *content, **context):
         if 'view' in context:
