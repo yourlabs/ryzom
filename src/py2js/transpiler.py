@@ -67,16 +67,16 @@ class JS(object):
     }
 
     binary_op = {
-        'Add'    : ' + ',
-        'Sub'    : ' - ',
-        'Mult'   : ' * ',
-        'Div'    : ' / ',
-        'Mod'    : ' % ',
-        'LShift' : ' << ',
-        'RShift' : ' >> ',
-        'BitOr'  : ' | ',
-        'BitXor' : ' ^ ',
-        'BitAnd' : ' & ',
+        'Add'    : '+',
+        'Sub'    : '-',
+        'Mult'   : '*',
+        'Div'    : '/',
+        'Mod'    : '%',
+        'LShift' : '<<',
+        'RShift' : '>>',
+        'BitOr'  : '|',
+        'BitXor' : '^',
+        'BitAnd' : '&',
     }
 
     comparison_op = {
