@@ -18,7 +18,7 @@ def to_css(selector, style):
     for sub_selector, sub_style in style.items():
         if not isinstance(sub_style, dict):
             continue
-        out += to_css(f'{selector} {sub_selector}', sub_style)
+        out += to_css(f'{selector}{sub_selector}', sub_style)
 
     return out
 

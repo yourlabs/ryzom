@@ -5,7 +5,10 @@
   margin: 0;
 }
 .MyComponent p ul {
-  list_style_type: none;
+  list-style-type: none;
+}
+.MyComponent:hover {
+  margin: 10px;
 }
 .OtherComponent {
   margin: 0;

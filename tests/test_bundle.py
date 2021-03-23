@@ -11,13 +11,16 @@ from .test_py2js import assert_equals_fixture
 
 class MyComponent(Component):
     tag = 'foo-bar'
-    style = dict(
-        padding=0,
-        p=dict(
-            margin=0,
-            ul=dict(list_style_type='none'),
-        ),
-    )
+    style = {
+        'padding': 0,
+        ' p': {
+            'margin': 0,
+            ' ul': {'list-style-type': 'none'},
+        },
+        ':hover': {
+            'margin': '10px'
+        }
+    }
 
     class HTMLElement:
         def connectedCallback(self):
