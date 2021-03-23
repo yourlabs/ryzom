@@ -2,14 +2,30 @@ import os
 import socket
 from pathlib import Path
 
-REDIS_SERVER = ('127.0.0.1', 6379)
+REDIS_SERVERS = [
+    ('redis', 6379),
+    ('127.0.0.1', 6379)
+]
+REDIS_SERVER = None
 
 if 'CHANNELS_ENABLE' in os.environ:
     CHANNELS_ENABLE = bool(os.environ['CHANNELS_ENABLE'])
-else:
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result_of_check = a_socket.connect_ex(REDIS_SERVER)
-    CHANNELS_ENABLE = result_of_check == 0
+
+if CHANNELS_ENABLE:
+    for server in REDIS_SERVERS:
+        a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            result_of_check = a_socket.connect_ex(server)
+        except socket.gaierror:
+            continue
+
+        if result_of_check == 0:
+            REDIS_SERVER = server
+            break
+
+if REDIS_SERVER is None:
+    CHANNELS_ENABLE = False
+
 
 
 try:
