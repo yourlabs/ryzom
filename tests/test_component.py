@@ -183,8 +183,8 @@ class Div(html.Div):
 @pytest.mark.parametrize('El', [Div, html.Div])
 def test_style(El):
     div = El(style='foo:bar')
-    assert div.style.foo == 'bar'
     assert div.attrs.style.foo == 'bar'
+    assert div.style.foo == 'bar'
     div.attrs.style.foo = 'test'
     assert div.style.foo == 'test'
     assert div.attrs.style.foo == 'test'

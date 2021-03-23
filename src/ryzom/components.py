@@ -198,13 +198,17 @@ class Component(metaclass=ComponentMetaclass):
 
     __publication = None
 
+    def __getattribute__(self, name):
+        '''Bind style to attrs.style'''
+        if name == 'style':
+            return self.attrs.style
+        return super().__getattribute__(name)
+
     def __getattr__(self, name):
-        '''Instanciate attrs and/or style on the fly.'''
+        '''Instanciate attrs on the fly.'''
         if name == 'attrs':
             self.attrs = CAttrs()
             return self.attrs
-        elif name == 'style':
-            return self.attrs.style
         raise AttributeError(f'{self} object has no attribute {name}')
 
     def __init__(self, *content, **attrs):
@@ -252,9 +256,6 @@ class Component(metaclass=ComponentMetaclass):
 
         # create an instance attribute from the class attribute
         self.__dict__['attrs'] = class_attrs
-
-        # bind self.style
-        self.__dict__['style'] = self.attrs.style
 
         # update with kwargs
         self.attrs.update(attrs)
