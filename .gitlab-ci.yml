@@ -1,5 +1,5 @@
 test:
-  image: yourlabs/python
+  image: yourlabs/python-arch
   script:
   - apk add py3-wheel rust cargo
   - pip install django -e .[django,channels]
