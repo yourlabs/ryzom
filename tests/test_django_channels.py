@@ -23,9 +23,9 @@ if settings.CHANNELS_ENABLE:
     from ryzom_django_channels.views import register
 
     class RBase(html.Div):
-        def __init__(self, view, content='initial'):
+        def to_html(self, *content, view):
             self.view = view
-            super().__init__(content)
+            return super().to_html(content)
 
 
     class SubscribeComp(SubscribeComponentMixin, RBase):
@@ -101,7 +101,7 @@ async def async_token(view):
 
 @pytest.fixture
 def sub_comp(view, token, pub):
-    c = SubscribeComp(view)
+    c = SubscribeComp()
     c.get_content = lambda *a, **kw : []
 
     return c
@@ -170,10 +170,10 @@ def test_subscription(sub_comp, view, token):
 
 
 @db_reactive
-def test_registration(reg_comp, token):
+def test_registration(reg_comp, view, token):
     assert not Registration.objects.count()
 
-    reg_comp.render()
+    reg_comp.render(view=view)
     reg = Registration.objects.first()
     assert reg
     assert reg.subscriber_id == reg_comp.id
@@ -207,12 +207,12 @@ async def test_ws_connected(ws_token):
 
 
 @async_db_reactive
-async def test_register_changed(ws, async_reg_comp):
-    await sync_to_async(async_reg_comp.render)()
+async def test_register_changed(ws, async_reg_comp, view):
+    await sync_to_async(async_reg_comp.render)(view=view)
 
     reg = await sync_to_async(register)('test_register')
     await sync_to_async(reg.update)(
-        RegisterComp(async_reg_comp.view, 'changed')
+        RegisterComp('changed')
     )
     res = await ws.receive_json_from()
     assert res['type'] == 'DDP'

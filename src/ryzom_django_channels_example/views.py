@@ -191,7 +191,6 @@ class Home(Html):
         return super().to_html(
             head,
             body,
-            view=view
         )
 
 
