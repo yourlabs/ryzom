@@ -933,15 +933,6 @@ class MDCDataTable(Div):
         self.tbody = self.table.tbody
         self.thead = self.table.thead
 
-    def content_html(self, *content, **context):
-        return super().content_html(
-            *content,
-            **context
-        ).replace(
-            '<a href',
-            '<a up-target="#main, .mdc-top-app-bar__title" href',
-        )
-
 
 class MDCDataTableTable(Table):
     attrs = {'class': 'mdc-data-table__table'}
