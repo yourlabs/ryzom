@@ -447,3 +447,6 @@ class YourView:
 
 We are careful with thread safety in new developments, but it seems must
 convenient to just being able to alter `self` on the way.
+
+UNIX was not designed to stop its users from doing stupid things, as that would also stop them from doing clever things.
+— Doug Gwyn
