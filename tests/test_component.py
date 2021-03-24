@@ -37,8 +37,10 @@ def test_addcls_rmcls():
         attrs = {'class': 'foo'}
 
     assert MyComponent(addcls='bar').attrs['class'] == 'foo bar'
-
     assert MyComponent(rmcls='foo', addcls='bar').attrs['class'] == 'bar'
+
+    assert MyComponent(addcls=['a', 'b']).attrs['class'] == 'foo a b'
+    assert MyComponent(cls=['a', 'b']).attrs['class'] == 'a b'
 
 
 class Test1(html.Div):

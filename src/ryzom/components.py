@@ -85,6 +85,9 @@ class CAttrs(HTMLPayload):
         raise AttributeError(f'{self} object has no attribute {name}')
 
     def __setitem__(self, name, value):
+        if name in ('cls', 'class', 'addcls'):
+            if isinstance(value, (list, tuple)):
+                value = ' '.join(value)
         if name == 'cls':
             # Maintain the "class" attribute
             name = 'class'
