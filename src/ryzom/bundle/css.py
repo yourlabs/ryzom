@@ -1,7 +1,5 @@
 import importlib
 
-from ryzom.components import Component
-
 
 def to_css(selector, style):
     out = []

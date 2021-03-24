@@ -291,3 +291,12 @@ def test_transpile_class():
         superclass='HTMLElement',
     )
     assert_equals_fixture('test_transpile_class', result)
+
+def test_transpile_function():
+    class Test:
+        def foo():
+            bar
+        foo.something = 'test'
+
+    result = py2js.transpile_function(Test.foo, 'Foo__bar')
+    assert_equals_fixture('test_transpile_function', result)

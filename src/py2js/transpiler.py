@@ -719,3 +719,13 @@ def transpile_class(cls, superclass=None, newname=None, **context):
     src = '\n'.join(lines)
     src = textwrap.dedent(src)
     return transpile(src, **context)
+
+
+def transpile_function(func, newname=None, **context):
+    src = inspect.getsource(func)
+    src = textwrap.dedent(src)
+    lines = src.split('\n')
+    if newname:
+        lines[0] = re.sub('def ([^(])*', f'def {newname}', lines[0])
+    src = '\n'.join(lines)
+    return transpile(src, **context)

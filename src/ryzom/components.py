@@ -167,7 +167,14 @@ class ComponentMetaclass(type):
             scripts.extend(extra_scripts)
         class_attrs['scripts'] = scripts
 
-        return super().__new__(cls, name, bases, class_attrs)
+        cls = super().__new__(cls, name, bases, class_attrs)
+
+        from ryzom.bundle.js import AUTOCOMPILE
+        for method in AUTOCOMPILE:
+            if getattr(cls, method, None):
+                class_attrs['attrs'][method] = f'{name}_{method}(this)'
+
+        return cls
 
 
 class Component(metaclass=ComponentMetaclass):

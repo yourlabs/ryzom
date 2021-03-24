@@ -127,8 +127,8 @@ class Foo(Div):
 ### JavaScript
 
 This repository provides a py2js fork that you may use to write JavaScript in
-Python. There are two ways you can write js in Python: the "jQuery way" and the
-WebComponent way.
+Python. There are three ways you can write js in Python: the "HTML way",
+"jQuery way" and the "WebComponent" way.
 
 You must however understand that our purpose is to write JS in Python, rather
 than supporting Python in JS like the Transcrypt project. In our case, we will
@@ -136,6 +136,25 @@ restrict ourselves to a subset of both the JS and Python language, so things
 like Python `__mro__` or even multiple inheritance won't be supported at all.
 
 However, you can still write JS in Python and generate a JS bundle.
+
+#### HTML Way
+
+`onclick`, `onsubmit`, `onchange` and so on may be defined in Python. They will
+receive the target element as first argument:
+
+```py
+class YourComponent(A):
+    def onclick(element):
+        alert(self.injected_dependency(element))
+
+    def injected_dependency(element):
+        return element.attributes.href.value
+```
+
+The above will bundle a `YourComponent_onclick` function, the
+`YourComponent_dependency` function, and recursively.
+
+And `YourComponent` will render with `onclick="YourComponent_onclick(this)"`.
 
 #### WebComponent: HTMLElement
 

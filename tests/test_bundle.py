@@ -34,15 +34,26 @@ class OtherComponent(Component):
     def nested_injection():
         print('hi')
 
+    def click_nested_injection():
+        print('hi')
+
     def on_form_submit():
         self.nested_injection()
 
     def py2js(self):
         self.on_form_submit()
 
+    def onclick(target):
+        something()
+        self.click_nested_injection()
+
+    def onmouseover(target):
+        self.nested_injection()
+
 
 def test_bundle_js():
     assert_equals_fixture('test_bundle', bundle.js(__name__))
+    assert OtherComponent.attrs.onclick == 'OtherComponent_onclick(this)'
 
 
 def test_bundle_css():

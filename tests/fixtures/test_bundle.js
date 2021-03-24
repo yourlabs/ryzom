@@ -12,3 +12,16 @@ function OtherComponent_on_form_submit() {
 function OtherComponent_nested_injection() {
     console.log('hi');
 }
+
+function OtherComponent_onclick(target) {
+    something();
+    OtherComponent_click_nested_injection();
+}
+
+function OtherComponent_click_nested_injection() {
+    console.log('hi');
+}
+
+function OtherComponent_onmouseover(target) {
+    OtherComponent_nested_injection();
+}
