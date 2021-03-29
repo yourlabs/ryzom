@@ -604,7 +604,16 @@ class JS(object):
             if isinstance(value, str):
                 return f'"{value}"'
             elif callable(value):
-                name = getattr(obj, '__name__', type(obj).__name__) + f'_{node.attr}'
+                base_name = ''
+                try:
+                    for cls in inspect.getmro(value.__self__.__class__):
+                        if value.__name__ in cls.__dict__:
+                            base_name = cls.__name__
+                except AttributeError:
+                    pass
+                if not base_name:
+                    base_name = getattr(obj, '__name__', type(obj).__name__)
+                name = base_name + f'_{node.attr}'
                 if name not in self._functions:
                     self._functions[name] = value
                 return name
