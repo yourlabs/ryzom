@@ -682,8 +682,8 @@ class MDCSelectMenu(Div):
         )
 
 
-class MDCSelect(Div):
-    tag = 'mdc-select'
+class MDCSelectOutlined(Div):
+    tag = 'mdc-select-outlined'
 
     def __init__(self, **attrs):
         attrs.pop('template_name')
