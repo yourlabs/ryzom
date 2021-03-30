@@ -154,7 +154,12 @@ class SelectWidget(MDCField):
         context = widget_context(bf)
         attrs.update(widget_attrs(bf))
         context['label'] = bf.label
-        return cls(MDCSelectOutlined(**context), **attrs)
+        return cls(
+            MDCFormField(
+                MDCSelectOutlined(**context),
+            ),
+            name=attrs['name']
+        )
 
 
 class SimpleForm(Form):
