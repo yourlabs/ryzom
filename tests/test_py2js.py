@@ -259,6 +259,21 @@ def test_py2js_context_attribute_deeper2():
 '''
 
 
+def test_py2js_inject_mixin():
+    class JSMixin:
+        def fun(self):
+            print('ok')
+
+        def py2js(self):
+            self.fun()
+
+    class Test(JSMixin):
+        tag = 'a'
+
+    self = Test()
+    assert py2js.transpile_body(self.py2js, self=self) == '''JSMixin_fun();\n'''
+
+
 def test_transpile_body():
     def foo():
         print('a')
