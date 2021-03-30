@@ -147,6 +147,16 @@ class FileInputWidget(MDCField):
         )
 
 
+@widget_template('django/forms/widgets/select.html')
+class SelectWidget(MDCField):
+    @classmethod
+    def from_boundfield(cls, bf, **attrs):
+        context = widget_context(bf)
+        attrs.update(widget_attrs(bf))
+        context['label'] = bf.label
+        return cls(MDCSelect(**context), **attrs)
+
+
 class SimpleForm(Form):
     def __init__(self, view, form):
         label = getattr(form, 'submit_label', 'submit')

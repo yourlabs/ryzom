@@ -26,9 +26,9 @@ BASIC_TAGS = (
     'main', 'map', 'mark', 'marquee', 'menu', 'menu#context_menu', 'menuitem',
     'meter', 'multicol', 'nav', 'nextid', 'nobr', 'noembed', 'noframes',
     'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'picture',
-    'plaintext', 'portal', 'pre', 'progress', 'q', 'rb', 'rp', 'rt', 'rtc',
-    'ruby', 's', 'samp', 'section', 'select', 'shadow', 'slot', 'small',
-    'spacer', 'span', 'strike', 'strong', 'sub', 'summary', 'sup',
+    'plaintext', 'polygon', 'portal', 'pre', 'progress', 'q', 'rb', 'rp', 'rt',
+    'rtc', 'ruby', 's', 'samp', 'section', 'select', 'shadow', 'slot', 'small',
+    'spacer', 'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg',
     'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead',
     'time', 'title', 'tr', 'tt', 'u', 'ul', 'var', 'video', 'xmp',
 )

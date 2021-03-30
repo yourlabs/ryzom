@@ -580,6 +580,147 @@ class MDCSelect(Div):
         )
 
 
+class MDCOption(Li):
+    def __init__(self, index, **choice):
+        extra_attrs = dict()
+
+        selected = choice.get('selected', False)
+        if selected:
+            extra_attrs['addcls'] = 'mdc-list-item--selected'
+            extra_attrs['aria-selected'] = 'true'
+
+        if index == '0':
+            extra_attrs['tabindex'] = 0
+
+        super().__init__(
+            Span(cls='mdc-list-item__ripple'),
+            Span(
+                choice['label'],
+                cls='mdc-list-item__text'
+            ),
+            data_value=choice['value'],
+            cls='mdc-list-item',
+            role='option',
+            **extra_attrs,
+        )
+
+
+class MDCNamedOptgroup(Div):
+    def __init__(self, name, choices):
+        super().__init__(
+            Ul(
+                H6(name, cls='mdc-list-group__subheader'),
+                *(MDCOption(**choice) for choice in choices),
+                cls='mdc-list'
+            ),
+            cls='mdc-list-group'
+        )
+
+
+class MDCOptgroup(CList):
+    def __init__(self, name, choices, index):
+        if name:
+            super().__init__(MDCNamedOptgroup(name, choices))
+        else:
+            super().__init__(
+                *(MDCOption(**choice) for choice in choices)
+            )
+
+
+class MDCSelectAnchor(Div):
+    def __init__(self, label, selected=None, **attrs):
+        required = attrs.pop('required', None)
+
+        super().__init__(
+            Span(
+                Span(cls='mdc-notched-outline__leading'),
+                Span(
+                    label,
+                    cls='mdc-notched-outline__notch'),
+                Span(cls='mdc-notched-outline__trailing'),
+                cls='mdc-notched-outline'),
+            Span(
+                selected or Span(cls='mdc-select__selected-text'),
+                cls='mdc-select__selected-text-container'),
+            Span(
+                Svg(
+                    Polygon(
+                        stroke='none',
+                        fill_rule='evenodd',
+                        points='7 10 12 15 17 10',
+                        cls='mdc-select__dropdown-icon-inactive'),
+                    Polygon(
+                        stroke='none',
+                        fill_rule='evenodd',
+                        points='7 15 12 10 17 15',
+                        cls='mdc-select__dropdown-icon-active'),
+                    viewBox="7 10 10 5",
+                    focusable="false",
+                    cls='mdc-select__dropdown-icon-graphic'),
+                cls='mdc-select__dropdown-icon'),
+            cls='mdc-select__anchor',
+            role="button",
+            aria_required='true' if required else 'false',
+            aria_labelled_by=label.id,
+            aria_haspopup="listbox",
+            aria_expanded="false",
+        )
+
+
+class MDCSelectMenu(Div):
+    def __init__(self, optgroups, **attrs):
+        super().__init__(
+            Ul(
+                *(
+                    MDCOptgroup(group_name, group_choices, group_index)
+                    for group_name, group_choices, group_index
+                    in optgroups
+                ),
+                cls='mdc-list'
+            ),
+            cls='mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth',
+        )
+
+
+class MDCSelect(Div):
+    tag = 'mdc-select'
+
+    def __init__(self, **attrs):
+        attrs.pop('template_name')
+        label = attrs.pop('label', attrs.get('name', None))
+
+        cls = 'mdc-select mdc-select--outlined'
+        if required := attrs.pop('required', None):
+            cls += ' mdc-select--required'
+
+        super().__init__(
+            Input(
+                type='hidden',
+                name=attrs['name'],
+                value=attrs['value'][0]
+            ),
+            MDCSelectAnchor(
+                Span(
+                    label,
+                    cls='mdc-floating-label'
+                ),
+                **dict(required=required),
+            ),
+            MDCSelectMenu(**attrs),
+            cls=cls,
+            data_mdc_auto_init='MDCSelect',
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('change', this.change.bind(this))
+
+        def change(self, event):
+            hidden = this.querySelector('input[type=hidden]')
+            option = this.querySelector('[aria-selected=true]')
+            hidden.value = option.dataset.value
+
+
 class MDCSelectPerPage(MDCSelect):
     tag = 'mdc-select-per-page'
 

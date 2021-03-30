@@ -90,6 +90,22 @@ class ExampleForm(forms.Form):
         help_text='Choose a file'
     )
 
+    select = forms.ChoiceField(
+        widget=forms.Select,
+        choices=(
+            ('Test', (
+                (1, 'the first one'),
+                (2, 'the second'),
+                (3, 'the thirf')
+            )),
+            ('Re', (
+                (4, '444'),
+                (5, '555')
+            )),
+        ),
+        initial=5
+    )
+
 
 # Finally, a Django FormView, there's nothing to see here because of how well
 # Ryzom integrates with Django. Of course you're free to make views that do
