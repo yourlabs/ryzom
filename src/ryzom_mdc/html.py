@@ -697,7 +697,7 @@ class MDCSelectOutlined(Div):
             Input(
                 type='hidden',
                 name=attrs['name'],
-                value=attrs['value'][0]
+                value=attrs['value'][0] if attrs['value'] else '',
             ),
             MDCSelectAnchor(
                 Span(
