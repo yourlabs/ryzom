@@ -378,7 +378,12 @@ class MDCInputCheckboxNativeControl(Input):
 
 
 class MDCCheckboxInput(Div):
-    """The actual input HTML element (widget)."""
+    """
+    The actual input HTML element (widget).
+
+    TODO: stop hijacking attrs like this because it enforces downstream
+    boilerplate
+    """
     def __init__(self, input=None, **attrs):
         attrs.setdefault('type', 'checkbox')
         super().__init__(
