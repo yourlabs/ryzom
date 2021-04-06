@@ -1,4 +1,10 @@
 import importlib
+import textwrap
+
+try:
+    import sass
+except:
+    sass = None
 
 
 def to_css(selector, style):
@@ -31,11 +37,17 @@ def bundle(*modules):
                 continue
             if not hasattr(value, 'attrs'):
                 continue
-            if 'style' not in value.attrs:
-                continue
             if value in done:
                 continue
-
-            out += to_css('.' + value.__name__, value.attrs.style)
+            if sass_src := getattr(value, 'sass', None):
+                if sass:
+                    out.append(
+                        sass.compile(
+                            string=textwrap.dedent(sass_src),
+                            indented=True
+                        )
+                    )
+            if 'style' in value.attrs:
+                out += to_css('.' + value.__name__, value.attrs.style)
             done.append(value)
     return '\n'.join(out)

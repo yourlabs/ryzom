@@ -2,7 +2,7 @@ from django.middleware.csrf import get_token
 from django.utils.safestring import mark_safe
 
 from ryzom.html import *
-from .bundle import CSS_BUNDLE_URL, JS_BUNDLE_URL
+from .bundle import CSSBundle, JSBundle
 
 
 def component_html(path, *args, **kwargs):
@@ -29,8 +29,8 @@ class ErrorList(Ul):
 
 
 class Html(Html):
-    scripts = [JS_BUNDLE_URL]
-    stylesheets = [CSS_BUNDLE_URL]
+    scripts = [JSBundle()]
+    stylesheets = [CSSBundle()]
 
 
 class CSRFInput(Input):

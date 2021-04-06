@@ -155,7 +155,7 @@ class ComponentMetaclass(type):
             attrs.update(class_attrs['attrs'])
         if 'style' in class_attrs:
             attrs.update(dict(style=class_attrs['style']))
-        if attrs.get('style', None):
+        if attrs.get('style', None) or class_attrs.get('sass', None):
             if not attrs.get('class', ''):
                 attrs['class'] = name
             else:

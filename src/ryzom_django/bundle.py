@@ -11,22 +11,22 @@ from ryzom import bundle
 from ryzom import html
 
 
-if not settings.DEBUG or sys.argv[0].replace('.', '').endswith('pytest'):
-    # pytest tampers with the DEBUG setting by default
-    # https://github.com/pytest-dev/pytest-django/issues/915
-    CSS_BUNDLE_URL = staticfiles_storage.url('bundle.css')
-    JS_BUNDLE_URL = staticfiles_storage.url('bundle.js')
-else:
-    CSS_BUNDLE_URL = reverse_lazy('bundle_css')
-    JS_BUNDLE_URL = reverse_lazy('bundle_js')
-
-
 class CSSBundle(html.Stylesheet):
-    attrs = dict(href=CSS_BUNDLE_URL)
+    def to_html(self, *content, **context):
+        if settings.DEBUG:
+            self.attrs.href = reverse_lazy('bundle_css')
+        else:
+            self.attrs.href = staticfiles_storage.url('bundle.css')
+        return super().to_html(*content, **context)
 
 
 class JSBundle(html.Script):
-    attrs = dict(src=JS_BUNDLE_URL)
+    def to_html(self, *content, **context):
+        if settings.DEBUG:
+            self.attrs.src = reverse_lazy('bundle_js')
+        else:
+            self.attrs.src = staticfiles_storage.url('bundle.js')
+        return super().to_html(*content, **context)
 
 
 def get_component_modules():

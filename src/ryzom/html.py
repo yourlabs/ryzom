@@ -60,7 +60,7 @@ class Script(Component):
 
 
 class Style(Component):
-    tag = 'link'
+    tag = 'style'
     attrs = {'type': 'text/css'}
 
 
@@ -109,11 +109,21 @@ class Html(Component):
         super().__init__(**context)
 
         for src in self.stylesheets:
-            if src:
+            if not src:
+                continue
+
+            if hasattr(src, 'to_html'):
+                self.head.content.append(src)
+            else:
                 self.head.content.append(Stylesheet(href=src))
 
         for src in self.scripts:
-            if src:
+            if not src:
+                continue
+
+            if hasattr(src, 'to_html'):
+                self.head.content.append(src)
+            else:
                 self.head.content.append(Script(src=src))
 
         if title := getattr(self, 'title', None):
