@@ -25,13 +25,6 @@ for server in REDIS_SERVERS:
         CHANNELS_ENABLE = True
         break
 
-try:
-    from crudlfap.settings import CRUDLFAP_TEMPLATE_BACKEND
-except ImportError:
-    CRUDLFAP_ENABLE = False
-else:
-    CRUDLFAP_ENABLE = True
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
@@ -97,21 +90,6 @@ if CHANNELS_ENABLE:
         'channels',
         'channels_redis',
     ]
-
-if CRUDLFAP_ENABLE:
-    INSTALLED_APPS += [
-        'ryzom_crudlfap',
-        'crudlfap',
-        'crudlfap_example.artist',
-        'crudlfap_example.song',
-        'crudlfap_example.nondb',
-        'crudlfap_example.blog',
-    ]
-    CRUDLFAP = dict(
-        TEMPLATE_ENGINE='ryzom',
-    )
-    LOGIN_REDIRECT_URL = '/crudlfap'
-    MIDDLEWARE.append('ryzom_unpoly.middleware.UnpolyMiddleware')
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
 WS_URLPATTERNS = ROOT_URLCONF
