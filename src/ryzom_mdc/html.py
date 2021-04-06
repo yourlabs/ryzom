@@ -62,6 +62,10 @@ class MDCButton(Button):
         )
 
 
+class MDCButtonRaised(Button):
+    style = {'addcls': 'mdc-button--raised'}
+
+
 class MDCButtonLabelOutlined(Label):
     def __init__(self, text, p=True, icon=None):
         black = 'black-button' if p else ''

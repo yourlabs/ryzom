@@ -1,3 +1,7 @@
+@media (max-width: 700px) {
+  .MyComponent .hidden {
+    display: none; } }
+
 .MyComponent {
   padding: 0;
 }

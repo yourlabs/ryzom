@@ -21,6 +21,12 @@ class MyComponent(Component):
             'margin': '10px'
         }
     }
+    sass = '''
+    @media (max-width: 700px)
+        .MyComponent
+            .hidden
+                display: none
+    '''
 
     class HTMLElement:
         def connectedCallback(self):
