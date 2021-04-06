@@ -2,8 +2,7 @@ test:
   image: yourlabs/python-arch
   script:
   - pacman -Sy python-wheel rust cargo --noconfirm
-  - pip install django channels channels-redis libsass
-  - pip install -e .
+  - pip install -e .[project]
   - ./manage.py diffsettings
   - py.test -vv --cov src --strict -r fEsxXw
   cache:

@@ -30,7 +30,7 @@ in Django:
 git clone https://yourlabs.io/oss/ryzom.git
 sudo -u postgres createdb -O $UTF -E UTF8 ryzom_django_example
 cd ryzom
-pip install -e .[django,channels]
+pip install -e .[project]
 ./manage.py migrate
 ./manage.py runserver
 # open localhost:8000 for a basic form
