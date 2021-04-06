@@ -1,24 +1,3 @@
-"""
-Base manage.main hack which supports being an entry point.
-
-In your project setup.py, add::
-
-    entry_points={
-        'console_scripts': [
-            'yourproject = yourproject.manage:main',
-        ],
-    }
-
-Replace your manage.py content with::
-
-    #!/usr/bin/env python
-    from crudlfap.manage import main
-
-    if __name__ == '__main__':
-        main('yourproject.settings')
-
-Note that it will enable DEBUG env var, which wsgi.py should **not** enable.
-"""
 import os
 import sys
 import warnings

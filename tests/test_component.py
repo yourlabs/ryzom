@@ -190,3 +190,19 @@ def test_style(El):
     div.attrs.style.foo = 'test'
     assert div.style.foo == 'test'
     assert div.attrs.style.foo == 'test'
+
+
+def test_markdown():
+    assert html.Markdown('''
+    # Title
+    - list item
+    Body
+    [link](/bye)
+    ''').render() == '''
+<h1>Title</h1>
+<ul>
+<li>list item
+Body
+<a href="/bye">link</a></li>
+</ul>
+'''.strip()

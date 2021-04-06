@@ -19,23 +19,15 @@ setup(
     tests_require=[
         'pytest',
     ],
-    #extras_require=dict(
-    #    django=[
-    #        'django',
-    #    ],
-    #    channels=[
-    #        'channels',
-    #        'channels-redis',
-    #    ],
-    #    psql=[
-    #        'psycopg2-binary',
-    #    ],
-    #),
-    entry_points={
-        'console_scripts': [
-            'ryzom = ryzom_example.manage:main',
-        ],
-    },
+    extras_require=dict(
+        project=[
+            'django',
+            'channels',
+            'channels-redis',
+            'libsass',
+            'markdown',
+        ]
+    ),
     classifiers=[
         'Development Status :: 1 - Planning',
         'Environment :: Web Environment',

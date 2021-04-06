@@ -5,6 +5,7 @@ They will be added when they'll be needed
 '''
 import copy
 import importlib
+import textwrap
 import re
 import uuid
 
@@ -496,3 +497,9 @@ class Text(Component):
 
     def preparecontent(self):
         self.content = self.content[0]
+
+
+class Markdown(Text):
+    def preparecontent(self):
+        import markdown
+        self.content = markdown.markdown(textwrap.dedent(self.content[0]))
