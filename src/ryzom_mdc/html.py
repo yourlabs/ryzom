@@ -1071,6 +1071,26 @@ class MDCDataTable(Div):
         self.thead = self.table.thead
 
 
+class MDCDataTableResponsive(MDCDataTable):
+    sass = '''
+    @media (max-width: 700px)
+        .MDCDataTableResponsive
+            thead
+                display: none
+            tr
+                display: block
+                margin-bottom: 40px
+            td
+                display: block
+                text-align: right
+                height: auto
+            td:before
+                content: attr(data-label)
+                float: left
+                font-weight: bold
+    '''
+
+
 class MDCDataTableTable(Table):
     attrs = {'class': 'mdc-data-table__table'}
 
@@ -1316,6 +1336,11 @@ class MDCFilterField(Component):
 
 class MDCDataTablePagination(Div):
     attrs = {'class': 'mdc-data-table__pagination'}
+    sass = '''
+    @media (max-width: 700px)
+        .MDCDataTablePagination [slot]
+            display: block
+    '''
 
 
 class MDCChip(Div):
