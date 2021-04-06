@@ -25,26 +25,10 @@ class MDCTextButton(Button):
         )
 
 
-class MDCButtonOutlined(Button):
-    def __init__(self, text, p=True, icon=None, **kwargs):
-        black = 'black-button' if p else ''
-        content = [Span(cls='mdc-button__ripple')]
-        if icon and isinstance(icon, str):
-            content.append(MDCIcon(icon))
-        elif icon:
-            content.append(icon)
-        content.append(Span(text, cls='mdc-button__label'))
-        super().__init__(
-            *content,
-            cls=f'mdc-button mdc-button--outlined {black}',
-            **kwargs
-        )
-
-
 class MDCButton(Button):
-    def __init__(self, text=None, p=True, icon=None, **kwargs):
-        black = 'black-button' if p else ''
+    attrs = {'class': 'mdc-button'}
 
+    def __init__(self, text=None, icon=None, **kwargs):
         if icon and isinstance(icon, str):
             content = [MDCIcon(icon)]
         elif icon:
@@ -52,18 +36,21 @@ class MDCButton(Button):
         else:
             content = []
 
+        content.append(Span(cls='mdc-button__ripple'))
         if text:
             content.append(Span(text, cls='mdc-button__label'))
-        raised = 'mdc-button--raised' if kwargs.pop('raised', None) else ''
         super().__init__(
             *content,
-            cls=f'mdc-button {raised} {black}',
             **kwargs
         )
 
 
-class MDCButtonRaised(Button):
-    style = {'addcls': 'mdc-button--raised'}
+class MDCButtonRaised(MDCButton):
+    attrs = {'addcls': 'mdc-button--raised'}
+
+
+class MDCButtonOutlined(MDCButton):
+    attrs = {'addcls': 'mdc-button--outlined'}
 
 
 class MDCButtonLabelOutlined(Label):
