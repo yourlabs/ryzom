@@ -60,7 +60,7 @@ class Script(Component):
 
 
 class Style(Component):
-    tag = 'link'
+    tag = 'style'
     attrs = {'type': 'text/css'}
 
 
