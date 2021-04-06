@@ -291,13 +291,13 @@ class MDCList(Div):
 class MDCListItem(Li):
     attrs = {'class': 'mdc-list-item'}
 
-    def __init__(self, *content, icon=None, **attrs):
+    def __init__(self, *content, icon=None, ripple=True, **attrs):
         if icon and not isinstance(icon, Component):
             icon = MDCIcon(icon, addcls='mdc-list-item__graphic')
 
         super().__init__(
-            Span(cls='mdc-list-item__ripple'),
-            icon or '',
+            Span(cls='mdc-list-item__ripple') if ripple else None,
+            icon,
             Span(*content, cls='mdc-list-item__text'),
             **attrs,
         )
@@ -591,7 +591,7 @@ class MDCOption(Li):
         super().__init__(
             Span(cls='mdc-list-item__ripple'),
             Span(
-                choice['label'],
+                choice['label'] if choice['value'] else '',
                 cls='mdc-list-item__text'
             ),
             data_value=choice['value'],
@@ -715,6 +715,111 @@ class MDCSelectOutlined(Div):
             hidden = this.querySelector('input[type=hidden]')
             option = this.querySelector('[aria-selected=true]')
             hidden.value = option.dataset.value
+
+
+class MDCAccordionToggle(MDCListItem):
+    tag = 'mdc-accordion-toggle'
+
+    def __init__(self, *, label=None, icon=None, toggle=True, **context):
+        super().__init__(label, icon=icon)
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('click', this.click.bind(this))
+
+        def click(self, event):
+            section = this.parentElement
+            if section.classList.contains('active'):
+                section.toggle()
+            else:
+                section.parentElement.closeAll()
+                section.open()
+
+
+class MDCAccordionMenu(Div):
+    tag = 'mdc-accordion-menu'
+
+    style = dict(
+        display='block',
+        overflow='hidden',
+        max_height='0px',
+    )
+
+    def __init__(self, *content, **context):
+        super().__init__(
+            *content,
+            cls='MDCAccordionMenu',
+        )
+
+    class HTMLElement:
+        def open(self):
+            this.style.transition = ''
+            this.style.maxHeight = 'initial'
+            rect = this.getBoundingClientRect()
+            this.style.maxHeight = 0
+            this.getBoundingClientRect()
+            this.style.transition='max-height 0.4s ease-out'
+            this.style.maxHeight = rect.height
+
+        def close(self):
+            this.style.maxHeight = 0
+
+
+class MDCAccordionSection(MDCList):
+    tag = 'mdc-accordion-section'
+
+    def __init__(self, *content, **context):
+        super().__init__(
+            MDCAccordionToggle(**context),
+            MDCAccordionMenu(*content),
+            addcls='mdc-accordion',
+        )
+
+    class HTMLElement:
+        def open(self):
+            this.querySelector('mdc-accordion-toggle').classList.add(
+                'mdc-list-item--selected'
+            )
+            this.classList.add('active')
+            this.querySelector('mdc-accordion-menu').open()
+            this.querySelector('i').innerText = 'remove'
+
+        def close(self):
+            this.querySelector('mdc-accordion-toggle').classList.remove(
+                'mdc-list-item--selected'
+            )
+            this.classList.remove('active')
+            this.querySelector('mdc-accordion-menu').close()
+            this.querySelector('i').innerText = 'add'
+
+        def toggle(self):
+            if this.classList.contains('active'):
+                this.close()
+            else:
+                this.open()
+
+
+class MDCAccordion(Div):
+    tag = 'mdc-accordion'
+
+    def __init__(self, *content, **context):
+        def get_content():
+            for c in content[:-1]:
+                yield c
+                yield Hr(cls='mdc-list-divider')
+            if len(content):
+                yield content[-1]
+
+        super().__init__(
+            *(c for c in get_content()),
+            cls='mdc-accordion'
+        )
+
+    class HTMLElement:
+        def closeAll(self):
+            sections = this.querySelectorAll('mdc-accordion-section')
+            for section in sections:
+                section.close()
 
 
 class MDCSelectPerPage(MDCSelect):
