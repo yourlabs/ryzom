@@ -1,7 +1,7 @@
 test:
   image: yourlabs/python-arch
   script:
-  - pacman -Sy python-wheel rust cargo --noconfirm
+  - pacman -Sy --overwrite "*wheel*" python-wheel rust cargo --noconfirm
   - pip install -e .[project]
   - ./manage.py diffsettings
   - py.test -vv --cov src --strict -r fEsxXw
