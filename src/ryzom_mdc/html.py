@@ -720,8 +720,8 @@ class MDCSelectOutlined(Div):
 class MDCAccordionToggle(MDCListItem):
     tag = 'mdc-accordion-toggle'
 
-    def __init__(self, *, label=None, icon=None, toggle=True, **context):
-        super().__init__(label, icon=icon)
+    def __init__(self, *, label=None, **context):
+        super().__init__(label, icon='add')
 
     class HTMLElement:
         def connectedCallback(self):
@@ -752,11 +752,22 @@ class MDCAccordionMenu(Div):
         )
 
     class HTMLElement:
-        def open(self):
+        def connectedCallback(self):
+            window.addEventListener('load', this.ready.bind(this))
+
+        def ready(self):
+            max_height = this.style.maxHeight
+            this.style.transition = ''
+            this.close()
+            if max_height and max_height != '0px':
+                print(max_height)
+                this.open(max_height)
+
+        def open(self, from_px='0px'):
             this.style.transition = ''
             this.style.maxHeight = 'initial'
             rect = this.getBoundingClientRect()
-            this.style.maxHeight = 0
+            this.style.maxHeight = from_px
             this.getBoundingClientRect()
             this.style.transition='max-height 0.4s ease-out'
             this.style.maxHeight = rect.height
