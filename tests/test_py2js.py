@@ -274,6 +274,16 @@ def test_py2js_inject_mixin():
     assert py2js.transpile_body(self.py2js, self=self) == '''JSMixin_fun();\n'''
 
 
+def test_default_parameters():
+    def func(a, b='test'):
+        print(b)
+
+    assert py2js.transpile(func) == '''function func(a, b = 'test') {
+    console.log(b);
+}
+'''
+
+
 def test_transpile_body():
     def foo():
         print('a')

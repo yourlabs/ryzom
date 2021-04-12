@@ -247,16 +247,16 @@ class JS(object):
             defaults = [None]*(len(_args) - len(node.args.defaults)) + node.args.defaults
 
             args = []
-            defaults2 = []
+            defaults2 = {}
             for arg, default in zip(_args, defaults):
                 if arg.arg == 'self':
                     continue
                 if not isinstance(arg, ast.arg):
                     raise JSError("tuples in argument list are not supported")
                 if default:
-                    defaults2.append("%s: %s" % (arg.id, self.visit(default)))
-                args.append(arg.arg)
-            defaults = "{" + ", ".join(defaults2) + "}"
+                    args.append(f'{arg.arg} = {self.visit(default)}')
+                else:
+                    args.append(arg.arg)
             args = ", ".join(args)
             func_name = node.name
             if func_name == '__init__':
