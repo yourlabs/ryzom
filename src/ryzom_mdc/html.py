@@ -304,7 +304,8 @@ class MDCListItem(Li):
 
 
 class MDCSnackBar(Div):
-    def __init__(self, msg, status='success'):
+    def __init__(self, msg, status='success', delay=0):
+        self.delay = delay
         super().__init__(
             Div(
                 Div(
@@ -330,11 +331,16 @@ class MDCSnackBar(Div):
             **{'data-mdc-auto-init': 'MDCSnackbar'}
         )
 
-
-    def py2js(self):
-        elem = getElementByUuid(self.id)
+    def open_snack(elem):
         sb = new.mdc.snackbar.MDCSnackbar(elem)
         sb.open()
+
+    def py2js(self):
+        setTimeout(
+            self.open_snack,
+            self.delay,
+            getElementByUuid(self.id)
+        )
 
 
 class MDCErrorListItem(Li):
@@ -496,7 +502,7 @@ class MDCMultipleChoicesCheckbox(Ul):
         )
 
     def update_inputs(event):
-        input_list = event.target
+        input_list = event.currentTarget
         checked = input_list.querySelectorAll('input:checked')
         unchecked = input_list.querySelectorAll('input:not(:checked)')
 
@@ -519,6 +525,7 @@ class MDCMultipleChoicesCheckbox(Ul):
 
     def py2js(self):
         input_list = getElementByUuid(self.id)
+        input_list.max = self.max
         input_list.addEventListener('change', self.update_inputs)
 
 
