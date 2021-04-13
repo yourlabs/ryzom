@@ -761,13 +761,13 @@ class MDCAccordionMenu(Div):
     class HTMLElement:
         def connectedCallback(self):
             window.addEventListener('load', this.ready.bind(this))
+            window.addEventListener('resize', this.ready.bind(this))
 
         def ready(self):
             max_height = this.style.maxHeight
             this.style.transition = ''
             this.close()
             if max_height and max_height != '0px':
-                print(max_height)
                 this.open(max_height)
 
         def open(self, from_px='0px'):
