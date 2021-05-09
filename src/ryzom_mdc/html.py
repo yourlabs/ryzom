@@ -1504,7 +1504,7 @@ class Body(Body):
 
 class Html(Html):
     scripts = [
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js',
+        'https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.js',
         'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
         'https://cdn.polyfill.io/v2/polyfill.min.js',
         '/static/py2js.js',
@@ -1512,6 +1512,6 @@ class Html(Html):
     stylesheets = [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
         'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
-        'https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css',
+        'https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.css',
     ]
     body_class = Body
