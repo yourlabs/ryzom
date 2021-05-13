@@ -124,6 +124,19 @@ class Foo(Div):
 - Instance style attributes will be rendered inline.
 - Every component that has a style will also render a class attribute.
 
+SASS also works, but won't be interpreted by Ryzom and just be rendered by
+libsass as-is:
+
+```py
+class FormContainer(Container):
+    sass = '''
+    .FormContainer
+        max-width: 580px
+        .mdc-text-field, .mdc-form-field, .mdc-select, form
+            width: 100%
+    '''
+```
+
 ### JavaScript
 
 This repository provides a py2js fork that you may use to write JavaScript in
