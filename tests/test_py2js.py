@@ -175,6 +175,21 @@ def test_range():
     assert_equals_fixture('test_range', result)
 
 
+def test_len():
+    def func():
+        a = [1, 2, 3, 4, 5]
+        b = len(a)
+
+    result = JS(func)
+    assert_equals_fixture('test_len', result)
+
+    def func2():
+        b = len([1, 2 ,3])
+
+    result = JS(func2)
+    assert_equals_fixture('test_len2', result)
+
+
 def test_py2js_context_attribute_string():
     class Test:
         def __init__(self):
