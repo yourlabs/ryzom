@@ -91,7 +91,8 @@ class JS(object):
         }
 
     funcs = {
-            'range' : 'visit_Range'
+            'range' : 'visit_Range',
+            'len': 'visit_Len',
     }
 
     def __init__(self, context=None):
@@ -681,6 +682,9 @@ class JS(object):
     #specifics
     def visit_Range(self, args):
         return f"[...Array({args}).keys()]"
+
+    def visit_Len(self, args):
+        return f"{args}.length"
 
 
 def convert_py2js(s, context=None):
