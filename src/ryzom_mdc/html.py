@@ -1466,6 +1466,130 @@ class MDCDataTablePagination(Div):
     '''
 
 
+class MDCDialogContainer(Div):
+    attrs = {'class': 'mdc-dialog__container'}
+
+
+class MDCDialogTitle(H2):
+    attrs = {'class': 'mdc-dialog__title'}
+
+
+class MDCDialogActions(Div):
+    attrs = {'class': 'mdc-dialog__actions'}
+
+
+class MDCDialogContent(Div):
+    attrs = {'class': 'mdc-dialog__content'}
+
+
+class MDCDialogSurface(Div):
+    def __init__(self, title, content, actions=None, **attrs):
+        extra_attrs = {}
+
+        _title = MDCDialogTitle(title)
+        _content = MDCDialogContent(content)
+        _actions = actions
+
+        if _actions is None:
+            _actions = MDCDialogActions(
+                    MDCDialogCloseButtonOutlined('cancel'),
+                    MDCDialogAcceptButton('confirm'),
+                    style='display: flex; justify-content: space-around'
+                )
+
+        super().__init__(
+            _title,
+            _content,
+            _actions,
+            cls='mdc-dialog__surface',
+            role='alertdialog',
+            aria_modal='true',
+            aria_labelledby=_title.id,
+            aria_describedby=_content.id
+        )
+
+
+class MDCDialogCloseButton(MDCButton):
+    tag = 'a'
+    attrs = {'data-mdc-dialog-action': 'close'}
+
+
+class MDCDialogCloseButtonOutlined(MDCButtonOutlined):
+    tag = 'a'
+    attrs = {'data-mdc-dialog-action': 'close'}
+
+
+class MDCDialogAcceptButton(MDCButtonRaised):
+    tag = 'a'
+    attrs = {'data-mdc-dialog-action': 'accept'}
+
+
+class MDCDialogAcceptButtonOutlined(MDCButtonOutlined):
+    tag = 'a'
+    attrs = {'data-mdc-dialog-action': 'accept'}
+
+
+class MDCDialogScrim(Div):
+    attrs = {'class': 'mdc-dialog__scrim'}
+
+
+class MDCDialog(Div):
+    tag = 'mdc-dialog'
+    attrs = {
+        'class': 'mdc-dialog',
+        'data-mdc-auto-init': 'MDCDialog'
+    }
+
+    def __init__(self, *content, **attrs):
+       super().__init__(
+            MDCDialogContainer(
+                MDCDialogSurface(*content, **attrs)
+            ),
+            MDCDialogScrim(),
+            **attrs
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.addEventListener('MDCDialog:closing', self.handle_closing.bind(this))
+            this.addEventListener('MDCDialog:closed', self.handle_closed.bind(this))
+            this.addEventListener('MDCDialog:opening', self.handle_opening.bind(this))
+            this.addEventListener('MDCDialog:opened', self.handle_opened.bind(this))
+
+        def onclosing(self, event):
+            pass
+
+        def onclosed(self, event):
+            pass
+
+        def onopening(self, event):
+            pass
+
+        def onopened(self, event):
+            pass
+
+        def open(self):
+            this.MDCDialog.open()
+
+        def close(self):
+            this.MDCDialog.close()
+
+        def layout(self):
+            this.MDCDialog.layout()
+
+        def handle_closing(self, event):
+            this.onclosing(event)
+
+        def handle_closed(self, event):
+            this.onclosed(event)
+
+        def handle_opening(self, event):
+            this.onopening(event)
+
+        def handle_opened(self, event):
+            this.onopened(event)
+
+
 class MDCChip(Div):
     attrs = {'class': 'mdc-chip', 'role': 'row'}
 
