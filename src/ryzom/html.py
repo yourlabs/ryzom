@@ -1,4 +1,5 @@
 from ryzom.components import CList, Component, CTree, HTMLPayload, Markdown, Text
+from py2js.transpiler import transpile_body
 
 templates = dict()
 
@@ -123,6 +124,10 @@ class Html(Component):
 
             if hasattr(src, 'to_html'):
                 self.head.content.append(src)
+            elif callable(src):
+                self.head.content.append(
+                    Script(transpile_body(src))
+                )
             else:
                 self.head.content.append(Script(src=src))
 
