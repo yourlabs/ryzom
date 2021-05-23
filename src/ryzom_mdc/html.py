@@ -1202,7 +1202,6 @@ class MDCDataTableResponsive(MDCDataTable):
                 display: none
             tr
                 display: block
-                margin-bottom: 40px
             td
                 display: block
                 text-align: right
