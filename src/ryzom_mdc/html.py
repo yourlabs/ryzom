@@ -728,7 +728,7 @@ class MDCAccordionToggle(MDCListItem):
     tag = 'mdc-accordion-toggle'
 
     def __init__(self, *, label=None, **context):
-        super().__init__(label, icon='add')
+        super().__init__(label, icon='add', **context)
 
     class HTMLElement:
         def connectedCallback(self):
@@ -756,6 +756,7 @@ class MDCAccordionMenu(Div):
         super().__init__(
             *content,
             cls='MDCAccordionMenu',
+            **context
         )
 
     class HTMLElement:
@@ -766,18 +767,34 @@ class MDCAccordionMenu(Div):
             max_height = this.style.maxHeight
             this.style.transition = ''
             this.close()
+            this.from_px = '0px'
             if max_height and max_height != '0px':
-                print(max_height)
-                this.open(max_height)
+                this.from_px = max_height
+                this.open()
 
-        def open(self, from_px='0px'):
+        def start_layout(self):
             this.style.transition = ''
+            this.from_px = this.style.maxHeight
             this.style.maxHeight = 'initial'
-            rect = this.getBoundingClientRect()
-            this.style.maxHeight = from_px
+            this.rect = this.getBoundingClientRect()
+
+            closest = this.parentElement.closest('mdc-accordion-menu')
+            if closest:
+                closest.start_layout()
+
+        def end_layout(self):
+            this.style.maxHeight = self.from_px
             this.getBoundingClientRect()
             this.style.transition='max-height 0.4s ease-out'
-            this.style.maxHeight = rect.height
+            this.style.maxHeight = this.rect.height
+
+            closest = this.parentElement.closest('mdc-accordion-menu')
+            if closest:
+                closest.end_layout()
+
+        def open(self):
+            this.start_layout()
+            this.end_layout()
 
         def close(self):
             this.style.maxHeight = 0
@@ -789,7 +806,7 @@ class MDCAccordionSection(MDCList):
     def __init__(self, *content, **context):
         super().__init__(
             MDCAccordionToggle(**context),
-            MDCAccordionMenu(*content),
+            MDCAccordionMenu(*content, **context),
             addcls='mdc-accordion',
         )
 
@@ -830,7 +847,7 @@ class MDCAccordion(Div):
 
         super().__init__(
             *(c for c in get_content()),
-            cls='mdc-accordion'
+            addcls='mdc-accordion'
         )
 
     class HTMLElement:
@@ -1540,9 +1557,10 @@ class MDCDialog(Div):
     }
 
     def __init__(self, *content, **attrs):
-       super().__init__(
+        actions = attrs.pop('actions', None)
+        super().__init__(
             MDCDialogContainer(
-                MDCDialogSurface(*content, **attrs)
+                MDCDialogSurface(*content, actions=actions)
             ),
             MDCDialogScrim(),
             **attrs
