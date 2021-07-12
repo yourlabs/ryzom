@@ -66,6 +66,8 @@ def context_attrs(widget_context, extra=None):
     attrs.update(dict(
         name=widget_context['name'],
         value=widget_context['value'],
+        is_hidden=widget_context['is_hidden'],
+        required=widget_context['required'],
     ))
     attrs.update(widget_context['attrs'])
     if 'type' in widget_context:
@@ -104,5 +106,5 @@ def field_kwargs(bf):
         label=bf.label,
         value=bf.value(),
         help_text=bf.help_text,
-        errors=bf.errors,
+        errors=bf.errors
     )

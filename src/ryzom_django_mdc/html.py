@@ -158,7 +158,10 @@ class SelectWidget(MDCField):
             MDCFormField(
                 MDCSelectOutlined(**context),
             ),
-            name=attrs['name']
+            name=attrs['name'],
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.errors
         )
 
 
