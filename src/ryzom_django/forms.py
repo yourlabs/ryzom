@@ -2,7 +2,7 @@ from django import forms
 
 from ryzom import html
 
-from .html import ErrorList
+from .html import ErrorList, HiddenFields
 
 
 widget_templates = dict()
@@ -37,9 +37,8 @@ def form_to_component(form):
         error_list = form.non_field_error_component
         content.append(error_list(*non_field_errors))
 
-    # TODO
-    # if form.form.hidden_fields():
-    #     form.content.append(HiddenFields(form.form))
+    if form.hidden_fields():
+        content.append(HiddenFields(*form.hidden_fields()))
     # if form.hidden_errors():  # Local method.
     #     form.content.append(HiddenErrors(form.form))
 

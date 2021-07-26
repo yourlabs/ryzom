@@ -28,6 +28,11 @@ class ErrorList(Ul):
         )
 
 
+class HiddenFields(CList):
+    def __init__(self, *content, **attrs):
+        super().__init__(*content, **attrs)
+
+
 class Html(Html):
     scripts = [JSBundle()]
     stylesheets = [CSSBundle()]
