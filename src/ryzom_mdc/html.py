@@ -1106,19 +1106,20 @@ class MdcAppBarActions(Component):
     def __init__(self, *content, **context):
         action_items = context.pop('action_items', None)
         if not action_items:
-            return ''
-        context['tag'] = 'section'
-        super().__init__(
-            *[Button(
-                item[0],  # icon
-                aria_label=item[1],  # label
-                href=item[2],
-                cls='material-icons mdc-top-app-bar__action-item mdc-icon-button',
-            ) for item in action_items],
-            cls='mdc-top-app-bar__section mdc-top-app-bar__section--align-end',
-            role='toolbar',
-            **context,
-        )
+            super().__init__()
+        else:
+            context['tag'] = 'section'
+            super().__init__(
+                *[Button(
+                    item[0],  # icon
+                    aria_label=item[1],  # label
+                    href=item[2],
+                    cls='material-icons mdc-top-app-bar__action-item mdc-icon-button',
+                ) for item in action_items],
+                cls='mdc-top-app-bar__section mdc-top-app-bar__section--align-end',
+                role='toolbar',
+                **context,
+            )
 
 
 class MdcButton(Div):
