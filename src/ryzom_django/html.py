@@ -1,7 +1,7 @@
 import functools
 
 from django.middleware.csrf import get_token
-from django.utils.safestring import mark_safe
+from django.utils.safestring import SafeString, mark_safe
 from django.utils.html import escape
 
 from ryzom.html import *
@@ -28,7 +28,8 @@ to_html = Component.to_html
 
 def component_to_html(self, *args, **kwargs):
     if self.tag == 'text':
-        return escape(f'{self.content}')
+        if not isinstance(self.content, SafeString):
+            return escape(f'{self.content}')
     return to_html(self, *args, **kwargs)
 
 Component.to_html = component_to_html
