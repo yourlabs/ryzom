@@ -1,5 +1,8 @@
+import functools
+
 from django.middleware.csrf import get_token
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 from ryzom.html import *
 from .bundle import CSSBundle, JSBundle
@@ -19,6 +22,16 @@ def component_html(path, *args, **kwargs):
     if Markup:
         html = Markup(html)
     return mark_safe(html)
+
+
+to_html = Component.to_html
+
+def component_to_html(self, *args, **kwargs):
+    if self.tag == 'text':
+        return escape(f'{self.content}')
+    return to_html(self, *args, **kwargs)
+
+Component.to_html = component_to_html
 
 
 class ErrorList(Ul):
