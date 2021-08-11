@@ -502,4 +502,5 @@ class Text(Component):
 class Markdown(Text):
     def preparecontent(self):
         import markdown
-        self.content = markdown.markdown(textwrap.dedent(self.content[0]))
+        from django.utils.safestring import mark_safe
+        self.content = mark_safe(markdown.markdown(textwrap.dedent(self.content[0])))
