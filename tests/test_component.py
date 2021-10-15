@@ -6,12 +6,21 @@ def test_default_tag_name():
     class MyComponent(html.Component):
         pass
 
+    assert MyComponent.tag == 'my-component'
     assert MyComponent().tag == 'my-component'
 
     # self naming of Component should not break inherited tag names
     class MyDivComponent(html.Div):
         pass
+    assert MyDivComponent.tag == 'div'
     assert MyDivComponent().tag == 'div'
+
+    # unless it defines an HTMLElement
+    class MyDivComponent(html.Div):
+        class HTMLElement:
+            pass
+    assert MyDivComponent.tag == 'my-div-component'
+    assert MyDivComponent().tag == 'my-div-component'
 
     # test thread safety of tag override
     assert html.Div(tag='test').tag == 'test'

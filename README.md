@@ -176,8 +176,6 @@ generate a basic web component.
 
 ```py
 class DeleteButton(Component):
-    tag = 'delete-button'
-
     class HTMLElement:
         def connectedCallback(self):
             this.addEventListener('click', this.delete.bind(this))

@@ -138,6 +138,13 @@ class CAttrs(HTMLPayload):
         return ' '.join(result)
 
 
+def noclose(tag):
+    return tag.lower() in [
+        'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
+        'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+    ]
+
+
 class ComponentMetaclass(type):
     def __new__(cls, name, bases, class_attrs):
         attrs = CAttrs()
@@ -170,6 +177,24 @@ class ComponentMetaclass(type):
         if extra_scripts := class_attrs.get('scripts', None):
             scripts.extend(extra_scripts)
         class_attrs['scripts'] = scripts
+
+        if 'tag' not in class_attrs:
+            tag = None
+            if 'HTMLElement' not in class_attrs:
+                # inherit tag from parent UNLESS I define a WebComponent
+                for base in bases:
+                    tag = getattr(base, 'tag', None)
+                    if tag:
+                        break
+
+            if not tag:
+                s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
+                tag = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+
+            class_attrs['tag'] = tag
+
+        if class_attrs.get('tag', None):
+            class_attrs['noclose'] = noclose(class_attrs['tag'])
 
         cls = super().__new__(cls, name, bases, class_attrs)
 
@@ -208,6 +233,7 @@ class Component(metaclass=ComponentMetaclass):
     :param str id: The id of the current instance (must be unique)
     '''
 
+    tag = None  # make sure this class is tagless
     __publication = None
 
     def __getattribute__(self, name):
@@ -239,22 +265,14 @@ class Component(metaclass=ComponentMetaclass):
         self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
-        self.__dict__['tag'] = getattr(self, 'tag', None)
         if 'tag' in attrs:
-            self.tag = attrs.pop('tag')
-        elif not getattr(self, 'tag', None):
-            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', type(self).__name__)
-            self.tag = re.sub('([a-z0-9])([A-Z])', r'\1-\2', s1).lower()
+            self.__dict__['tag'] = attrs.pop('tag')
+            self.__dict__['noclose'] = noclose(self.tag)
 
         self.__dict__['selfclose'] = attrs.pop(
             'selfclose',
             getattr(self, 'selfclose', False),
         )
-
-        self.noclose = self.tag.lower() in [
-            'area', 'base', 'br', 'col', 'embed', 'hr', 'img',
-            'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
-        ]
 
         self.scripts = copy.deepcopy(getattr(self, 'scripts', []))
         self.stylesheets = copy.deepcopy(getattr(self, 'stylesheets', []))
