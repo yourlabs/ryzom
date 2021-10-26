@@ -518,13 +518,17 @@ class Text(Component):
 
 
 class Markdown(Text):
+    def __init__(self, *content, **kwargs):
+        self.kwargs = kwargs
+        super().__init__(*content)
+
     def preparecontent(self):
         import markdown
         from django.utils.safestring import mark_safe
         self.content = mark_safe(
             markdown.markdown(
                 textwrap.dedent(
-                    self.content[0]
+                    '\n'.join(self.content),
                 ),
                 **self.kwargs,
             )
