@@ -50,11 +50,11 @@ forms.BaseForm.non_field_error_component = ErrorList
 forms.BaseForm.to_component = form_to_component
 
 
-def form_to_html(form, **context):
-    form_component = form.to_component()
+def form_to_html(self, **context):
+    form_component = self.to_component()
     html = form_component.to_html(**context)
-    form.scripts = form_component.scripts
-    form.stylesheets = form_component.stylesheets
+    self.scripts = form_component.scripts
+    self.stylesheets = form_component.stylesheets
     return html
 forms.BaseForm.to_html = form_to_html
 
