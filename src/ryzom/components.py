@@ -521,4 +521,11 @@ class Markdown(Text):
     def preparecontent(self):
         import markdown
         from django.utils.safestring import mark_safe
-        self.content = mark_safe(markdown.markdown(textwrap.dedent(self.content[0])))
+        self.content = mark_safe(
+            markdown.markdown(
+                textwrap.dedent(
+                    self.content[0]
+                ),
+                **self.kwargs,
+            )
+        )
