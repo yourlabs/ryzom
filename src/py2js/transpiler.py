@@ -28,6 +28,7 @@ class JS(object):
 
         'super' : '_super',
         'print' : 'console.log',
+        'undefined': 'undefined',
 
         # ideally we should check, that this name is available:
         'py_builtins' : '___py_hard_to_collide',
@@ -553,6 +554,8 @@ class JS(object):
             return self.visit_Str(node)
         elif isinstance(node.value, bool):
             return 'true' if node.value else 'false'
+        elif node.value is None:
+            return 'null'
         else:
             return self.visit_Num(node)
 
