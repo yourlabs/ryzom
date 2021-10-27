@@ -112,6 +112,7 @@ class JS(object):
         self._class_names = set()
         self._classes = {}
         self._functions = {}
+        self.in_str = False
 
         if context:
             _copy_context = context.copy()
@@ -161,6 +162,18 @@ class JS(object):
     def visit_Module(self, node):
         for stmt in node.body:
             self.visit(stmt)
+
+    def visit_JoinedStr(self, node):
+        result = '`'
+        self.in_str = True
+        for value in node.values:
+            result += self.visit(value)
+        self.in_str = False
+        result += '`'
+        return result
+
+    def visit_FormattedValue(self, node):
+        return '${%s}' % self.visit(node.value)
 
     def visit_AsyncFunctionDef(self, node):
         self.is_async = True
@@ -550,7 +563,9 @@ class JS(object):
         # Uses the Python builtin repr() of a string and the strip string type
         # from it. This is to ensure Javascriptness, even when they use things
         # like b"\\x00" or u"\\u0000".
-        return "%s" % repr(node.s).lstrip("urb")
+        if not self.in_str:
+            return "%s" % repr(node.s).lstrip("urb")
+        return node.s
 
     def visit_Call(self, node):
         func = self.visit(node.func)

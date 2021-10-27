@@ -340,3 +340,10 @@ def test_transpile_function():
 
     result = py2js.transpile_function(Test.foo, 'Foo__bar')
     assert_equals_fixture('test_transpile_function', result)
+
+
+def test_transpile_template():
+    def foo():
+        return f'foo {bar}{1 + b}'
+    result = py2js.transpile(foo)
+    assert_equals_fixture('test_transpile_template', result)
