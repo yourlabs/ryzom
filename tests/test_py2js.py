@@ -39,6 +39,8 @@ def test_assign():
         h = {'a': 1, 'b': 2}
         k = {'toto': 11532}
         i = h
+        j = None
+        l = undefined
 
     result = JS(func)
 
