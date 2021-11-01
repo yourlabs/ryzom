@@ -1243,7 +1243,9 @@ class MDCDataTableTable(Table):
         )
 
     def to_html(self, *content, **context):
-        self.attrs.arial_label = context['view'].title
+        if 'view' in context and getattr(context['view'], 'title', None):
+            # set a default aria label if possible
+            self.attrs.arial_label = context['view'].title
         return super().to_html(*content, **context)
 
 
