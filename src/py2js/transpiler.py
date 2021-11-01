@@ -576,6 +576,8 @@ class JS(object):
             #~ func = 'new '+func
         if getattr(node.func, 'id', None) == 'type':
             return "typeof %s" % self.visit(node.args[0])
+        elif getattr(node.func, 'id', None) == 'bool':
+            return "new Boolean(%s)" % self.visit(node.args[0])
         elif node.keywords:
             keywords = []
             for kw in node.keywords:
