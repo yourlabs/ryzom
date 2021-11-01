@@ -40,13 +40,14 @@ def bundle(*modules):
             if value in done:
                 continue
             if sass_src := getattr(value, 'sass', None):
-                if sass:
-                    css = sass.compile(
-                        string=textwrap.dedent(sass_src),
-                        indented=True
-                    )
-                    if css not in out:
-                        out.append(css)
+                if not sass:
+                    raise Exception(f'Sass not installed, cannot bundle {key}')
+                css = sass.compile(
+                    string=textwrap.dedent(sass_src),
+                    indented=True
+                )
+                if css not in out:
+                    out.append(css)
             if 'style' in value.attrs:
                 out += to_css('.' + value.__name__, value.attrs.style)
             done.append(value)

@@ -1,3 +1,4 @@
+from django.utils.safestring import mark_safe
 from ryzom.html import *
 
 
@@ -534,7 +535,7 @@ class MDCSelect(Div):
 
     def __init__(self, select, *content, **attrs):
         super().__init__(
-            '''
+            mark_safe('''
             <div class="mdc-select__anchor" role="button" aria-haspopup="listbox"
                   aria-labelledby="demo-pagination-select" tabindex="0">
               <span class="mdc-select__selected-text-container">
@@ -566,19 +567,19 @@ class MDCSelect(Div):
 
             <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
               <ul class="mdc-list">
-            ''',
+            '''),
             *[
-                f'''
+                mark_safe(f'''
                 <li class="mdc-list-item {'mdc-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
                   <span class="mdc-list-item__text">{option.attrs.value}</span>
                 </li>
-                '''
+                ''')
                 for option in select.content
             ],
-            '''
+            mark_safe('''
               </ul>
             </div>
-            ''',
+            '''),
             **attrs,
         )
 
@@ -1243,7 +1244,9 @@ class MDCDataTableTable(Table):
         )
 
     def to_html(self, *content, **context):
-        self.attrs.arial_label = context['view'].title
+        if 'view' in context and getattr(context['view'], 'title', None):
+            # set a default aria label if possible
+            self.attrs.arial_label = context['view'].title
         return super().to_html(*content, **context)
 
 
@@ -1276,115 +1279,6 @@ class MDCDataTableTr(Tr):
 class MDCDataTableTd(Td):
     attrs = {'class': 'mdc-data-table__cell'}
 
-
-thead = '''
-      <th
-        class="mdc-data-table__header-cell mdc-data-table__header-cell--with-sort"
-        role="columnheader"
-        scope="col"
-        aria-sort="none"
-        data-column-id="dessert"
-      >
-        <div class="mdc-data-table__header-cell-wrapper">
-          <div class="mdc-data-table__header-cell-label">
-            Dessert
-          </div>
-          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
-                  aria-label="Sort by dessert" aria-describedby="dessert-status-label">arrow_upward</button>
-          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="dessert-status-label">
-          </div>
-        </div>
-      </th>
-      <th
-        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort mdc-data-table__header-cell--sorted"
-        role="columnheader"
-        scope="col"
-        aria-sort="ascending"
-        data-column-id="carbs"
-      >
-        <div class="mdc-data-table__header-cell-wrapper">
-          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
-                  aria-label="Sort by carbs" aria-describedby="carbs-status-label">arrow_upward</button>
-          <div class="mdc-data-table__header-cell-label">
-            Carbs (g)
-          </div>
-          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="carbs-status-label"></div>
-        </div>
-      </th>
-      <th
-        class="mdc-data-table__header-cell mdc-data-table__header-cell--numeric mdc-data-table__header-cell--with-sort"
-        role="columnheader"
-        scope="col"
-        aria-sort="none"
-        data-column-id="protein"
-      >
-        <div class="mdc-data-table__header-cell-wrapper">
-          <button class="mdc-icon-button material-icons mdc-data-table__sort-icon-button"
-                  aria-label="Sort by protein" aria-describedby="protein-status-label">arrow_upward</button>
-          <div class="mdc-data-table__header-cell-label">
-            Protein (g)
-          </div>
-          <div class="mdc-data-table__sort-status-label" aria-hidden="true" id="protein-status-label"></div>
-        </div>
-      </th>
-      <th
-        class="mdc-data-table__header-cell"
-        role="columnheader"
-        scope="col"
-        data-column-id="comments"
-      >
-        Comments
-      </th>
-      '''
-
-tbody  = '''
-    <tbody class="mdc-data-table__content">
-      <tr data-row-id="u0" class="mdc-data-table__row">
-        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
-          <div class="mdc-checkbox mdc-data-table__row-checkbox">
-            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
-            <div class="mdc-checkbox__background">
-              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
-                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
-              </svg>
-              <div class="mdc-checkbox__mixedmark"></div>
-            </div>
-            <div class="mdc-checkbox__ripple"></div>
-          </div>
-        </td>
-      <td class="mdc-data-table__cell">Frozen yogurt</td>
-      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
-        20
-      </td>
-      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
-        4.0
-      </td>
-      <td class="mdc-data-table__cell">Super tasty</td>
-      </tr>
-      <tr data-row-id="u0" class="mdc-data-table__row">
-        <td class="mdc-data-table__cell mdc-data-table__cell--checkbox">
-          <div class="mdc-checkbox mdc-data-table__row-checkbox">
-            <input type="checkbox" class="mdc-checkbox__native-control" aria-labelledby="u0"/>
-            <div class="mdc-checkbox__background">
-              <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
-                <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" />
-              </svg>
-              <div class="mdc-checkbox__mixedmark"></div>
-            </div>
-            <div class="mdc-checkbox__ripple"></div>
-          </div>
-        </td>
-      <td class="mdc-data-table__cell">Frozen yogurt</td>
-      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
-        24
-      </td>
-      <td class="mdc-data-table__cell mdc-data-table__cell--numeric">
-        4.0
-      </td>
-      <td class="mdc-data-table__cell">Super tasty</td>
-      </tr>
-    </tbody>
-        '''
 
 class MDCDataTableContainer(Div):
     attrs = {'class': 'mdc-data-table__table-container'}
@@ -1448,7 +1342,7 @@ class MDCFilterField(Component):
                 H3(
                     Span(label),
                     Component(
-                        '<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>',
+                        mark_safe('<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>'),
                         tag='svg',
                         width='26',
                         height='26',
