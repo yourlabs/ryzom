@@ -51,26 +51,42 @@ def test_assign_deep():
     def func():
         a.b.c = 2
         d.e.f['titi'] = 'test'
-
     result = JS(func)
-
     assert_equals_fixture('test_assign_deep', result)
+
+
+def test_bool():
+    def func():
+        bool(test.deep)
+    result = JS(func)
+    assert_equals_fixture('test_bool', result)
+
+
+def test_endswith():
+    def func():
+        test.deep.endswith('test')
+    result = JS(func)
+    assert_equals_fixture('test_endswith', result)
+
+
+def test_type():
+    def func():
+        type(test.deep)
+    result = JS(func)
+    assert_equals_fixture('test_typeof', result)
 
 
 def test_new():
     def func():
         test = new.HTMLElement(param)
         test.deep = new.deep.ClassName
-
     result = JS(func)
-
     assert_equals_fixture('test_new', result)
 
 
 def test_print():
     def func():
         print('to console')
-
     result = JS(func)
     assert_equals_fixture('test_print', result)
 
