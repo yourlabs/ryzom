@@ -574,6 +574,7 @@ class JS(object):
         func = self.visit(node.func)
         #~ if func in self._class_names:
             #~ func = 'new '+func
+
         if getattr(node.func, 'id', None) == 'type':
             return "typeof %s" % self.visit(node.args[0])
         elif getattr(node.func, 'id', None) == 'bool':
@@ -601,6 +602,9 @@ class JS(object):
             if func in self.funcs.keys():
                 method = getattr(self, self.funcs[func])
                 return method(js_args)
+
+            if func.endswith('.endswith'):
+                func = func[:-4] + 'With'
 
             return "%s(%s)" % (func, js_args)
 

@@ -62,6 +62,13 @@ def test_bool():
     assert_equals_fixture('test_bool', result)
 
 
+def test_endswith():
+    def func():
+        test.deep.endswith('test')
+    result = JS(func)
+    assert_equals_fixture('test_endswith', result)
+
+
 def test_type():
     def func():
         type(test.deep)
