@@ -574,7 +574,9 @@ class JS(object):
         func = self.visit(node.func)
         #~ if func in self._class_names:
             #~ func = 'new '+func
-        if node.keywords:
+        if getattr(node.func, 'id', None) == 'type':
+            return "typeof %s" % self.visit(node.args[0])
+        elif node.keywords:
             keywords = []
             for kw in node.keywords:
                 keywords.append("%s: %s" % (kw.arg, self.visit(kw.value)))

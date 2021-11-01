@@ -57,6 +57,15 @@ def test_assign_deep():
     assert_equals_fixture('test_assign_deep', result)
 
 
+def test_type():
+    def func():
+        type(test.deep)
+
+    result = JS(func)
+
+    assert_equals_fixture('test_typeof', result)
+
+
 def test_new():
     def func():
         test = new.HTMLElement(param)
