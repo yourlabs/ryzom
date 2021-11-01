@@ -1,3 +1,4 @@
+from django.utils.safestring import mark_safe
 from ryzom.html import *
 
 
@@ -534,7 +535,7 @@ class MDCSelect(Div):
 
     def __init__(self, select, *content, **attrs):
         super().__init__(
-            '''
+            mark_safe('''
             <div class="mdc-select__anchor" role="button" aria-haspopup="listbox"
                   aria-labelledby="demo-pagination-select" tabindex="0">
               <span class="mdc-select__selected-text-container">
@@ -566,19 +567,19 @@ class MDCSelect(Div):
 
             <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
               <ul class="mdc-list">
-            ''',
+            '''),
             *[
-                f'''
+                mark_safe(f'''
                 <li class="mdc-list-item {'mdc-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
                   <span class="mdc-list-item__text">{option.attrs.value}</span>
                 </li>
-                '''
+                ''')
                 for option in select.content
             ],
-            '''
+            mark_safe('''
               </ul>
             </div>
-            ''',
+            '''),
             **attrs,
         )
 
@@ -1450,7 +1451,7 @@ class MDCFilterField(Component):
                 H3(
                     Span(label),
                     Component(
-                        '<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>',
+                        mark_safe('<g><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"></path> <path d="M0 0h24v24H0z" fill="none"></path></g><svg>'),
                         tag='svg',
                         width='26',
                         height='26',
