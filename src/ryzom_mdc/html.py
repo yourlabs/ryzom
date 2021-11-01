@@ -875,8 +875,10 @@ class MDCSelectPerPage(MDCSelect):
             else:
                 search = '?per_page=' + event.detail.value
 
-            up.visit(url.pathname + search, {target: '.mdc-data-table'})
-
+            if document.up and document.up.visit:
+                up.visit(url.pathname + search, {target: '.mdc-data-table'})
+            else:
+                document.location.href = url.pathname + search
 
 
 class MDCIconButton(A):
