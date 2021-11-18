@@ -123,9 +123,8 @@
     var prev_node = getElementByUuid(params.id);
     var cur_node = createDOMelement(params);
     var parent = getElementByUuid(params.parent);
-    parent.removeChild(prev_node);
-    prev_node = parent.childNodes[params.position]
     parent.insertBefore(cur_node, prev_node)
+    parent.removeChild(prev_node);
   };
 
   /*
@@ -188,7 +187,8 @@
   var ws;
 
   ws_connect = function(reconnecting) {
-    ws_path = 'ws://' + window.location.host + '/ws/ddp/'
+    ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    ws_path = ws_scheme + '://' + window.location.host + '/ws/ddp/'
     ws_path += '?' + token
     ws = new WebSocket(ws_path);
 

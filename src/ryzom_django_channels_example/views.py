@@ -1,6 +1,7 @@
 from django import forms, http
 from django.urls import path, reverse
 from django.views import generic
+from django.utils.safestring import mark_safe
 
 import py2js
 from py2js.renderer import JS
@@ -184,7 +185,7 @@ class Home(Html):
                         style='width:100%'),
                     style='flex-grow: 1; height: 100%;'),
                 style='display:flex; flex-flow: row wrap;'),
-            Script(view.get_token()),
+            Script(mark_safe(view.get_token())),
             Script('mdc.autoInit();'),
         ])
 
