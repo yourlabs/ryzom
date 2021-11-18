@@ -3,6 +3,7 @@ Defines the ryzom View class and the main index view
 '''
 from asgiref.sync import async_to_sync
 from django import http
+from django.conf import settings
 
 from py2js.renderer import JS, autoexec
 from ryzom.components import Component
@@ -22,9 +23,15 @@ class ReactiveMixin:
 
         def js_set_token():
             window.token = token
+            window.ws_host = host
+            window.ws_port = port
             ws_connect()
 
-        return autoexec(JS(js_set_token, dict(token=client.token)))
+        return autoexec(JS(js_set_token, dict(
+            token=client.token,
+            host=settings.WS_HOST,
+            port=settings.WS_PORT,
+        )))
 
 
 class RegisterManager:

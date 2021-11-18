@@ -13,27 +13,31 @@ from channels.auth import get_user, login
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from ryzom_django_channels.methods import Methods
-from ryzom_django_channels.models import Client, Publication, Subscription
 
 
 class Consumer(JsonWebsocketConsumer):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
-    ddp_urlpatterns = importlib.import_module(
-        settings.WS_URLPATTERNS).urlpatterns
-
     '''
     Import all user defined server methods
     '''
-    for module in settings.SERVER_METHODS:
-        importlib.import_module(module)
+    def __init__(self, *args, **kwargs):
+        self.ddp_urlpatterns = importlib.import_module(
+            settings.WS_URLPATTERNS).urlpatterns
+
+        for module in settings.SERVER_METHODS:
+            importlib.import_module(module)
+
+        super().__init__(*args, **kwargs)
+
 
     def connect(self):
+        from ryzom_django_channels.models import Client
+        from django.contrib.auth.models import User
         '''
         Websocket connect handler.
         This method tries to get the user connecting and create a new
@@ -60,6 +64,7 @@ class Consumer(JsonWebsocketConsumer):
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
+        from ryzom_django_channels.models import Client
         '''
         Websocket disconnect handler.
         Removes the ryzom.models.Client entry attached to this
@@ -76,6 +81,7 @@ class Consumer(JsonWebsocketConsumer):
         deadclients.delete()
 
     def receive(self, text_data):
+        from ryzom_django_channels.models import Client
         '''
         Websocket message handler.
         Dispatches message to type specific subhandlers after some
@@ -290,6 +296,7 @@ class Consumer(JsonWebsocketConsumer):
             self.remove_component(data['params'])
 
     def recv_subscribe(self, data):
+        from ryzom_django_channels.models import Client, Publication, Subscription
         '''
         subscribe message handler.
         Creates a new subscription for the current Client.
