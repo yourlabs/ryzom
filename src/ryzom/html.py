@@ -134,3 +134,6 @@ class Html(Component):
         if title := getattr(self, 'title', None):
             self.__dict__['title'] = Title(title)
             self.head.addchild(self.title)
+
+    def to_html(self, *content, **context):
+        return '<!DOCTYPE html>\n' + super().to_html(*content, **context)
