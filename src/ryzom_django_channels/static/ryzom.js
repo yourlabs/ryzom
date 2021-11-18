@@ -188,7 +188,9 @@
 
   ws_connect = function(reconnecting) {
     ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-    ws_path = ws_scheme + '://' + window.location.host + '/ws/ddp/'
+    ws_host = ws_host ? ws_host : window.location.hostname
+    ws_port = ws_port ? ws_port : window.location.port
+    ws_path = ws_scheme + '://' + ws_host + ':' + ws_port + '/ws/ddp/'
     ws_path += '?' + token
     ws = new WebSocket(ws_path);
 
