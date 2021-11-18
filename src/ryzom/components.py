@@ -310,17 +310,21 @@ class Component(metaclass=ComponentMetaclass):
         Moreover it sets the child's position attribute to its index
         in the current component's content list
         '''
+        to_delete = []
         for i, c in enumerate(self.content):
             if c is None:
-                del self.content[i]
-                i -= 1
+                to_delete.append(i)
                 continue
 
             if not hasattr(c, 'to_html'):
                 self.content[i] = c = Text(str(c))
 
             c.parent = self
-            c.position = i
+            c.position = i - len(to_delete)
+
+        to_delete.reverse()
+        for i in to_delete:
+            del self.content[i]
 
     def addchild(self, component):
         '''Add a child component
@@ -386,7 +390,10 @@ class Component(metaclass=ComponentMetaclass):
         if isinstance(self.parent, str):
             parent_id = self.parent
         else:
-            parent_id = self.parent.id
+            if not self.parent:
+                parent_id = 'body'
+            else:
+                parent_id = self.parent.id
 
         return {
             'id': self.id,
