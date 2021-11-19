@@ -37,7 +37,7 @@ class Consumer(JsonWebsocketConsumer):
 
     def connect(self):
         from ryzom_django_channels.models import Client
-        from django.contrib.auth.models import User
+        from django.contrib.auth import get_user_model
         '''
         Websocket connect handler.
         This method tries to get the user connecting and create a new
@@ -45,6 +45,7 @@ class Consumer(JsonWebsocketConsumer):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
+        User = get_user_model()
         client = None
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
