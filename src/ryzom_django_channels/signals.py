@@ -51,7 +51,7 @@ def _ddp_insert_change(sender, **kwargs):
             if not created:
                 # changed and may have moved
                 # just send new instance and pos
-                send_change(sub, sender, template, instance.id)
+                send_change(sub, sender, template, str(instance.id))
 
         # if sets aren't the same, then considering that only one entry
         # was added or has changed:

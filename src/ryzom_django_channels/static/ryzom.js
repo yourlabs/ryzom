@@ -63,9 +63,11 @@
       elem = document.createTextNode(component);
     else {
       elem = document.createElement(component.tag);
-      Object.keys(component.attrs).forEach(function(k) {
-        elem.setAttribute(k, component.attrs[k]);
-      });
+      if (component.attrs) {
+        Object.keys(component.attrs).forEach(function(k) {
+          elem.setAttribute(k, component.attrs[k]);
+        });
+      }
     }
 
     if (component.publication) {
