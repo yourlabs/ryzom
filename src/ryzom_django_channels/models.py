@@ -86,7 +86,7 @@ class Subscription(models.Model):
     subscriber_id = models.CharField(max_length=255)
     subscriber_module = models.CharField(max_length=255)
     subscriber_class = models.CharField(max_length=255)
-    queryset = ArrayField(models.IntegerField(), default=list)
+    queryset = ArrayField(models.CharField(max_length=255), default=list)
     options = JSONField(blank=True, null=True)
 
     @property
@@ -112,7 +112,7 @@ class Subscription(models.Model):
             self.client.user, queryset, opts)
 
         self.options = opts
-        self.queryset = list(queryset.values_list('id', flat=True))
+        self.queryset = list(map(lambda x : str(x), queryset.values_list('id', flat=True)))
         self.save()
 
         return queryset
