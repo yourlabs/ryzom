@@ -48,7 +48,7 @@ def _ddp_insert_change(sender, **kwargs):
         if not diff['inserted'] and not diff['removed']:
             # if created and sets are the same,
             # entry has been filtered and can't be there
-            if not created:
+            if str(instance.id) in new_qs:
                 # changed and may have moved
                 # just send new instance and pos
                 send_change(sub, sender, template, str(instance.id))

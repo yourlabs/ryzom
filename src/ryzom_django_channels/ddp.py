@@ -94,9 +94,7 @@ def send_remove(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmp = model()
-    tmp.id = id
-    tmpl_instance = tmpl(tmp)
+    tmpl_instance = tmpl(model.objects.get(id=id))
     data = {
         'type': 'handle.ddp',
         'params': {
