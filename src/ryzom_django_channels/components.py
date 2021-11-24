@@ -66,29 +66,32 @@ class SubscribeComponentMixin(ReactiveBase):
 
 
     def create_subscription(self):
+        subscriber_id = getattr(self, 'container', self).id
         publication = Publication.objects.get(name=self.publication)
-        subscription = Subscription.objects.create(
+        self.subscription = Subscription.objects.create(
             client=self.view.client,
             publication=publication,
-            subscriber_id=self.id,
+            subscriber_id=subscriber_id,
             subscriber_module=self.__module__,
             subscriber_class=self.__class__.__name__,
             options=self.subscribe_options,
         )
 
-        self.get_content(publication, subscription)
+        self.get_content()
 
-    def get_content(self, publication, subscription):
+    def get_content(self):
         template = model_templates[self.model_template]
 
         content = []
-        for obj in subscription.get_queryset():
+        self.queryset = self.subscription.get_queryset()
+        for obj in self.queryset:
             content.append(template(obj))
 
-        self.content = content
+        container = getattr(self, 'container', self)
+        container.content = content
 
     @classmethod
-    def get_queryset(self, qs, opts):
+    def get_queryset(self, usr, qs, opts):
         return qs
 
 
