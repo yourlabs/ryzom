@@ -65,7 +65,14 @@
       elem = document.createElement(component.tag);
       if (component.attrs) {
         Object.keys(component.attrs).forEach(function(k) {
-          elem.setAttribute(k, component.attrs[k]);
+          val = component.attrs[k];
+          if (k == 'style') {
+            Object.keys(val).forEach(function(sk) {
+              elem.style[sk] = val[sk];
+            });
+          } else {
+            elem.setAttribute(k, val);
+          }
         });
       }
     }
