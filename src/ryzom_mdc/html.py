@@ -787,7 +787,7 @@ class MDCAccordionMenu(Div):
             this.style.maxHeight = self.from_px
             this.getBoundingClientRect()
             this.style.transition='max-height 0.4s ease-out'
-            this.style.maxHeight = this.rect.height
+            this.style.maxHeight = this.rect.height + 'px'
 
             closest = this.parentElement.closest('mdc-accordion-menu')
             if closest:
