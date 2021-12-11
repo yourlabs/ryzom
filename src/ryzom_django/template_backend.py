@@ -8,7 +8,7 @@ from django.template.backends.base import BaseEngine
 from django.template.backends.django import reraise
 from django.template.base import Origin
 from django.template.context import BaseContext
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.functional import SimpleLazyObject, cached_property
 from django.utils.module_loading import import_string
 
@@ -107,7 +107,7 @@ class Template:
                 if token is None:
                     return 'NOTPROVIDED'
                 else:
-                    return smart_text(token)
+                    return smart_str(token)
 
             context["csrf_token"] = SimpleLazyObject(_get_val)
 
