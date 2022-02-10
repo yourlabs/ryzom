@@ -584,6 +584,7 @@ class MDCSelect(Div):
         )
 
 
+@template('django/forms/widgets/select_option.html')
 class MDCOption(Li):
     def __init__(self, index, **choice):
         extra_attrs = dict()
@@ -610,7 +611,7 @@ class MDCOption(Li):
 
 
 class MDCNamedOptgroup(Div):
-    def __init__(self, name, choices):
+    def __init__(self, name, choices, option_component):
         super().__init__(
             Ul(
                 H6(name, cls='mdc-list-group__subheader'),
@@ -626,9 +627,13 @@ class MDCOptgroup(CList):
         if name:
             super().__init__(MDCNamedOptgroup(name, choices))
         else:
-            super().__init__(
-                *(MDCOption(**choice) for choice in choices)
-            )
+            options = []
+            for choice in choices:
+                option_template = choice.pop('template_name')
+                option_component = templates.get(option_template, MDCOption)
+                options.append(option_component(**choice))
+
+            super().__init__(*options)
 
 
 class MDCSelectAnchor(Div):
@@ -690,7 +695,6 @@ class MDCSelectOutlined(Div):
     tag = 'mdc-select-outlined'
 
     def __init__(self, **attrs):
-        attrs.pop('template_name')
         label = attrs.pop('label', attrs.get('name', None))
 
         cls = 'mdc-select mdc-select--outlined'
