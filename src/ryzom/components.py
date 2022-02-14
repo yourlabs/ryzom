@@ -385,7 +385,11 @@ class Component(metaclass=ComponentMetaclass):
                 if isinstance(c, (int, float, str)):
                     content.append(c)
                 else:
-                    content.append(c.to_obj())
+                    to_append = c.to_obj()
+                    if not isinstance(to_append, (list, tuple)):
+                        content.append(c.to_obj())
+                    else:
+                        content += to_append
 
         if isinstance(self.parent, str):
             parent_id = self.parent
