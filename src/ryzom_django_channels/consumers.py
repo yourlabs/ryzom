@@ -61,7 +61,7 @@ class Consumer(JsonWebsocketConsumer):
             client.user = user if isinstance(user, User) else None
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
-        else:
+        elif not client:
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
