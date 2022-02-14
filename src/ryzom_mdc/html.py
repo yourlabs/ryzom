@@ -628,8 +628,9 @@ class MDCOptgroup(CList):
             super().__init__(MDCNamedOptgroup(name, choices))
         else:
             options = []
+            default_opt_template = 'django/forms/widgets/select_option.html'
             for choice in choices:
-                option_template = choice.pop('template_name')
+                option_template = choice.pop('template_name', default_opt_template)
                 option_component = templates.get(option_template, MDCOption)
                 options.append(option_component(**choice))
 
