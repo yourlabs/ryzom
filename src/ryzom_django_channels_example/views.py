@@ -225,8 +225,9 @@ class ChatView(ReactiveMixin, generic.CreateView):
         msg = self.object
         room = msg.room
         message_count = msg.room.message_set.count()
-        register('page_title').update(
-            ReactiveTitle(f'{msg.room.name} - {message_count} messages'))
+        register('page_title').replace(
+            ReactiveTitle, f'{msg.room.name} - {message_count} messages'
+        )
 
         return reverse('home')
 
@@ -245,8 +246,9 @@ class ChatDeleteView(generic.DeleteView):
         msg = self.get_object()
         room = msg.room
         message_count = msg.room.message_set.count() - 1
-        register('page_title').update(
-            ReactiveTitle(f'{msg.room.name} - {message_count} messages'))
+        register('page_title').replace(
+            ReactiveTitle, f'{msg.room.name} - {message_count} messages'
+        )
 
         if not message_count and room.name != 'general':
             room.delete()
