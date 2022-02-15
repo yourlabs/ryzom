@@ -609,32 +609,36 @@ class MDCOption(Li):
             **extra_attrs,
         )
 
+class MDCOptionMixin:
+    def create_options(self, choices):
+        options = []
+        default_opt_template = 'django/forms/widgets/select_option.html'
+        for choice in choices:
+            option_template = choice.pop('template_name', default_opt_template)
+            option_component = templates.get(option_template, MDCOption)
+            options.append(option_component(**choice))
 
-class MDCNamedOptgroup(Div):
-    def __init__(self, name, choices, option_component):
+        return options
+
+
+class MDCNamedOptgroup(MDCOptionMixin, Div):
+    def __init__(self, name, choices):
         super().__init__(
             Ul(
                 H6(name, cls='mdc-list-group__subheader'),
-                *(MDCOption(**choice) for choice in choices),
+                *self.create_options(choices),
                 cls='mdc-list'
             ),
             cls='mdc-list-group'
         )
 
 
-class MDCOptgroup(CList):
+class MDCOptgroup(MDCOptionMixin, CList):
     def __init__(self, name, choices, index):
         if name:
             super().__init__(MDCNamedOptgroup(name, choices))
         else:
-            options = []
-            default_opt_template = 'django/forms/widgets/select_option.html'
-            for choice in choices:
-                option_template = choice.pop('template_name', default_opt_template)
-                option_component = templates.get(option_template, MDCOption)
-                options.append(option_component(**choice))
-
-            super().__init__(*options)
+            super().__init__(*self.create_options(choices))
 
 
 class MDCSelectAnchor(Div):
