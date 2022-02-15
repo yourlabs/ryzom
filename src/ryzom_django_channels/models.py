@@ -40,6 +40,8 @@ class Registration(models.Model):
     client = models.ForeignKey(Client, models.CASCADE, blank=True, null=True)
     subscriber_id = models.CharField(max_length=255)
     subscriber_parent = models.CharField(max_length=255)
+    subscriber_module = models.CharField(max_length=255)
+    subscriber_class = models.CharField(max_length=255)
 
     class Meta:
         unique_together = [('name', 'client')]

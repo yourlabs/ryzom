@@ -1,6 +1,8 @@
 '''
 Defines the ryzom View class and the main index view
 '''
+import importlib
+
 from asgiref.sync import async_to_sync
 from django import http
 from django.conf import settings
@@ -38,21 +40,38 @@ class RegisterManager:
     def __init__(self, queryset):
         self.queryset = queryset
 
-    def update(self, content):
-        from channels.layers import get_channel_layer
-        channel = get_channel_layer()
+    def replace(self, content_class, *args, **kwargs):
         for registration in self.queryset:
+            registration.subscriber_class = content_class.__name__
+            registration.subscriber_module = content_class.__module__
+            registration.save()
+
+            self._replace(registration, content_class, *args, **kwargs)
+
+    def _replace(self, registration, content_class, *args, **kwargs):
+            content = content_class(*args, **kwargs)
             content.id = registration.subscriber_id
             content.parent = registration.subscriber_parent
             channel_name = registration.client.channel
-            if channel_name:
-                async_to_sync(channel.send)(channel_name, {
-                    'type': 'handle.ddp',
-                    'params': {
-                        'type': 'changed',
-                        'instance': content.to_obj()
-                    }
-                })
+            self.send(channel_name, content)
+
+    def refresh(self, *args, **kwargs):
+        for registration in self.queryset:
+            content_module = importlib.import_module(registration.subscriber_module)
+            content_class = getattr(content_module, registration.subscriber_class)
+            self._replace(registration, content_class, *args, **kwargs)
+
+    def send(self, channel_name, content):
+        from channels.layers import get_channel_layer
+        channel = get_channel_layer()
+        if channel_name:
+            async_to_sync(channel.send)(channel_name, {
+                'type': 'handle.ddp',
+                'params': {
+                    'type': 'changed',
+                    'instance': content.to_obj()
+                }
+            })
 
 
 def register(register_name):

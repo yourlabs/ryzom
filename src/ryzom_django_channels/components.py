@@ -113,6 +113,8 @@ class ReactiveComponentMixin(ReactiveBase):
         if existent:
             existent.subscriber_id = self.id
             existent.subscriber_parent = self.parent.id
+            existent.subscriber_class = self.__class__.__name__
+            existent.subscriber_module = self.__module__
             existent.save()
 
         else:
@@ -121,6 +123,8 @@ class ReactiveComponentMixin(ReactiveBase):
                 client=self.view.client,
                 subscriber_id=self.id,
                 subscriber_parent=self.parent.id,
+                subscriber_class=self.__class__.__name__,
+                subscriber_module=self.__module__,
             )
 
     def get_register(self):

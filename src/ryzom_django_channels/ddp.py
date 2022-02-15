@@ -25,7 +25,10 @@ def send_insert(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmpl_instance = tmpl(sub.get_queryset().get(id=id))
+    queryset = sub.get_queryset()
+    if not queryset.query.can_filter():
+        queryset.query.clear_limits()
+    tmpl_instance = tmpl(queryset.get(id=id))
     tmpl_instance.parent = sub.subscriber_id
     tmpl_instance.position = sub.queryset.index(id)
     data = {
@@ -59,7 +62,10 @@ def send_change(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmpl_instance = tmpl(sub.get_queryset().get(id=id))
+    queryset = sub.get_queryset()
+    if not queryset.query.can_filter():
+        queryset.query.clear_limits()
+    tmpl_instance = tmpl(queryset.get(id=id))
     tmpl_instance.parent = sub.subscriber_id
     tmpl_instance.position = sub.queryset.index(id)
     data = {
@@ -94,7 +100,10 @@ def send_remove(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmpl_instance = tmpl(sub.get_queryset().get(id=id))
+    queryset = sub.get_queryset()
+    if not queryset.query.can_filter():
+        queryset.query.clear_limits()
+    tmpl_instance = tmpl(queryset.get(id=id))
     data = {
         'type': 'handle.ddp',
         'params': {
