@@ -86,7 +86,7 @@
     if (component.content && typeof(component.content) != 'string' && component.content.length) {
       component.content.forEach(function(child) {
         var c = createDOMelement(child);
-        var prev = elem.childNodes[c.position]
+        var prev = elem.children[c.position]
         elem.insertBefore(c, prev);
         eval(child.script);
       });
@@ -114,7 +114,7 @@
     data.forEach(function(component) {
       var elem = createDOMelement(component);
       var parent = getElementByUuid(component.parent)
-      var prev = parent.childNodes[component.position]
+      var prev = parent.children[component.position]
       parent.insertBefore(elem, prev);
       eval(component.script);
     });
