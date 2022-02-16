@@ -55,10 +55,16 @@
     }
   };
 
+  decodeHtml = function(html) {
+    var txt = document.createElement('textarea');
+    txt.innerHTML = html
+    return txt.value
+  }
+
   createDOMelement = function(component) {
     var elem;
     if (component.tag == 'text')
-      elem = document.createTextNode(component.content);
+      elem = document.createTextNode(decodeHtml(component.content));
     else if (typeof(component) == 'string')
       elem = document.createTextNode(component);
     else {
