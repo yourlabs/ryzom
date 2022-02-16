@@ -54,7 +54,8 @@ def _ddp_insert_change(sender, **kwargs):
             if str(instance.id) in new_qs:
                 # changed and may have moved
                 # just send new instance and pos
-                send_change(sub, sender, template, instance)
+                send_change(sub, sender, template, qs.get(pk=instance.id))
+                # getting from qs to keep annotations
 
         # if sets aren't the same, then considering that only one entry
         # was added or has changed:
