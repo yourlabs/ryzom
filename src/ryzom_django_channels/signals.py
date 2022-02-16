@@ -37,7 +37,10 @@ def _ddp_insert_change(sender, **kwargs):
         template = model_templates[sub.subscriber.model_template]
         old_qs = sub.queryset
 
-        sub.get_queryset()
+        qs = sub.get_queryset()
+        if not qs.query.can_filter():
+            qs.query.clear_limits()
+
         new_qs = sub.queryset
 
         diff = {
@@ -51,7 +54,7 @@ def _ddp_insert_change(sender, **kwargs):
             if str(instance.id) in new_qs:
                 # changed and may have moved
                 # just send new instance and pos
-                send_change(sub, sender, template, str(instance.id))
+                send_change(sub, sender, template, instance)
 
         # if sets aren't the same, then considering that only one entry
         # was added or has changed:
@@ -68,9 +71,9 @@ def _ddp_insert_change(sender, **kwargs):
             # are handling only one entry, the queryset shouldn't
             # move by more that one in and/or one out
             for id in diff['removed']:
-                send_remove(sub, sender, template, id)
+                send_remove(sub, sender, template, qs.get(pk=id))
             for id in diff['inserted']:
-                send_insert(sub, sender, template, id)
+                send_insert(sub, sender, template, qs.get(pk=id))
 
 
 @receiver(post_delete)
@@ -99,8 +102,11 @@ def _ddp_delete(sender, **kwargs):
         # if instance not in queryset, no need to remove it
         # or update the queryset
         # else:
-        if instance.id in old_qs:
-            sub.get_queryset()
+        if str(instance.id) in old_qs:
+            qs = sub.get_queryset()
+            if not qs.query.can_filter():
+                qs.query.clear_limits()
+
             new_qs = sub.queryset
 
             diff = {
@@ -108,7 +114,10 @@ def _ddp_delete(sender, **kwargs):
                 'removed': set(old_qs).difference(set(new_qs))
             }
 
+
             for id in diff['removed']:
-                send_remove(sub, sender, template, id)
+                # Should only be the deleted instance if it was in qs
+                send_remove(sub, sender, template, instance)
             for id in diff['inserted']:
-                send_insert(sub, sender, template, id)
+                # May have been replace if limits were set
+                send_insert(sub, sender, template, qs.get(pk=id))

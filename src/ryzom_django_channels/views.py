@@ -49,11 +49,12 @@ class RegisterManager:
             self._replace(registration, content_class, *args, **kwargs)
 
     def _replace(self, registration, content_class, *args, **kwargs):
-            content = content_class(*args, **kwargs)
-            content.id = registration.subscriber_id
-            content.parent = registration.subscriber_parent
-            channel_name = registration.client.channel
-            self.send(channel_name, content)
+        user = registration.client.user
+        content = content_class(*args, user=user, **kwargs)
+        content.id = registration.subscriber_id
+        content.parent = registration.subscriber_parent
+        channel_name = registration.client.channel
+        self.send(channel_name, content)
 
     def refresh(self, *args, **kwargs):
         for registration in self.queryset:
