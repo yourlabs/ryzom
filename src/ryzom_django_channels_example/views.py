@@ -101,7 +101,8 @@ class ChatRoom(SubscribeComponentMixin, MDCList):
         room_messages = qs.filter(room__name=opts['room_id']).order_by('created')
         count = room_messages.count()
         start = max(count - 10, 0)
-        return room_messages[start:count]
+        rm = room_messages[start:count]
+        return rm
 
 
 @model_template('room-item')
@@ -153,8 +154,15 @@ class Body(Body):
 class ReactiveTitle(ReactiveComponentMixin, H1):
     register = 'page_title'
 
-    def __init__(self, room):
-        super().__init__(f'Test - {room}')
+    def __init__(self, room, **kwargs):
+        msg_count = 0
+        name = ''
+
+        if room:
+            msg_count = room.message_set.count()
+            name = room.name
+
+        super().__init__(f'Test - {name}', f' - {msg_count}' if msg_count else None)
 
 
 @template('home')
@@ -165,12 +173,11 @@ class Home(Html):
     def to_html(self, *content, view, form, **context):
         current_room_name = view.request.GET.get('room', 'general')
         current_room = Room.objects.filter(name=current_room_name).first()
-        message_count = current_room.message_set.count() if current_room else 0
 
         head, body = content
 
         body.addchildren([
-            ReactiveTitle(f'{current_room_name} - {message_count} messages'),
+            ReactiveTitle(current_room),
             A('test forms', href='form/'),
             Div(
                 Div(
@@ -217,19 +224,13 @@ class ChatView(ReactiveMixin, generic.CreateView):
 
         room = self.request.GET.get('room', 'general')
         room_obj, _ = Room.objects.get_or_create(name=room)
-
         form.instance.room = room_obj
-        return super().form_valid(form)
 
-    def get_success_url(self):
-        msg = self.object
-        room = msg.room
-        message_count = msg.room.message_set.count()
-        register('page_title').replace(
-            ReactiveTitle, f'{msg.room.name} - {message_count} messages'
-        )
+        self.object = form.save()
 
-        return reverse('home')
+        register('page_title').refresh(room_obj)
+
+        return http.HttpResponse()
 
     @classmethod
     def as_url(cls):
@@ -246,9 +247,7 @@ class ChatDeleteView(generic.DeleteView):
         msg = self.get_object()
         room = msg.room
         message_count = msg.room.message_set.count() - 1
-        register('page_title').replace(
-            ReactiveTitle, f'{msg.room.name} - {message_count} messages'
-        )
+        register('page_title').refresh(room)
 
         if not message_count and room.name != 'general':
             room.delete()
