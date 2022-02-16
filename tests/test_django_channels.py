@@ -23,6 +23,9 @@ if settings.CHANNELS_ENABLE:
     from ryzom_django_channels.views import register
 
     class RBase(html.Div):
+        def __init__(self, *content, view=None, user=None):
+            super().__init__(*content, view=view)
+
         def to_html(self, *content, view):
             self.view = view
             return super().to_html(content)
@@ -211,8 +214,8 @@ async def test_register_changed(ws, async_reg_comp, view):
     await sync_to_async(async_reg_comp.render)(view=view)
 
     reg = await sync_to_async(register)('test_register')
-    await sync_to_async(reg.update)(
-        RegisterComp('changed')
+    await sync_to_async(reg.replace)(
+        RegisterComp, 'changed'
     )
     res = await ws.receive_json_from()
     assert res['type'] == 'DDP'
