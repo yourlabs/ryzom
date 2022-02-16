@@ -1,3 +1,5 @@
+from ryzom.components import CList
+
 from ryzom_django_channels.models import (
     Publication,
     Subscription,
@@ -105,6 +107,9 @@ class ReactiveComponentMixin(ReactiveBase):
             self.create_registration()
 
     def create_registration(self):
+        if isinstance(self, CList):
+            raise Exception('Cannot register from CList')
+
         existent = Registration.objects.filter(
             name=self.get_register(),
             client=self.view.client
