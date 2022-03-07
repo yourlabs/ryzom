@@ -193,6 +193,23 @@ def test_range():
     assert_equals_fixture('test_range', result)
 
 
+def test_list_comprehension():
+    def func():
+        a = [
+            {'b': 1, 'c': 2},
+            {'b': 3, 'c': 4},
+            {'b': 5, 'c': 6},
+        ]
+        b = [x['b'] for x in a]
+        c = [x.b.toString() for x in a]
+
+        print(b)
+        print(c)
+
+    result = JS(func)
+    assert_equals_fixture('test_list_comprehension', result)
+
+
 def test_len():
     def func():
         a = [1, 2, 3, 4, 5]
