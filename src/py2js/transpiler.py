@@ -376,6 +376,16 @@ class JS(object):
             self.write("}")
 
     @scope
+    def visit_ListComp(self, node):
+        generator = node.generators[0]
+
+        arr = self.visit(node.elt)
+        for_target = self.visit(generator.target)
+        for_iter = self.visit(generator.iter)
+
+        return f"[...(function* f() {{ for (const {for_target} of {for_iter}) {{ yield {arr} }} }})()]"
+
+    @scope
     def visit_While(self, node):
 
         if not node.orelse:
