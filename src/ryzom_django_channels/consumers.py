@@ -52,7 +52,7 @@ class Consumer(JsonWebsocketConsumer):
         if token:
             client = Client.objects.filter(token=token).last()
             if client and client.user:
-                async_to_sync(login)(self.scope, client.user)
+                async_to_sync(login)(self.scope, client.user, backend='django.contrib.auth.backends.ModelBackend')
                 self.scope['session'].save()
 
         self.accept()
