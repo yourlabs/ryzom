@@ -97,17 +97,21 @@ class SplitDateTimeWidget(MDCField):
     @classmethod
     def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
+        date_context = context_attrs(context['subwidgets'][0])
+        time_context = context_attrs(context['subwidgets'][1])
         return cls(
             Label(bf.label, style='display: block'),
             MDCFormField(
                 MDCTextFieldOutlined(
-                    Input(**context_attrs(context['subwidgets'][0])),
-                    label='Date',
+                    Input(**date_context),
+                    label='label' in date_context
+                          and date_context['label'] or 'Date',
                     style=cls.date_style
                 ),
                 MDCTextFieldOutlined(
-                    Input(**context_attrs(context['subwidgets'][1])),
-                    label='Time',
+                    Input(**time_context),
+                    label='label' in time_context
+                          and time_context['label'] or 'Time',
                     style=cls.time_style,
                 ),
             ),
@@ -137,12 +141,15 @@ class FileInputWidget(MDCField):
     @classmethod
     def from_boundfield(cls, bf, **attrs):
         attrs.update(widget_attrs(bf))
+        if 'label' not in attrs:
+            attrs['label'] = 'Select file'
+
         return cls(
             Label(bf.label),
             MDCFileField(
                 Input(**attrs),
-                label='Select file',
-                **attrs),
+                **attrs
+            ),
             name=attrs['name']
         )
 

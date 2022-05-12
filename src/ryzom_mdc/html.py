@@ -208,7 +208,12 @@ class MDCFileField(Div):
         self.btn = MDCButtonLabelOutlined(label, False)
         self.input_id = html_input.attrs['id']
         self.btn.attrs['for'] = self.input_id
-        self.selected_text = Span('No file selected')
+        if 'empty_value' in attrs:
+            self.empty_value = str(attrs['empty_value'])
+        else:
+            self.empty_value = 'No file selected'
+
+        self.selected_text = Span(self.empty_value)
         self.label_id = self.selected_text.id
         super().__init__(
             Span(
@@ -219,16 +224,16 @@ class MDCFileField(Div):
             self.btn
         )
 
-    def set_update_name(input_id, label_id):
+    def set_update_name(input_id, label_id, empty_value):
         def update_name(event):
             file_name = event.target.value
             label = getElementByUuid(label_id)
-            label.innerHTML = file_name or 'No file selected'
+            label.innerHTML = file_name or empty_value
 
         document.querySelector('#'+input_id).addEventListener('change', update_name)
 
     def py2js(self):
-        self.set_update_name(self.input_id, self.label_id)
+        self.set_update_name(self.input_id, self.label_id, self.empty_value)
 
 
 class MDCSplitDateTime(Div):
