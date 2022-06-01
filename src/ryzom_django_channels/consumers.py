@@ -34,7 +34,6 @@ class Consumer(JsonWebsocketConsumer):
 
         super().__init__(*args, **kwargs)
 
-
     def connect(self):
         from ryzom_django_channels.models import Client
         from django.contrib.auth import get_user_model
@@ -58,7 +57,8 @@ class Consumer(JsonWebsocketConsumer):
         self.accept()
         if client and client.channel != self.channel_name:
             client.channel = self.channel_name
-            client.user = user if isinstance(user, User) else None
+            if not client.user and isinstance(user, User):
+                client.user = user
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
         elif not client:
