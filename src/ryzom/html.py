@@ -1,6 +1,11 @@
 from ryzom.components import CList, Component, CTree, HTMLPayload, Markdown, Text
 from py2js.transpiler import transpile_body
 
+try:
+    from django.utils.safestring import mark_safe
+except ImportError:
+    mark_safe = lambda x: x
+
 templates = dict()
 
 def template(name, *wrappers):
@@ -126,7 +131,7 @@ class Html(Component):
                 self.head.content.append(src)
             elif callable(src):
                 self.head.content.append(
-                    Script(transpile_body(src))
+                    Script(mark_safe(transpile_body(src)))
                 )
             else:
                 self.head.content.append(Script(src=src))

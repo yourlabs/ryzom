@@ -11,6 +11,11 @@ import uuid
 
 from py2js.transpiler import transpile_body
 
+try:
+    from django.utils.safestring import mark_safe
+except ImportError:
+    mark_safe = lambda x: x
+
 
 def component_html(path, *args, **kwargs):
     from django.utils.safestring import mark_safe
@@ -464,7 +469,7 @@ class Component(metaclass=ComponentMetaclass):
 
     def render_js(self):
         if hasattr(self, 'py2js'):
-            return transpile_body(self.py2js, self=self)
+            return mark_safe(transpile_body(self.py2js, self=self))
         return ''
 
     def render_js_tree(self, lvl=0):
