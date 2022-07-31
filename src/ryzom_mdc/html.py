@@ -717,13 +717,14 @@ class MDCSelectOutlined(Div):
 
     class HTMLElement:
         def connectedCallback(self):
-            this.addEventListener('change', this.change.bind(this))
+            this.addEventListener('MDCSelect:change', this.change.bind(this))
 
         def change(self, event):
             hidden = this.querySelector('input[type=hidden]')
             option = this.querySelector('[aria-selected=true]')
             hidden.value = option.dataset.value
-
+            input = event.target.querySelector('input')
+            up.emit(input, 'change')
 
 class MDCAccordionToggle(MDCListItem):
     tag = 'mdc-accordion-toggle'
@@ -1361,6 +1362,7 @@ class MDCFilterField(Component):
             ),
             **attrs,
         )
+
 
     @classmethod
     def from_boundfield(cls, bf):
