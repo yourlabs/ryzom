@@ -160,6 +160,7 @@ class MDCTextFieldOutlined(MDCField):
             id=label_id,
             cls='mdc-text-field mdc-text-field--outlined',
             data_mdc_auto_init='MDCTextField',
+            **{'for': input_id}
         )
         self.html_input.attrs.aria_labelledby = label_id
 

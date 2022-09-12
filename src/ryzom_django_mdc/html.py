@@ -34,6 +34,20 @@ class MDCInputWidget(MDCTextFieldOutlined):
         )
 
 
+@widget_template('django/forms/widgets/date.html')
+class MDCDateInputWidget(MDCInputWidget):
+    @classmethod
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
+        attrs['type'] = 'date'
+        return cls(
+            Input(**attrs),
+            label=bf.label,
+            help_text=bf.help_text,
+            errors=bf.errors,
+        )
+
+
 @widget_template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
