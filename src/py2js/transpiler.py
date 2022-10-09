@@ -118,6 +118,9 @@ class JS(object):
         if context:
             _copy_context = context.copy()
             for key in _copy_context.keys():
+                # TODO: review this line
+                if hasattr(_copy_context[key], 'to_html'):
+                    continue
                 if callable(_copy_context[key]):
                     value = context.pop(key)
                     source = inspect.getsource(value)

@@ -307,6 +307,10 @@ class Component(metaclass=ComponentMetaclass):
                 return False
         return True
 
+    def __call__(self, *content):
+        self.content += content
+        return self
+
     def preparecontent(self):
         '''Set the parent and position of children
 
