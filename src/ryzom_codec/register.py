@@ -5,7 +5,7 @@ import codecs, io, encodings
 import sys
 import traceback
 from encodings import utf_8
-from pyxl.codec.tokenizer import pyxl_tokenize, pyxl_untokenize
+from .tokenizer import pyxl_tokenize, pyxl_untokenize
 
 def pyxl_transform(stream):
     output = pyxl_untokenize(pyxl_tokenize(stream.readline))
