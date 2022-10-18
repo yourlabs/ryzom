@@ -215,6 +215,8 @@ class PyxlParser(HTMLTokenizer):
             self._handle_attr_value(attr_value)
 
         if call:
+            if not first_attr:
+                self.output.append(', ')
             self.output.append('content=[')
         else:
             self.output.append(')')
