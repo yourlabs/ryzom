@@ -270,6 +270,9 @@ class Component(metaclass=ComponentMetaclass):
         self.id = attrs.get('id', uuid.uuid1().hex)
         self.parent = attrs.pop('parent', None)
 
+        if 'content' in attrs:
+            self.content = attrs.pop('content')
+
         if 'tag' in attrs:
             self.__dict__['tag'] = attrs.pop('tag')
             self.__dict__['noclose'] = noclose(self.tag)
