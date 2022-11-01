@@ -203,7 +203,7 @@ class PyxlParser(HTMLTokenizer):
             self.last_thing_was_close_if_tag = False
             return
 
-        self.output.append(tag.capitalize() + '(')
+        self.output.append(tag[:1].upper() + tag[1:] + '(')
 
         first_attr = True
         for attr_name, attr_value in attrs.items():
