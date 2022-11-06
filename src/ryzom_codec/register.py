@@ -9,7 +9,7 @@ from .tokenizer import pyxl_tokenize, pyxl_untokenize
 
 def pyxl_transform(stream):
     output = pyxl_untokenize(pyxl_tokenize(stream.readline))
-    return output.rstrip()
+    return output
 
 def pyxl_transform_string(input):
     stream = io.StringIO(bytes(input).decode('utf-8'))
