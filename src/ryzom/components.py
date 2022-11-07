@@ -257,6 +257,8 @@ class Component(metaclass=ComponentMetaclass):
     def __init__(self, *content, **attrs):
         cls = type(self)
         self.content = list(content) or []
+        if 'content' in attrs:
+            self.content += attrs['content']
 
         for key in [*attrs.keys()]:
             value = attrs[key]

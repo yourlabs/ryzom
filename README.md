@@ -412,6 +412,30 @@ def to_component(self):
     )
 ```
 
+#### HTML-in-python
+
+##### Exemple
+
+```
+print(<body>
+    <h1>{title}</h1>
+    <h2>Hello {user.name}</h2>
+</body>)
+```
+
+##### Install
+
+```bash
+python -m ryzom_codec.install
+```
+
+##### Debug
+
+Use this to see how the file is transformed
+```bash
+python -m ryzom_codec.transform filename
+```
+
 #### Demo
 
 An example Django project is available in `src/ryzom_django_example/`, example
