@@ -122,7 +122,7 @@ class PyxlParser(HTMLTokenizer):
     @staticmethod
     def safe_attr_name(name):
         if name == "class":
-            return "xclass"
+            return "cls"
         if name == "for":
             return "xfor"
         return name.replace('-', '_').replace(':', 'COLON')
