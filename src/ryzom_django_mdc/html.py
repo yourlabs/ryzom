@@ -1,5 +1,5 @@
 from django.middleware.csrf import get_token
-from ryzom_django.forms import widget_template
+from ryzom_django.forms import widget_template, widget_templates
 from ryzom_django.html import *
 from ryzom_django_mdc.forms import (context_attrs, field_kwargs, widget_attrs,
                                     widget_context)
@@ -85,21 +85,36 @@ class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
         )
 
 
+@widget_template('postgres/widgets/split_array.html')
 @widget_template('django/forms/widgets/multiwidget.html')
 class MultiWidget(CList):
     def __init__(self, **context):
+        if 'widget' in context:
+            subwidgets = context['widget']['subwidgets']
+            temp = templates
+        elif 'subwidgets' in context:
+            subwidgets = context['subwidgets']
+            temp = widget_templates
+        else:
+            subwidgets = []
+            temp = {}
+
         super().__init__(*[
-            templates[widget['template_name']](**widget)
-            for widget in context['widget']['subwidgets']
+            temp[widget['template_name']](
+                Input(**widget),
+                label=context['label'] + f' {i}',
+            ) for i, widget in enumerate(subwidgets, start=1)
         ])
 
     @classmethod
     def from_boundfield(cls, bf, **attrs):
         attrs.update(widget_context(bf))
         return Div(
-            Label(bf.label),
-            cls(**attrs),
-            cls='mdc-form-field'
+            MDCErrorList(*bf.errors),
+            cls(
+                label=bf.label,
+                **attrs
+            )
         )
 
 
