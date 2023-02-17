@@ -1,12 +1,17 @@
 '''
 Defines the ryzom View class and the main index view
 '''
+
+import time
 import importlib
+
+from threading import Thread
 
 from asgiref.sync import async_to_sync
 from django import http
 from django.conf import settings
 
+from channels.layers import get_channel_layer
 from py2js.renderer import JS, autoexec
 from ryzom.components import Component
 from ryzom_django_channels.models import (Client, Publication, Registration,
@@ -54,7 +59,10 @@ class RegisterManager:
         content.id = registration.subscriber_id
         content.parent = registration.subscriber_parent
         channel_name = registration.client.channel
-        self.send(channel_name, content)
+        if channel_name:
+            self.send(channel_name, content)
+        else:
+            self.defer(registration.client, content)
 
     def refresh(self, *args, **kwargs):
         for registration in self.queryset:
@@ -63,16 +71,43 @@ class RegisterManager:
             self._replace(registration, content_class, *args, **kwargs)
 
     def send(self, channel_name, content):
-        from channels.layers import get_channel_layer
+        Thread(
+            target=self._send,
+            args=[channel_name, content]
+        ).start()
+
+    def _send(self, channel_name, content):
         channel = get_channel_layer()
         if channel_name:
+            inner = content.to_obj()
             async_to_sync(channel.send)(channel_name, {
                 'type': 'handle.ddp',
                 'params': {
                     'type': 'changed',
-                    'instance': content.to_obj()
+                    'instance': inner
                 }
             })
+
+    def defer(self, client, content):
+        Thread(
+            target=self.wait,
+            args=[client, content]
+        ).start()
+
+    def wait(self, client, content):
+        for i in range(10):
+            try:
+                client.refresh_from_db()
+            except client.__class__.DoesNotExist:
+                break
+            if client.channel:
+                self._send(client.channel, content)
+                break
+            else:
+                time.sleep(1)
+
+    def delete(self):
+        self.queryset.delete()
 
 
 def register(register_name):

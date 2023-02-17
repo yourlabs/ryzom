@@ -1,6 +1,6 @@
   initialized = false;
 
-  $ = function(q) {
+  _$ = function(q) {
     return document.querySelector(q);
   };
 
@@ -51,7 +51,7 @@
     if (elem != undefined )
       return elem
     else {
-      return $('[ryzom-id="'+uuid+'"]');
+      return _$('[ryzom-id="'+uuid+'"]');
     }
   };
 
@@ -140,6 +140,7 @@
     var parent = getElementByUuid(params.parent);
     parent.insertBefore(cur_node, prev_node)
     parent.removeChild(prev_node);
+    eval(params.script);
   };
 
   /*
