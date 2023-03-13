@@ -409,12 +409,16 @@ class MDCCheckboxInput(Div):
 
 
 class MDCCheckboxField(MDCField):
-    def __init__(self, *content, name, label=None, help_text=None, value=None,
+    def __init__(self, input, *content, name, label=None, help_text=None, value=None,
                  errors=None):
         super().__init__(
             MDCFormField(
-                *content,
-                Label(label or name.capitalize()),
+                input, *content,
+                Label(
+                    label or name.capitalize(),
+                    style=dict(cursor='pointer'),
+                    **{'for': input.input.id}
+                ),
             ),
             name=name,
             errors=errors,
@@ -1553,6 +1557,26 @@ class Body(Body):
 
     def py2js(self):
         mdc.autoInit()
+
+
+class MDCRadio(Div):
+    def __init__(self, label, input, **kwargs):
+        id = kwargs.get('id')
+        input.cls = 'mdc-radio__native-control'
+        super().__init__(
+            Div(
+                input,
+                Div(
+                    Div(cls='mdc-radio__inner-circle'),
+                    cls='mdc-radio__background'
+                ),
+                Div(cls='mdc-radio__ripple'),
+                cls='mdc-radio',
+            ),
+            Label(label, **{'for': id}),
+            cls='mdc-form-field',
+            **kwargs,
+        )
 
 
 class Html(Html):

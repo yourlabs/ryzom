@@ -24,6 +24,7 @@ setup(
             'django',
             'channels',
             'channels-redis',
+            'daphne',
             'libsass',
             'markdown',
         ]

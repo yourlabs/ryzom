@@ -70,17 +70,21 @@ class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
                 continue
             choices += options
 
+        content = []
+        for choice in choices:
+            cb_input = MDCCheckboxInput(**context_attrs(choice))
+            cb_label = Label(
+                choice['label'],
+                style=dict(cursor='pointer'),
+                **{'for': cb_input.input.id}
+            )
+            content.append(
+                Div(MDCFormField(cb_input, cb_label))
+            )
+
         return cls(
             Label(bf.label),
-            *[
-                Div(
-                    MDCFormField(
-                        MDCCheckboxInput(**context_attrs(choice)),
-                        Label(choice['label'])
-                    )
-                )
-                for choice in choices
-            ],
+            *content,
             **field_kwargs(bf),
         )
 
@@ -195,6 +199,18 @@ class SelectWidget(MDCField):
                 MDCSelectOutlined(**context),
             ),
             name=attrs['name']
+        )
+
+
+@widget_template('django/forms/widgets/radio.html')
+class RadioSelectWidget(MDCRadio):
+    @classmethod
+    def from_boundfield(cls, bf, **attrs):
+        context = widget_context(bf)
+        attrs.update(widget_attrs(bf))
+        return cls(
+            bf.label,
+            Input(**context)
         )
 
 
