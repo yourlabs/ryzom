@@ -103,7 +103,24 @@ class ExampleForm(forms.Form):
                 (5, '555')
             )),
         ),
-        initial=5
+        initial=5,
+        help_text='Some help text',
+    )
+    select_multiple = forms.MultipleChoiceField(
+        widget=forms.SelectMultiple,
+        choices=(
+            ('Test', (
+                (1, 'the first one'),
+                (2, 'the second'),
+                (3, 'the thirf')
+            )),
+            ('Re', (
+                (4, '444'),
+                (5, '555')
+            )),
+        ),
+        initial=5,
+        help_text='Some more help text',
     )
 
 

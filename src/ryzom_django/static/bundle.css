@@ -1,0 +1,57 @@
+.Body {
+  margin: 0;
+}
+.MDCField {
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+.MDCVerticalMargin {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+.MDCErrorListItem {
+  list-style-type: none;
+}
+.MDCErrorList {
+  padding-left: 10px;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: var(--mdc-typography-caption-font-size, 0.75rem);
+  color: var(--mdc-theme-error, #b00020);
+}
+.MDCHelpText {
+  font-size: var(--mdc-typography-caption-font-size, 0.75rem);
+  color: rgba(0, 0, 0, 0.6);
+  padding-left: 10px;
+}
+.ToggleNextElement svg {
+  transition: all 0.5s ease;
+}
+.ToggleNextElement.open svg {
+  transform: rotate(180deg);
+}
+.MDCFilterField h3 {
+  display: flex;
+  justify-content: space-between;
+}
+.InlineForm {
+  display: inline-block;
+}
+.InlineForm .MDCField {
+  display: inline-block;
+}
+.PageMenu {
+  margin-bottom: 10px;
+}
+.NarrowCard {
+  max-width: 25em;
+  margin: auto;
+  padding: 1em;
+  margin-top: 2em;
+}
+.NarrowCardbutton {
+  width: 100%;
+}
+.NarrowCard.MDCField label {
+  width: 100%;
+}

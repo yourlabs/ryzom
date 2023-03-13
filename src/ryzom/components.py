@@ -201,6 +201,9 @@ class ComponentMetaclass(type):
         if class_attrs.get('tag', None):
             class_attrs['noclose'] = noclose(class_attrs['tag'])
 
+        if 'HTMLElement' not in class_attrs:
+            class_attrs['HTMLElement'] = None
+
         cls = super().__new__(cls, name, bases, class_attrs)
 
         from ryzom.bundle.js import AUTOCOMPILE

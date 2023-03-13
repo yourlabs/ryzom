@@ -5,12 +5,14 @@
 <link type="text/css" rel="stylesheet" href="/static/bundle.css" ryzom-id=""/>
 <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" ryzom-id=""/>
 <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" ryzom-id=""/>
-<link type="text/css" rel="stylesheet" href="https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.css" ryzom-id=""/>
+<link type="text/css" rel="stylesheet" href="https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css" ryzom-id=""/>
+<link type="text/css" rel="stylesheet" href="/static/autocomplete_light/autocomplete-light.css" ryzom-id=""/>
 <script type="text/javascript" src="/static/bundle.js" ryzom-id=""></script>
-<script type="text/javascript" src="https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.js" ryzom-id=""></script>
+<script type="text/javascript" src="https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.js" ryzom-id=""></script>
 <script type="text/javascript" src="https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js" ryzom-id=""></script>
 <script type="text/javascript" src="https://cdn.polyfill.io/v2/polyfill.min.js" ryzom-id=""></script>
 <script type="text/javascript" src="/static/py2js.js" ryzom-id=""></script>
+<script type="text/javascript" src="/static/autocomplete_light/autocomplete-light.js" ryzom-id=""></script>
 <title  ryzom-id="">Secure Elections with homomorphic encryption</title>
 </head>
 <body class="mdc-typography" slot="body" ryzom-id="">
@@ -150,66 +152,76 @@ csrfmiddlewaretoken
 MDCFileField_set_update_name("id_document","");
 </script>
 </div></div>
+<select-widget class="SelectWidget" ryzom-id="">
 <div class="MDCField" ryzom-id="">
-<div class="mdc-form-field" ryzom-id="">
-<mdc-select-outlined class="mdc-select mdc-select--outlined mdc-select--required" data-mdc-auto-init="MDCSelect" ryzom-id="">
-<input type="hidden" name="select" value="5" input-id="id_select" label-id="id_select_label" ryzom-id="">
-<div class="mdc-select__anchor" role="button" aria-required="true" aria-labelled-by="" aria-haspopup="listbox" aria-expanded="false" ryzom-id="">
+<autocomplete-select  ryzom-id=""><select name="select" slot="select">
+  <optgroup label="Test">
+  <option value="1">the first one</option>
+
+  <option value="2">the second</option>
+
+  <option value="3">the thirf</option>
+
+  </optgroup>
+  <optgroup label="Re">
+  <option value="4">444</option>
+
+  <option value="5" selected>555</option>
+
+  </optgroup>
+</select>
+<autocomplete-select-input  ryzom-id="">
+<placeholder-remover class="MDCField" ryzom-id="">
+<label id="id_select-autocomplete_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--textarea" data-mdc-auto-init="MDCTextField" style="align-items: baseline" ryzom-id="">
 <span class="mdc-notched-outline" ryzom-id="">
 <span class="mdc-notched-outline__leading" ryzom-id=""></span>
 <span class="mdc-notched-outline__notch" ryzom-id="">
-<span class="mdc-floating-label" ryzom-id="">Select</span>
+<span id="id_select-autocomplete_label" class="mdc-floating-label" ryzom-id="">Select</span>
 </span>
 <span class="mdc-notched-outline__trailing" ryzom-id=""></span>
 </span>
-<span class="mdc-select__selected-text-container" ryzom-id="">
-<span class="mdc-select__selected-text" ryzom-id=""></span>
-</span>
-<span class="mdc-select__dropdown-icon" ryzom-id="">
-<svg viewBox="7 10 10 5" focusable="false" class="mdc-select__dropdown-icon-graphic" ryzom-id="">
-<polygon stroke="none" fill-rule="evenodd" points="7 10 12 15 17 10" class="mdc-select__dropdown-icon-inactive" ryzom-id=""></polygon>
-<polygon stroke="none" fill-rule="evenodd" points="7 15 12 10 17 15" class="mdc-select__dropdown-icon-active" ryzom-id=""></polygon>
-</svg>
-</span>
-</div>
-<div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" ryzom-id="">
-<ul class="mdc-list" ryzom-id="">
+<input slot="input" name="select-autocomplete" type="text" class="mdc-text-field__input mdc-text-field__input" input-id="id_select-autocomplete" label-id="id_select-autocomplete_label" aria-labelledby="id_select-autocomplete_label" ryzom-id="">
+<div slot="deck" style="padding: 4px" ryzom-id=""></div>
+</label></placeholder-remover>
+<div class="MDCHelpText" ryzom-id="">Some help text</div>
+</autocomplete-select-input>
+</autocomplete-select></div>
+</select-widget>
+<select-widget class="SelectWidget" ryzom-id="">
+<div class="MDCField" ryzom-id="">
+<autocomplete-select  ryzom-id=""><select name="select_multiple" slot="select" multiple>
+  <optgroup label="Test">
+  <option value="1">the first one</option>
 
-<div class="mdc-list-group" ryzom-id="">
-<ul class="mdc-list" ryzom-id="">
-<h6 class="mdc-list-group__subheader" ryzom-id="">Test</h6>
-<li data-value="1" class="mdc-list-item" role="option" ryzom-id="">
-<span class="mdc-list-item__ripple" ryzom-id=""></span>
-<span class="mdc-list-item__text" ryzom-id="">the first one</span>
-</li>
-<li data-value="2" class="mdc-list-item" role="option" ryzom-id="">
-<span class="mdc-list-item__ripple" ryzom-id=""></span>
-<span class="mdc-list-item__text" ryzom-id="">the second</span>
-</li>
-<li data-value="3" class="mdc-list-item" role="option" ryzom-id="">
-<span class="mdc-list-item__ripple" ryzom-id=""></span>
-<span class="mdc-list-item__text" ryzom-id="">the thirf</span>
-</li>
-</ul>
-</div>
+  <option value="2">the second</option>
 
-<div class="mdc-list-group" ryzom-id="">
-<ul class="mdc-list" ryzom-id="">
-<h6 class="mdc-list-group__subheader" ryzom-id="">Re</h6>
-<li data-value="4" class="mdc-list-item" role="option" ryzom-id="">
-<span class="mdc-list-item__ripple" ryzom-id=""></span>
-<span class="mdc-list-item__text" ryzom-id="">444</span>
-</li>
-<li data-value="5" class="mdc-list-item mdc-list-item--selected" role="option" aria-selected="true" ryzom-id="">
-<span class="mdc-list-item__ripple" ryzom-id=""></span>
-<span class="mdc-list-item__text" ryzom-id="">555</span>
-</li>
-</ul>
-</div>
-</ul>
-</div>
-</mdc-select-outlined>
-</div></div>
+  <option value="3">the thirf</option>
+
+  </optgroup>
+  <optgroup label="Re">
+  <option value="4">444</option>
+
+  <option value="5" selected>555</option>
+
+  </optgroup>
+</select>
+<autocomplete-select-input  ryzom-id="">
+<placeholder-remover class="MDCField" ryzom-id="">
+<label id="id_select_multiple-autocomplete_label" class="mdc-text-field mdc-text-field--outlined mdc-text-field--textarea" data-mdc-auto-init="MDCTextField" style="align-items: baseline" ryzom-id="">
+<span class="mdc-notched-outline" ryzom-id="">
+<span class="mdc-notched-outline__leading" ryzom-id=""></span>
+<span class="mdc-notched-outline__notch" ryzom-id="">
+<span id="id_select_multiple-autocomplete_label" class="mdc-floating-label" ryzom-id="">Select multiple</span>
+</span>
+<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
+</span>
+<input slot="input" name="select_multiple-autocomplete" type="text" class="mdc-text-field__input mdc-text-field__input" input-id="id_select_multiple-autocomplete" label-id="id_select_multiple-autocomplete_label" aria-labelledby="id_select_multiple-autocomplete_label" ryzom-id="">
+<div slot="deck" style="padding: 4px" ryzom-id=""></div>
+</label></placeholder-remover>
+<div class="MDCHelpText" ryzom-id="">Some more help text</div>
+</autocomplete-select-input>
+</autocomplete-select></div>
+</select-widget>
 <button class="mdc-button" ryzom-id="">
 <span class="mdc-button__ripple" ryzom-id=""></span>
 <span class="mdc-button__label" ryzom-id="">Send</span>
