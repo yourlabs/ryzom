@@ -26,6 +26,7 @@ setup(
             'channels',
             'channels-redis',
             'libsass',
+            'daphne',
             'markdown',
         ],
     ),
