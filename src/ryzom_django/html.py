@@ -1,8 +1,10 @@
 import functools
 
+from django.conf import settings
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.middleware.csrf import get_token
-from django.utils.safestring import SafeString, mark_safe
 from django.utils.html import escape
+from django.utils.safestring import SafeString, mark_safe
 
 from ryzom.html import *
 from .bundle import CSSBundle, JSBundle
@@ -48,8 +50,8 @@ class HiddenFields(CList):
 
 
 class Html(Html):
-    scripts = [JSBundle()]
-    stylesheets = [CSSBundle()]
+    scripts = Html.scripts + [JSBundle()]
+    stylesheets = Html.stylesheets + [CSSBundle()]
 
 
 class CSRFInput(Input):
@@ -59,3 +61,16 @@ class CSRFInput(Input):
             name='csrfmiddlewaretoken',
             value=get_token(request)
         )
+
+
+class Static:
+    '''Return a static url for an app asset.
+
+    :param str src: The app path of the asset.
+    '''
+    def __init__(self, src):
+        self._data = src
+        self.url = staticfiles_storage.url(src)
+
+    def __str__(self):
+        return self.url

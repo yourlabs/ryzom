@@ -17,10 +17,12 @@ class Html(ryzom_django.Html, Html):
     'django/forms/widgets/input.html',
     'django/forms/widgets/date.html',
     'django/forms/widgets/time.html',
+    'django/forms/widgets/datetime.html',
     'django/forms/widgets/text.html',
     'django/forms/widgets/email.html',
     'django/forms/widgets/password.html',
     'django/forms/widgets/number.html',
+    'django/forms/widgets/url.html',
 )
 class MDCInputWidget(MDCTextFieldOutlined):
     @classmethod

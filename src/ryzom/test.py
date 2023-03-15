@@ -98,7 +98,7 @@ def assert_equals_fixture(name, result):
     result = re.sub(ryzom_id_re, '', str(result))
     result = re.sub(re_uuid, '""', str(result))
     result = re.sub(csrf_re, 'csrfmiddlewaretoken', result)
-    if not os.path.exists(path):
+    if not os.path.exists(path) or 'FIXTURE_REWRITE' in os.environ:
         result = re.sub(ryzom_id_re, '', str(result))
         with open(path, 'w') as f:
             f.write(result)

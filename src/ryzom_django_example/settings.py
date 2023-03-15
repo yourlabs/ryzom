@@ -46,8 +46,13 @@ INSTALLED_APPS = [
     # Add py2js static file
     'py2js',
 
+    # Transform select HTML tags into autocompletes webcomponents
+    'autocomplete_light',
+    'ryzom_django_autocomplete',
+
     # Enable form rendering with MDC components
     'ryzom_django_mdc',
+
 ]
 
 MIDDLEWARE = [

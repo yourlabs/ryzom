@@ -21,12 +21,14 @@ setup(
     ],
     extras_require=dict(
         project=[
+            'autocomplete-light',
             'django',
             'channels',
             'channels-redis',
             'libsass',
+            'daphne',
             'markdown',
-        ]
+        ],
     ),
     classifiers=[
         'Development Status :: 1 - Planning',

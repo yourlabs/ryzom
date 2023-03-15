@@ -142,21 +142,22 @@ class MDCField(Div):
 
 
 class MDCTextFieldOutlined(MDCField):
-    def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
+    def __init__(self, html_input, *content, label=None, help_text=None, errors=None,
+                 **attrs):
         self.html_input = html_input
         self.html_input.attrs.addcls = 'mdc-text-field__input'
 
         name = self.html_input.attrs.name
-        input_id = f'id_{name}'
         label_id = f'id_{name}_label'
         helper_id = f'id_{name}_helper'
         errors_id = f'id_{name}_errors'
 
         floating_label = Span(label, id=label_id, cls='mdc-floating-label')
         notch_outline = MDCNotchOutline(floating_label)
+        content = [html_input, *content]
         self.label = Label(
             notch_outline,
-            self.html_input,
+            *content,
             id=label_id,
             cls='mdc-text-field mdc-text-field--outlined',
             data_mdc_auto_init='MDCTextField',
@@ -184,12 +185,13 @@ class MDCTextFieldOutlined(MDCField):
 
 
 class MDCTextareaFieldOutlined(MDCTextFieldOutlined):
-    def __init__(self, textarea, label=None, help_text=None, errors=None):
+    def __init__(self, textarea, label=None, help_text=None, errors=None, **attrs):
         super().__init__(
             textarea,
             label=label,
             help_text=help_text,
             errors=errors,
+            *attrs,
         )
         # decorate textarea with a resizer
         self.label.content[1] = Span(textarea, cls='mdc-text-field__resizer')
@@ -332,16 +334,9 @@ class MDCSnackBar(Div):
             **{'data-mdc-auto-init': 'MDCSnackbar'}
         )
 
-    def open_snack(elem):
-        sb = new.mdc.snackbar.MDCSnackbar(elem)
-        sb.open()
-
-    def py2js(self):
-        setTimeout(
-            self.open_snack,
-            self.delay,
-            getElementByUuid(self.id)
-        )
+    class HTMLElement:
+        def connectedCallback(self):
+            new.mdc.snackbar.MDCSnackbar(this).open(),
 
 
 class MDCErrorListItem(Li):
@@ -1543,15 +1538,15 @@ class Body(Body):
 
 
 class Html(Html):
-    scripts = [
-        'https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.js',
+    scripts = Html.scripts + [
+        'https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.js',
         'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
         'https://cdn.polyfill.io/v2/polyfill.min.js',
         '/static/py2js.js',
     ]
-    stylesheets = [
+    stylesheets = Html.stylesheets + [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
         'https://fonts.googleapis.com/css?family=Roboto:300,400,500',
-        'https://unpkg.com/material-components-web@10.0.0/dist/material-components-web.min.css',
+        'https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.min.css',
     ]
     body_class = Body
