@@ -47,8 +47,8 @@ def pretty(html, indent=None):
         if key == 'ryzom-id':
             continue
         out += [f'{spaces}  {key}={el.attrib[key]}\n']
-    if el.text:
-        out += [f'{spaces}  {el.text}\n']
+    if el.text and el.text.strip():
+        out += [f'{spaces}  {el.text.strip()}\n']
     for child in el:
         out += pretty(child, indent + 2)
 

@@ -52,21 +52,26 @@ may have content (children):
 ```py
 from ryzom.html import *
 
-yourdiv = Div('some', P('content'))
-yourdiv.render() == '<div>some <p>content</p></div>'
+yourdiv = Div(cls='foo')(
+    'some',
+    P('content'),
+)
 ```
+
+And `yourdiv.render()` will render `<div class="foo">some <p>content</p></div>`
 
 Most components should instanciate with `*content` as first argument, and you
 can pass as many children as needed there. These goes into `self.content` which
 you can also change after instanciation.
 
 You may also pass component as keyword arguments, in which case they will be
-have a "slot" attribute and be assigned to self:
+have a "slot" attribute and be assigned to self, useful for web components:
 
 ```py
-yourdiv = Div(main=P('content'))
-yourdiv.main == P('content', slot='main')
+yourdiv = Div()(main=P('content'))
 ```
+
+Will make `yourdiv.main` contain: `P('content', slot='main')`
 
 #### Special content
 

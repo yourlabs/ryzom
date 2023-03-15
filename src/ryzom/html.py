@@ -12,7 +12,7 @@ def template(name, *wrappers):
     global templates
     def decorator(component):
         if wrappers:
-            templates[name] = CTree(*wrappers + (component,))
+            templates[name] = CTree(*wrappers + (component,)).wrap
         else:
             templates[name] = component
         return component
