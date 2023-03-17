@@ -7,6 +7,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
+from celery import shared_task
+
 from ryzom_django_channels.components import model_templates
 from ryzom_django_channels.ddp import send_change, send_insert, send_remove
 from ryzom_django_channels.models import Publication, Subscription
@@ -23,9 +25,12 @@ def _ddp_insert_change(sender, **kwargs):
     message for each id that was added or removed from the old
     queryset to the new one.
     '''
-    if Publishable not in sender.mro():
-        return
+    if Publishable in sender.mro():
+        ddp_insert_change.delay(sender, **kwargs)
 
+
+@shared_task()
+def ddp_insert_change(sender, **kwargs):
     created = kwargs.pop('created')
     instance = kwargs.pop('instance')
 

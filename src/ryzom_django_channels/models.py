@@ -7,8 +7,7 @@ import secrets
 import uuid
 
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import JSONField
 from django.utils import timezone
@@ -63,12 +62,15 @@ class Publication(models.Model):
     model_class = models.CharField(max_length=255)
 
     @property
-    def publish_function(self):
-        model = getattr(
+    def model(self):
+        return getattr(
             importlib.import_module(self.model_module),
             self.model_class
         )
-        return getattr(model, self.name)
+
+    @property
+    def publish_function(self):
+        return getattr(self.model, self.name)
 
 
 class Subscription(models.Model):
@@ -88,13 +90,24 @@ class Subscription(models.Model):
     subscriber_id = models.CharField(max_length=255)
     subscriber_module = models.CharField(max_length=255)
     subscriber_class = models.CharField(max_length=255)
-    queryset = ArrayField(models.CharField(max_length=255), default=list)
+    qs = ArrayField(models.CharField(max_length=255), default=list)
     options = JSONField(blank=True, null=True)
 
     @property
     def subscriber(self):
         subscriber_mod = importlib.import_module(self.subscriber_module)
         return getattr(subscriber_mod, self.subscriber_class)
+
+    @property
+    def queryset(self):
+        return [
+            self.publication.model.id.field.to_python(i)
+            for i in self.qs
+        ]
+
+    @queryset.setter
+    def queryset(self, value):
+        self.qs = [str(i) for i in value]
 
     def get_queryset(self, opts=None):  # noqa: C901
         '''
@@ -114,7 +127,7 @@ class Subscription(models.Model):
             self.client.user, queryset, opts)
 
         self.options = opts
-        self.queryset = list(map(lambda x : str(x), queryset.values_list('id', flat=True)))
+        self.queryset = queryset.values_list('id', flat=True)
         self.save()
 
         return queryset
