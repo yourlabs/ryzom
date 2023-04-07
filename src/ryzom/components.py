@@ -257,6 +257,14 @@ class Component(metaclass=ComponentMetaclass):
             return self.attrs
         raise AttributeError(f'{self} object has no attribute {name}')
 
+    def __call__(self, *content, **slots):
+        self.content += content
+        for key, value in slots.items():
+            setattr(self, key, value)
+            value.attrs.setdefault('slot', key)
+            self.content.append(value)
+        return self
+
     def __init__(self, *content, **attrs):
         cls = type(self)
         self.content = list(content) or []
@@ -494,7 +502,7 @@ class CTree(Component):
         self.components = components
         self.__name__ = components[-1].__name__
 
-    def __call__(self, **kwargs):
+    def wrap(self, **kwargs):
         component = self.components[-1](**kwargs)
         for wrapper in reversed(self.components[:-1]):
             component = wrapper(component, **kwargs)

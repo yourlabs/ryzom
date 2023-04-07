@@ -119,8 +119,12 @@ class JS(object):
             _copy_context = context.copy()
             for key in _copy_context.keys():
                 if callable(_copy_context[key]):
+                    try:
+                        source = inspect.getsource(_copy_context[key])
+                    except TypeError:
+                        # probably a callable object and not a function
+                        continue
                     value = context.pop(key)
-                    source = inspect.getsource(value)
                     source = textwrap.dedent(source)
                     tree = ast.parse(source)
                     sub = JS()

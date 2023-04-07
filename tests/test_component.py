@@ -1,5 +1,6 @@
 import pytest
 from ryzom import html
+from ryzom.test import pretty
 
 
 def test_default_tag_name():
@@ -136,6 +137,19 @@ def test_attrs_to_html():
     comp.attrs.style.color = 'red'
     comp.attrs.style.o = None
     assert comp.attrs.to_html() == 'x="x" foo test="" lol-bar="ok" style="x-y: 0; color: red"'
+
+
+def test_content_call():
+    assert pretty(html.Div('content', cls='outer')(
+        Div(cls='inner'),
+    ).render()) == '''
+%div
+  class=outer
+  content
+  %div
+    class=inner
+'''.strip()
+
 
 
 class BlueWhite(html.Div):
