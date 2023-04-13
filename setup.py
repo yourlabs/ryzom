@@ -29,7 +29,8 @@ setup(
             'libsass',
             'daphne',
             'markdown',
-        ],
+            'celery'
+        ]
     ),
     classifiers=[
         'Development Status :: 1 - Planning',
