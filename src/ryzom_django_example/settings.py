@@ -89,6 +89,7 @@ if CHANNELS_ENABLE:
         'ryzom_django_channels_example',
         'channels',
         'channels_redis',
+        'celery'
     ]
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
@@ -159,3 +160,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
+
+CELERY_BROKER_URL = 'redis://redis:6379'
+CELERY_RESULT_BACKEND = 'redis://redis:6379'
+

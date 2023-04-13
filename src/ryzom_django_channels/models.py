@@ -123,6 +123,7 @@ class Subscription(models.Model):
         queryset = self.publication.publish_function(self.client.user)
 
         opts = opts or self.options
+        self.save()
         queryset = self.subscriber.get_queryset(
             self.client.user, queryset, opts)
 
