@@ -9,7 +9,7 @@ class MDCLink(A):
 class MDCIcon(Icon):
     attrs = {
         'class': 'material-icons',
-        'aria-hiddem': 'true'
+        'aria-hidden': 'true'
     }
 
 
@@ -55,7 +55,7 @@ class MDCButtonOutlined(MDCButton):
 
 
 class MDCButtonLabelOutlined(Label):
-    def __init__(self, text, p=True, icon=None):
+    def __init__(self, text, p=True, icon=None, **kwargs):
         black = 'black-button' if p else ''
         content = [Span(cls='mdc-button__ripple')]
         if icon:
@@ -63,7 +63,8 @@ class MDCButtonLabelOutlined(Label):
         content.append(Span(text, cls='mdc-button__label'))
         super().__init__(
             *content,
-            cls=f'mdc-button mdc-button--outlined {black}'
+            cls=f'mdc-button mdc-button--outlined {black}',
+            **kwargs
         )
 
 
@@ -157,7 +158,7 @@ class MDCTextFieldOutlined(MDCField):
         self.label = Label(
             notch_outline,
             self.html_input,
-            id=label_id,
+            id=label_id + '_label',
             cls='mdc-text-field mdc-text-field--outlined',
             data_mdc_auto_init='MDCTextField',
             **{'for': input_id}
@@ -206,7 +207,7 @@ class MDCFormField(Div):
 
 class MDCFileField(Div):
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
-        self.btn = MDCButtonLabelOutlined(label, False)
+        self.btn = MDCButtonLabelOutlined(label, False, style=dict(margin=0))
         self.input_id = html_input.attrs['id']
         self.btn.attrs['for'] = self.input_id
         if 'empty_value' in attrs:
@@ -221,8 +222,11 @@ class MDCFileField(Div):
                 html_input,
                 style='display:block;width:0;height:0;overflow:hidden'
             ),
+            self.btn,
             self.selected_text,
-            self.btn
+            style=dict(
+                margin_bottom='24px'
+            )
         )
 
     def set_update_name(input_id, label_id, empty_value):
@@ -300,7 +304,7 @@ class MDCListItem(Li):
 
     def __init__(self, *content, icon=None, ripple=True, **attrs):
         if icon and not isinstance(icon, Component):
-            icon = MDCIcon(icon, addcls='mdc-list-item__graphic')
+            icon = MDCIcon(icon, role='img', addcls='mdc-list-item__graphic')
 
         super().__init__(
             Span(cls='mdc-list-item__ripple') if ripple else None,
@@ -469,12 +473,13 @@ class MDCCheckboxListItem(Li):
                                 tag='path', fill='none',
                                 d="M1.73,12.91 8.1,19.28 22.79,4.59",
                                 cls='mdc-checkbox__checkmark-path'),
-                            tag='svg', viewBox='0 0 24 24',
+                            tag='svg', role='img', aria_hidden='true',
+                            aria_label='checkbox', viewBox='0 0 24 24',
                             cls='mdc-checkbox__checkmark'),
                         Div(cls='mdc-checkbox__mixedmark'),
                         cls='mdc-checkbox__background'),
                     cls='mdc-checkbox'),
-                cls='mdc-list-item__graphic'),
+                cls='mdc-list-item__graphic mdc-form-field'),
             Label(title, cls='mdc-list-item__text', **{'for': id}),
             cls='mdc-list-item',
             role='checkbox',
@@ -654,6 +659,7 @@ class MDCOptgroup(MDCOptionMixin, CList):
 class MDCSelectAnchor(Div):
     def __init__(self, label, selected=None, **attrs):
         required = attrs.pop('required', None)
+        name = attrs.get('name', 'anchor')
 
         super().__init__(
             Span(
@@ -664,7 +670,7 @@ class MDCSelectAnchor(Div):
                 Span(cls='mdc-notched-outline__trailing'),
                 cls='mdc-notched-outline'),
             Span(
-                selected or Span(cls='mdc-select__selected-text'),
+                selected or Span(id=name + '_selected_id', cls='mdc-select__selected-text'),
                 cls='mdc-select__selected-text-container'),
             Span(
                 Svg(
@@ -680,12 +686,13 @@ class MDCSelectAnchor(Div):
                         cls='mdc-select__dropdown-icon-active'),
                     viewBox="7 10 10 5",
                     focusable="false",
+                    role='img',
+                    aria_hidden='true',
                     cls='mdc-select__dropdown-icon-graphic'),
                 cls='mdc-select__dropdown-icon'),
             cls='mdc-select__anchor',
             role="button",
-            aria_required='true' if required else 'false',
-            aria_labelled_by=label.id,
+            aria_labelledby=name + '_selected_id',
             aria_haspopup="listbox",
             aria_expanded="false",
         )
@@ -725,9 +732,11 @@ class MDCSelectOutlined(Div):
             MDCSelectAnchor(
                 Span(
                     label,
+                    id=attrs.get('name', 'anchor') + '_label_id',
                     cls='mdc-floating-label'
                 ),
-                **dict(required=required),
+                required=required,
+                name=attrs['name']
             ),
             MDCSelectMenu(**attrs),
             cls=cls,
@@ -748,13 +757,18 @@ class MDCAccordionToggle(MDCListItem):
     tag = 'mdc-accordion-toggle'
 
     def __init__(self, *, label=None, **context):
-        super().__init__(label, icon='add', **context)
+        super().__init__(label, icon='add', tabindex=0, **context)
 
     class HTMLElement:
         def connectedCallback(self):
             this.addEventListener('click', this.click.bind(this))
+            this.addEventListener('keyup', this.click.bind(this))
+            this.addEventListener('focusout', this.focusout.bind(this))
 
         def click(self, event):
+            if event.code and event.code != 'Enter':
+                return
+
             section = this.parentElement
             if section.classList.contains('active'):
                 section.toggle()
@@ -762,13 +776,19 @@ class MDCAccordionToggle(MDCListItem):
                 section.parentElement.closeAll()
                 section.open()
 
+        def focusout(self, event):
+            setTimeout(
+                lambda: this.setAttribute('tabindex', 0),
+                10
+            )
+
 
 class MDCAccordionMenu(Div):
     tag = 'mdc-accordion-menu'
 
     style = dict(
         display='block',
-        overflow='hidden',
+        overflow='clip',
         max_height='0px',
     )
 
@@ -805,7 +825,7 @@ class MDCAccordionMenu(Div):
         def end_layout(self):
             this.style.maxHeight = self.from_px
             this.getBoundingClientRect()
-            this.style.transition='max-height 0.4s ease-out'
+            this.style.transition = 'max-height 0.4s ease-out'
             this.style.maxHeight = this.rect.height + 'px'
 
             closest = this.parentElement.closest('mdc-accordion-menu')
@@ -813,10 +833,18 @@ class MDCAccordionMenu(Div):
                 closest.end_layout()
 
         def open(self):
+            this.ariaHidden = 'false'
             this.start_layout()
             this.end_layout()
+            this.querySelectorAll('[tabindex]').forEach(
+                lambda elem: elem.setAttribute('tabindex', 0)
+            )
 
         def close(self):
+            this.ariaHidden = 'true'
+            this.querySelectorAll('[tabindex]').forEach(
+                lambda elem: elem.setAttribute('tabindex', -1)
+            )
             this.style.maxHeight = 0
 
 
@@ -832,19 +860,19 @@ class MDCAccordionSection(MDCList):
 
     class HTMLElement:
         def open(self):
-            this.querySelector('mdc-accordion-toggle').classList.add(
-                'mdc-list-item--selected'
-            )
             this.classList.add('active')
-            this.querySelector('mdc-accordion-menu').open()
+            toggle = this.querySelector('mdc-accordion-toggle')
+            toggle.classList.add('mdc-list-item--selected')
+            menu = this.querySelector('mdc-accordion-menu')
+            menu.open()
             this.querySelector('i').innerText = 'remove'
 
         def close(self):
-            this.querySelector('mdc-accordion-toggle').classList.remove(
-                'mdc-list-item--selected'
-            )
             this.classList.remove('active')
-            this.querySelector('mdc-accordion-menu').close()
+            toggle = this.querySelector('mdc-accordion-toggle')
+            toggle.classList.remove('mdc-list-item--selected')
+            menu = this.querySelector('mdc-accordion-menu')
+            menu.close()
             this.querySelector('i').innerText = 'add'
 
         def toggle(self):
@@ -1442,23 +1470,19 @@ class MDCDialogSurface(Div):
 
 
 class MDCDialogCloseButton(MDCButton):
-    tag = 'a'
-    attrs = {'data-mdc-dialog-action': 'close'}
+    attrs = {'type': 'button', 'data-mdc-dialog-action': 'close'}
 
 
 class MDCDialogCloseButtonOutlined(MDCButtonOutlined):
-    tag = 'a'
-    attrs = {'data-mdc-dialog-action': 'close'}
+    attrs = {'type': 'button', 'data-mdc-dialog-action': 'close'}
 
 
 class MDCDialogAcceptButton(MDCButtonRaised):
-    tag = 'a'
-    attrs = {'data-mdc-dialog-action': 'accept'}
+    attrs = {'type': 'button', 'data-mdc-dialog-action': 'accept'}
 
 
 class MDCDialogAcceptButtonOutlined(MDCButtonOutlined):
-    tag = 'a'
-    attrs = {'data-mdc-dialog-action': 'accept'}
+    attrs = {'type': 'button', 'data-mdc-dialog-action': 'accept'}
 
 
 class MDCDialogScrim(Div):

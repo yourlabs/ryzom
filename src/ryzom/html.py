@@ -136,4 +136,9 @@ class Html(Component):
             self.head.addchild(self.title)
 
     def to_html(self, *content, **context):
+        view = context.get('view')
+        if view and hasattr(view.request, 'LANGUAGE_CODE'):
+            self.attrs.lang = view.request.LANGUAGE_CODE
+        else:
+            self.attrs.lang = 'en'
         return '<!DOCTYPE html>\n' + super().to_html(*content, **context)

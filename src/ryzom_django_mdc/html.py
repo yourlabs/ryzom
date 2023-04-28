@@ -177,13 +177,16 @@ class FileInputWidget(MDCField):
         if 'label' not in attrs:
             attrs['label'] = 'Select file'
 
+        name = attrs['name']
+        label = Label(bf.label, id=name + '_label_id', style=dict(
+            font_size='0.8rem', color='rgba(0, 0, 0, 0.6)'))
         return cls(
-            Label(bf.label),
+            label,
             MDCFileField(
-                Input(**attrs),
+                Input(aria_labelledby=label.id, **attrs),
                 **attrs
             ),
-            name=attrs['name']
+            name=name
         )
 
 
