@@ -288,20 +288,20 @@ class MDCVerticalMargin(Div):
 
 
 class MDCList(Div):
-    attrs = {'class': 'mdc-list', 'data-mdc-auto-init': 'MDCList'}
+    attrs = {'class': 'mdc-deprecated-list', 'data-mdc-auto-init': 'MDCList'}
 
 
 class MDCListItem(Li):
-    attrs = {'class': 'mdc-list-item'}
+    attrs = {'class': 'mdc-deprecated-list-item'}
 
     def __init__(self, *content, icon=None, ripple=True, **attrs):
         if icon and not isinstance(icon, Component):
-            icon = MDCIcon(icon, addcls='mdc-list-item__graphic')
+            icon = MDCIcon(icon, addcls='mdc-deprecated-list-item__graphic')
 
         super().__init__(
-            Span(cls='mdc-list-item__ripple') if ripple else None,
+            Span(cls='mdc-deprecated-list-item__ripple') if ripple else None,
             icon,
-            Span(*content, cls='mdc-list-item__text'),
+            Span(*content, cls='mdc-deprecated-list-item__text'),
             **attrs,
         )
 
@@ -440,7 +440,7 @@ class MDCCheckboxListItem(Li):
         if checked:
             kwargs['checked'] = True
         super().__init__(
-            Span(cls='mdc-list-item__ripple'),
+            Span(cls='mdc-deprecated-list-item__ripple'),
             Span(
                 Div(
                     Input(
@@ -459,9 +459,9 @@ class MDCCheckboxListItem(Li):
                         Div(cls='mdc-checkbox__mixedmark'),
                         cls='mdc-checkbox__background'),
                     cls='mdc-checkbox'),
-                cls='mdc-list-item__graphic'),
-            Label(title, cls='mdc-list-item__text', **{'for': id}),
-            cls='mdc-list-item',
+                cls='mdc-deprecated-list-item__graphic'),
+            Label(title, cls='mdc-deprecated-list-item__text', **{'for': id}),
+            cls='mdc-deprecated-list-item',
             role='checkbox',
             **{
                 'aria-checked': 'true' if checked else 'false',
@@ -492,7 +492,7 @@ class MDCMultipleChoicesCheckbox(Ul):
                 value=value,
                 **kwargs
             ) for i, title, value in choices),
-            cls='mdc-list',
+            cls='mdc-deprecated-list',
             role='group',
             **{'aria-label': alabel}
         )
@@ -506,13 +506,13 @@ class MDCMultipleChoicesCheckbox(Ul):
             elem.disabled = True
             list_item = document.querySelector(
                 '[data-list-item-of="' + elem.id + '"]'
-            ).classList.add('mdc-list-item--disabled')
+            ).classList.add('mdc-deprecated-list-item--disabled')
 
         def enable(elem, pas, arr):
             elem.disabled = undefined
             list_item = document.querySelector(
                 '[data-list-item-of="' + elem.id + '"]'
-            ).classList.remove('mdc-list-item--disabled')
+            ).classList.remove('mdc-deprecated-list-item--disabled')
 
         if checked.length >= self.max:
             unchecked.forEach(disable)
@@ -561,12 +561,12 @@ class MDCSelect(Div):
             </div>
 
             <div class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth" role="listbox">
-              <ul class="mdc-list">
+              <ul class="mdc-deprecated-list">
             '''),
             *[
                 mark_safe(f'''
-                <li class="mdc-list-item {'mdc-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
-                  <span class="mdc-list-item__text">{option.attrs.value}</span>
+                <li class="mdc-deprecated-list-item {'mdc-deprecated-list-item--selected" aria-selected="true' if option.attrs.get('selected', False) else ''}" role="option" data-value="{option.attrs.value}">
+                  <span class="mdc-deprecated-list-item__text">{option.attrs.value}</span>
                 </li>
                 ''')
                 for option in select.content
@@ -585,20 +585,20 @@ class MDCOption(Li):
 
         selected = choice.get('selected', False)
         if selected:
-            extra_attrs['addcls'] = 'mdc-list-item--selected'
+            extra_attrs['addcls'] = 'mdc-deprecated-list-item--selected'
             extra_attrs['aria-selected'] = 'true'
 
         if index == '0':
             extra_attrs['tabindex'] = 0
 
         super().__init__(
-            Span(cls='mdc-list-item__ripple'),
+            Span(cls='mdc-deprecated-list-item__ripple'),
             Span(
                 choice['label'] if choice['value'] else '',
-                cls='mdc-list-item__text'
+                cls='mdc-deprecated-list-item__text'
             ),
             data_value=choice['value'],
-            cls='mdc-list-item',
+            cls='mdc-deprecated-list-item',
             role='option',
             **extra_attrs,
         )
@@ -608,11 +608,11 @@ class MDCNamedOptgroup(Div):
     def __init__(self, name, choices):
         super().__init__(
             Ul(
-                H6(name, cls='mdc-list-group__subheader'),
+                H6(name, cls='mdc-deprecated-list-group__subheader'),
                 *(MDCOption(**choice) for choice in choices),
-                cls='mdc-list'
+                cls='mdc-deprecated-list'
             ),
-            cls='mdc-list-group'
+            cls='mdc-deprecated-list-group'
         )
 
 
@@ -675,7 +675,7 @@ class MDCSelectMenu(Div):
                     for group_name, group_choices, group_index
                     in optgroups
                 ),
-                cls='mdc-list'
+                cls='mdc-deprecated-list'
             ),
             cls='mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth',
         )
@@ -810,7 +810,7 @@ class MDCAccordionSection(MDCList):
     class HTMLElement:
         def open(self):
             this.querySelector('mdc-accordion-toggle').classList.add(
-                'mdc-list-item--selected'
+                'mdc-deprecated-list-item--selected'
             )
             this.classList.add('active')
             this.querySelector('mdc-accordion-menu').open()
@@ -818,7 +818,7 @@ class MDCAccordionSection(MDCList):
 
         def close(self):
             this.querySelector('mdc-accordion-toggle').classList.remove(
-                'mdc-list-item--selected'
+                'mdc-deprecated-list-item--selected'
             )
             this.classList.remove('active')
             this.querySelector('mdc-accordion-menu').close()
@@ -838,7 +838,7 @@ class MDCAccordion(Div):
         def get_content():
             for c in content[:-1]:
                 yield c
-                yield Hr(cls='mdc-list-divider')
+                yield Hr(cls='mdc-deprecated-list-divider')
             if len(content):
                 yield content[-1]
 
@@ -936,23 +936,23 @@ class MdcDrawer(Component):
         <h6 class="mdc-drawer__subtitle">Demonstration</h6>
       </div>
       <div class="mdc-drawer__content">
-        <nav class="mdc-list">
-          <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page">
-            <span class="mdc-list-item__ripple"></span>
-            <i class="material-icons mdc-list-item__graphic" aria-hidden="true">inbox</i>
-            <span class="mdc-list-item__text">Inbox</span>
+        <nav class="mdc-deprecated-list">
+          <a class="mdc-deprecated-list-item mdc-deprecated-list-item--activated" href="#" aria-current="page">
+            <span class="mdc-deprecated-list-item__ripple"></span>
+            <i class="material-icons mdc-deprecated-list-item__graphic" aria-hidden="true">inbox</i>
+            <span class="mdc-deprecated-list-item__text">Inbox</span>
           </a>
-          <a class="mdc-list-item" href="#">
-            <span class="mdc-list-item__ripple"></span>
-            <i class="material-icons mdc-list-item__graphic" aria-hidden="true">send</i>
-            <span class="mdc-list-item__text">Outgoing</span>
+          <a class="mdc-deprecated-list-item" href="#">
+            <span class="mdc-deprecated-list-item__ripple"></span>
+            <i class="material-icons mdc-deprecated-list-item__graphic" aria-hidden="true">send</i>
+            <span class="mdc-deprecated-list-item__text">Outgoing</span>
           </a>
-          <hr class="mdc-list-divider">
-          <h6 class="mdc-list-group__subheader">Labels</h6>
-          <a class="mdc-list-item" href="#">
-            <span class="mdc-list-item__ripple"></span>
-            <i class="material-icons mdc-list-item__graphic" aria-hidden="true">drafts</i>
-            <span class="mdc-list-item__text">Drafts</span>
+          <hr class="mdc-deprecated-list-divider">
+          <h6 class="mdc-deprecated-list-group__subheader">Labels</h6>
+          <a class="mdc-deprecated-list-item" href="#">
+            <span class="mdc-deprecated-list-item__ripple"></span>
+            <i class="material-icons mdc-deprecated-list-item__graphic" aria-hidden="true">drafts</i>
+            <span class="mdc-deprecated-list-item__text">Drafts</span>
           </a>
         </nav>
       </div>
@@ -1032,15 +1032,15 @@ class MdcDrawerHeader(Div):
 
 class MdcListDivider(Text):
     """
-    <hr class="mdc-list-divider">
-    <h6 class="mdc-list-group__subheader">Section</h6>
+    <hr class="mdc-deprecated-list-divider">
+    <h6 class="mdc-deprecated-list-group__subheader">Section</h6>
     """
     def __init__(self, *content, **context):
         super().__init__(
-            Hr(cls="mdc-list-divider"),
+            Hr(cls="mdc-deprecated-list-divider"),
             H6(
                 *content,
-                cls="mdc-list-group__subheader",
+                cls="mdc-deprecated-list-group__subheader",
                 **context,
             ),
         )
@@ -1052,7 +1052,7 @@ class MdcIcon(Component):
     def __init__(self, *content, **context):
         super().__init__(
             *content,
-            cls='material-icons mdc-list-item__graphic',
+            cls='material-icons mdc-deprecated-list-item__graphic',
             aria_hidden='true',
             **context,
         )
@@ -1065,8 +1065,8 @@ class MdcList(Component):
     def __init__(self, *content, **context):
         context.setdefault('tag', 'ul')
         context.setdefault('cls', '')
-        context['cls'] = (' '.join((context['cls'], 'mdc-list'))
-                          if context['cls'] else 'mdc-list')
+        context['cls'] = (' '.join((context['cls'], 'mdc-deprecated-list'))
+                          if context['cls'] else 'mdc-deprecated-list')
         super().__init__(*content, **context)
 
 
@@ -1078,25 +1078,25 @@ class MdcNavList(MdcList):
 
 class MdcListItem(Component):
     """ MdcListItem(Text("Home"), icon='home', href='#', active=True)
-    <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page">
-      <span class="mdc-list-item__ripple"></span>
-      <i class="material-icons mdc-list-item__graphic" aria-hidden="true">home</i>
-      <span class="mdc-list-item__text">Home</span>
+    <a class="mdc-deprecated-list-item mdc-deprecated-list-item--activated" href="#" aria-current="page">
+      <span class="mdc-deprecated-list-item__ripple"></span>
+      <i class="material-icons mdc-deprecated-list-item__graphic" aria-hidden="true">home</i>
+      <span class="mdc-deprecated-list-item__text">Home</span>
     </a>
     """
     def __init__(self, *content, icon=None, **context):
         context.setdefault('tag', 'a')
         context.setdefault('aria-current', 'page')
         context.setdefault('cls', '')
-        context['cls'] = (' '.join((context['cls'], 'mdc-list-item'))
-                          if context['cls'] else 'mdc-list-item')
+        context['cls'] = (' '.join((context['cls'], 'mdc-deprecated-list-item'))
+                          if context['cls'] else 'mdc-deprecated-list-item')
         if context.pop('active', None):
-            context['cls'] += ' mdc-list-item--activated'
+            context['cls'] += ' mdc-deprecated-list-item--activated'
             context['tabindex'] = 0
         super().__init__(
-            Span(cls='mdc-list-item__ripple'),
+            Span(cls='mdc-deprecated-list-item__ripple'),
             MdcIcon(icon) if icon else '',
-            Span(*content, cls='mdc-list-item__text'),
+            Span(*content, cls='mdc-deprecated-list-item__text'),
             **context,
         )
 
