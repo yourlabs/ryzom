@@ -28,7 +28,7 @@ for server in REDIS_SERVERS:
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',

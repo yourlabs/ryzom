@@ -18,6 +18,8 @@ from django.utils import timezone
 from ryzom_django_channels.methods import Methods
 
 
+AUTH_BACKEND = settings.AUTHENTICATION_BACKENDS[0]
+
 class Consumer(JsonWebsocketConsumer):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
@@ -51,7 +53,7 @@ class Consumer(JsonWebsocketConsumer):
         if token:
             client = Client.objects.filter(token=token).last()
             if client and client.user:
-                async_to_sync(login)(self.scope, client.user, backend='django.contrib.auth.backends.ModelBackend')
+                async_to_sync(login)(self.scope, client.user, backend=AUTH_BACKEND)
                 self.scope['session'].save()
 
         self.accept()

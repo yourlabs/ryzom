@@ -164,6 +164,8 @@ class MDCTextFieldOutlined(MDCField):
             data_mdc_auto_init='MDCTextField',
             **{'for': input_id}
         )
+        self.html_input.id = input_id
+        self.html_input.attrs.id = input_id
         self.html_input.attrs.aria_labelledby = label_id
 
         value = self.html_input.attrs.get('value', '')
