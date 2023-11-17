@@ -180,13 +180,16 @@ class FileInputWidget(MDCField):
         name = attrs['name']
         label = Label(bf.label, id=name + '_label_id', style=dict(
             font_size='0.8rem', color='rgba(0, 0, 0, 0.6)'))
-        return cls(
-            label,
-            MDCFileField(
-                Input(aria_labelledby=label.id, **attrs),
-                **attrs
+        return Div(
+            cls(
+                label,
+                MDCFileField(
+                    Input(aria_labelledby=label.id, **attrs),
+                    **attrs
+                ),
+                name=name
             ),
-            name=name
+            MDCErrorList(*bf.errors),
         )
 
 
