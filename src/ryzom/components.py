@@ -9,6 +9,7 @@ import textwrap
 import re
 import uuid
 
+from lxml import html
 from py2js.transpiler import transpile_body
 
 
@@ -529,18 +530,62 @@ class Text(Component):
 
 
 class Markdown(Text):
-    def __init__(self, *content, **kwargs):
+    def __init__(self, *content, strip_outer_p=False, **kwargs):
         self.kwargs = kwargs
+        self.strip_outer_p = strip_outer_p
         super().__init__(*content)
 
     def preparecontent(self):
         import markdown
         from django.utils.safestring import mark_safe
-        self.content = mark_safe(
-            markdown.markdown(
-                textwrap.dedent(
-                    '\n'.join(self.content),
-                ),
-                **self.kwargs,
-            )
+        rendered = markdown.markdown(
+            textwrap.dedent(
+                '\n'.join(self.content),
+            ),
+            **self.kwargs,
         )
+        if self.strip_outer_p:
+            rendered = rendered.removeprefix('<p>')
+            rendered = rendered.removesuffix('</p>')
+
+        self.content = mark_safe(rendered)
+
+    def parse_html_tree(self, tree):
+        """ recursively parse the html tree and return a list of components """
+        components = []
+        for element in tree:
+            component = Component(
+                tag=element.tag,
+                **element.attrib,
+            )
+            if element.text:
+                component.addchild(Text(str(element.text)))
+            component.addchildren(self.parse_html_tree(element))
+            components.append(component)
+            if element.tail:
+                components.append(Text(str(element.tail)))
+        return components
+
+    def to_obj(self, context=None):
+        tree = html.fromstring(self.content)
+        components = []
+        if tree.text:
+            components.append(Text(str(tree.text)))
+        components += self.parse_html_tree(tree)
+        if tree.tail:
+            components.append(Text(str(tree.tail)))
+
+        if tree.tag:
+            current = Component(
+                tag=tree.tag,
+                **tree.attrib,
+            )
+        else:
+            current = CList()
+        current.addchildren(components)
+        if self.parent and isinstance(self.parent, str):
+            current.parent = self.parent
+        elif self.parent:
+            current.parent = self.parent.id
+        current.parent = self.parent or None
+        return current.to_obj()
