@@ -62,13 +62,20 @@
   }
 
   createDOMelement = function(component) {
-    var elem;
+    var elem; 
     if (component.tag == 'text')
       elem = document.createTextNode(decodeHtml(component.content));
     else if (typeof(component) == 'string')
       elem = document.createTextNode(component);
     else {
-      elem = document.createElement(component.tag);
+      if (Array.isArray(component)) {
+	console.log('component is array')
+	elem = document.createElement('p');
+	component = {content: component};
+      } else {
+	elem = document.createElement(component.tag);
+      }
+
       if (component.attrs) {
         Object.keys(component.attrs).forEach(function(k) {
           val = component.attrs[k];
