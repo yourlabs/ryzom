@@ -85,7 +85,8 @@ def bundle(*modules):
             if value in done:
                 continue
             if hasattr(value, 'HTMLElement'):
-                out += webcomponent(value)
+                if key in value.HTMLElement.__qualname__:
+                    out += webcomponent(value)
             if callable(getattr(value, 'py2js', None)):
                 out += functions(value, done_funcs)
             out += methods(value, done_funcs)
