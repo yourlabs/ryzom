@@ -1559,6 +1559,30 @@ class MDCChip(Div):
             **attrs
         )
 
+class MDCSwitchInput(Input):
+    def __init__(self, **attrs):
+        super().__init__(
+            type='checkbox',
+            cls='mdc-switch__native-control',
+            role='switch',
+            **attrs
+        )
+
+
+class MDCSwitch(Div):
+    def __init__(self, *content, **attrs):
+        super().__init__(
+            Div(
+                Div(cls='mdc-switch__track'),
+                Div(
+                    Div(*content, cls='mdc-switch__thumb'),
+                    cls='mdc-switch__thumb-underlay',
+                )
+            ),
+            data_mdc_auto_init='MDCSwitch',
+            addcls='mdc-switch',
+            **attrs
+        )
 
 class MDCChipRipple(Div):
     attrs = {'class': 'mdc-chip__ripple'}

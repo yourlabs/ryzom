@@ -48,7 +48,6 @@ class MDCDateInputWidget(MDCInputWidget):
         )
 
 
-@widget_template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
     def from_boundfield(cls, bf, **attrs):
@@ -56,6 +55,31 @@ class MDCCheckboxWidget(MDCCheckboxField):
         return cls(
             MDCCheckboxInput(**attrs),
             **field_kwargs(bf),
+        )
+
+
+@widget_template('django/forms/widgets/checkbox.html')
+class MDCSwitchWidget(MDCField):
+    sass = """
+    .switch-field
+        .inner-switch-field
+            display: flex
+            flex-flow: row
+        label
+            margin-right: 32px
+    """
+    @classmethod
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
+        del attrs['type']
+        return cls(
+            Div(
+                Label(bf.label, **{'for': attrs['id']}),
+                MDCSwitch(MDCSwitchInput(**attrs)),
+                cls='inner-switch-field'
+            ),
+            **field_kwargs(bf),
+            cls='MDCField switch-field'
         )
 
 
