@@ -29,7 +29,8 @@ setup(
             'libsass',
             'daphne',
             'markdown',
-            'celery'
+            'celery',
+            'lxml'
         ]
     ),
     classifiers=[
