@@ -306,14 +306,18 @@ class MDCList(Div):
 class MDCListItem(Li):
     attrs = {'class': 'mdc-deprecated-list-item'}
 
-    def __init__(self, *content, icon=None, ripple=True, **attrs):
+    def __init__(self, *content, icon=None, meta=None, ripple=True, **attrs):
         if icon and not isinstance(icon, Component):
             icon = MDCIcon(icon, role='img', addcls='mdc-deprecated-list-item__graphic')
+
+        if meta:
+            meta = Span(meta, cls='mdc-deprecated-list-item__meta')
 
         super().__init__(
             Span(cls='mdc-deprecated-list-item__ripple') if ripple else None,
             icon,
             Span(*content, cls='mdc-deprecated-list-item__text'),
+            meta,
             **attrs,
         )
 

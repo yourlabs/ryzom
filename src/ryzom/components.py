@@ -556,7 +556,7 @@ class Markdown(Text):
         from django.utils.safestring import mark_safe
         rendered = markdown.markdown(
             textwrap.dedent(
-                '\n'.join(self.content),
+                '\n'.join([str(c) for c in self.content]),
             ),
             **self.kwargs,
         )
