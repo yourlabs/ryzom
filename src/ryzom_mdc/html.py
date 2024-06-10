@@ -1749,7 +1749,7 @@ class Html(Html):
         'https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.js',
         'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
         'https://cdn.polyfill.io/v2/polyfill.min.js',
-        staticfiles_storage.url('py2js.js'),
+        '/static/py2js.js',
     ]
     stylesheets = Html.stylesheets + [
         'https://fonts.googleapis.com/icon?family=Material+Icons',
