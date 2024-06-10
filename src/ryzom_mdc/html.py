@@ -1,3 +1,4 @@
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.safestring import mark_safe
 from ryzom.html import *
 
@@ -143,8 +144,7 @@ class MDCField(Div):
 
 
 class MDCTextFieldOutlined(MDCField):
-    def __init__(self, html_input, *content, label=None, help_text=None, errors=None,
-                 **attrs):
+    def __init__(self, html_input, label=None, help_text=None, errors=None, licon=None, ticon=None, **attrs):
         self.html_input = html_input
         self.html_input.attrs.addcls = 'mdc-text-field__input'
 
@@ -156,11 +156,18 @@ class MDCTextFieldOutlined(MDCField):
         floating_label = Span(label, id=label_id, cls='mdc-floating-label')
         notch_outline = MDCNotchOutline(floating_label)
         content = [html_input, *content]
+        classes = 'mdc-text-field mdc-text-field--outlined'
+        if licon:
+            classes += ' mdc-text-field--with-leading-icon'
+        if ticon:
+            classes += ' mdc-text-field--with-trailing-icon'
+
         self.label = Label(
             notch_outline,
+            licon,
             *content,
-            id=label_id,
-            cls='mdc-text-field mdc-text-field--outlined',
+            ticon,
+            cls=classes,
             data_mdc_auto_init='MDCTextField',
             **{'for': input_id}
         )
@@ -724,6 +731,10 @@ class MDCSelectOutlined(Div):
         if required := attrs.pop('required', None):
             cls += ' mdc-select--required'
 
+        multiple = False
+        if _attrs := attrs.get('attrs', None):
+            multiple = _attrs.get('multiple', False)
+
         super().__init__(
             Input(
                 type='hidden',
@@ -741,6 +752,7 @@ class MDCSelectOutlined(Div):
             ),
             MDCSelectMenu(**attrs),
             cls=cls,
+            multiple='true' if multiple else None,
             data_mdc_auto_init='MDCSelect',
         )
 
@@ -755,11 +767,53 @@ class MDCSelectOutlined(Div):
             input = event.target.querySelector('input')
             up.emit(input, 'change')
 
-class MDCAccordionToggle(MDCListItem):
+class Arrow(Span):
+    sass = """
+    .arrow
+        animation: rotate 0.4s ease-out
+        --webkit-animation: rotate 0.4s ease-out
+    .arrow.right
+        transform: rotate(-45deg)
+        --webkit-transform: rotate(-45deg)
+    .arrow.down
+        transform: rotate(45deg)
+        --webkit-transform: rotate(45deg)
+    """
+
+    def __init__(self, way=None, **attrs):
+        way = way or 'right'
+        color = attrs.pop('color', 'black')
+        size = attrs.pop('size', '3px')
+        weight = attrs.pop('weight', '3px')
+
+        super().__init__(
+            I(
+                cls=f"arrow {way}",
+                style=dict(
+                    border=f'solid {color}',
+                    border_width=f'0 {weight} {weight} 0',
+                    display='inline-block',
+                    padding=size,
+                )
+            ),
+            **attrs
+        )
+
+class MDCAccordionToggle(Li):
     tag = 'mdc-accordion-toggle'
 
-    def __init__(self, *, label=None, **context):
-        super().__init__(label, icon='add', tabindex=0, **context)
+    def __init__(self, *content, icon=None, ripple=True, **attrs):
+        mdc_icon = MDCIcon(icon, role='img', addcls='mdc-list-item__graphic')
+        opened = attrs.pop('opened', False)
+        arrow = Arrow(color='var(--mdc-theme-primary)', way='down' if opened else 'right')
+        super().__init__(
+            Span(cls='mdc-deprecated-list-item__ripple') if ripple else None,
+            icon,
+            Span(*content, cls='mdc-deprecated-list-item__text'),
+            Span(arrow, cls='mdc-deprecated-list-item__meta'),
+            cls='mdc-deprecated-list-item',
+            data_arrow_id=arrow.id,
+        )
 
     class HTMLElement:
         def connectedCallback(self):
@@ -772,11 +826,11 @@ class MDCAccordionToggle(MDCListItem):
                 return
 
             section = this.parentElement
-            if section.classList.contains('active'):
-                section.toggle()
+            if section.classList.contains('active') or section.classList.contains('opened'):
+                section.toggle(this.dataset.arrowId)
             else:
                 section.parentElement.closeAll()
-                section.open()
+                section.open(this.dataset.arrowId)
 
         def focusout(self, event):
             setTimeout(
@@ -784,21 +838,37 @@ class MDCAccordionToggle(MDCListItem):
                 10
             )
 
+        def open(self):
+            this.classList.add('mdc-deprecated-list-item--selected')
+            arrow = this.querySelector('.arrow')
+            arrow.classList.remove('right')
+            arrow.classList.add('down')
+
+        def close(self):
+            this.classList.remove('mdc-deprecated-list-item--selected')
+            arrow = this.querySelector('.arrow')
+            arrow.classList.remove('down')
+            arrow.classList.add('right')
+
 
 class MDCAccordionMenu(Div):
     tag = 'mdc-accordion-menu'
 
-    style = dict(
-        display='block',
-        overflow='clip',
-        max_height='0px',
-    )
-
     def __init__(self, *content, **context):
+
+        if context.pop('opened', False):
+            max_height = 'initial'
+        else:
+            max_height = '0px'
+
         super().__init__(
             *content,
             cls='MDCAccordionMenu',
-            **context
+            style=dict(
+                display='block',
+                overflow='clip',
+                max_height=max_height,
+            )
         )
 
     class HTMLElement:
@@ -855,7 +925,7 @@ class MDCAccordionSection(MDCList):
 
     def __init__(self, *content, **context):
         super().__init__(
-            MDCAccordionToggle(**context),
+            MDCAccordionToggle(context.pop('label', None), **context),
             MDCAccordionMenu(*content, **context),
             addcls='mdc-accordion',
         )
@@ -864,21 +934,20 @@ class MDCAccordionSection(MDCList):
         def open(self):
             this.classList.add('active')
             toggle = this.querySelector('mdc-accordion-toggle')
-            toggle.classList.add('mdc-deprecated-list-item--selected')
+            toggle.open()
             menu = this.querySelector('mdc-accordion-menu')
             menu.open()
-            this.querySelector('i').innerText = 'remove'
 
         def close(self):
             this.classList.remove('active')
+            this.classList.remove('opened')
             toggle = this.querySelector('mdc-accordion-toggle')
-            toggle.classList.remove('mdc-deprecated-list-item--selected')
+            toggle.close()
             menu = this.querySelector('mdc-accordion-menu')
             menu.close()
-            this.querySelector('i').innerText = 'add'
 
         def toggle(self):
-            if this.classList.contains('active'):
+            if this.classList.contains('active') or this.classList.contains('opened'):
                 this.close()
             else:
                 this.open()
@@ -1553,13 +1622,58 @@ class MDCDialog(Div):
 class MDCChip(Div):
     attrs = {'class': 'mdc-chip', 'role': 'row'}
 
-    def __init__(self, *content, icon=None, **attrs):
+    def __init__(self, *content, licon=None, ticon=None, icon=None, **attrs):
         super().__init__(
             MDCChipRipple(),
+            licon,
             Gridcell(*content),
-            icon=Gridcell(icon) if icon else '',
+            ticon or icon,
             **attrs
         )
+
+
+class MDCMenu(Div):
+    def __init__(self, *content, **attrs):
+        aria_attrs = dict(
+            role=attrs.pop('role', 'menu'),
+            aria_hidden=attrs.pop('aria_hidden', 'true'),
+            aria_orientation=attrs.pop('aria_orientation', 'vertical'),
+        )
+
+        for c in content:
+            if not getattr(c.attrs, 'role', None):
+                c.attrs.role = 'menuitem'
+
+        super().__init__(
+            MDCList(
+                *content,
+                tag='ul',
+                **aria_attrs,
+            ),
+            cls='mdc-menu mdc-menu-surface',
+            **attrs
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            print('menu connected')
+            this.menu = new.mdc.menu.MDCMenu(this)
+
+        def open(self):
+            this.menu.open = True
+
+        def close(self):
+            this.menu.open = False
+
+        def toggle(self):
+            print('toggle')
+            if this.menu.open:
+                print('close')
+                this.close()
+            else:
+                print('open')
+                this.open()
+
 
 class MDCSwitchInput(Input):
     def __init__(self, **attrs):
@@ -1635,7 +1749,7 @@ class Html(Html):
         'https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.js',
         'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
         'https://cdn.polyfill.io/v2/polyfill.min.js',
-        '/static/py2js.js',
+        staticfiles_storage.url('py2js.js'),
     ]
     stylesheets = Html.stylesheets + [
         'https://fonts.googleapis.com/icon?family=Material+Icons',

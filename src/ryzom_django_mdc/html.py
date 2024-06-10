@@ -60,6 +60,14 @@ class MDCCheckboxWidget(MDCCheckboxField):
         )
 
 
+@widget_template('django/forms/widgets/switch_option.html')
+class MDCSwitchOption(MDCSwitch):
+    def __init__(self, **attrs):
+        del attrs['type']
+        self.input = MDCSwitchInput(**attrs)
+        super().__init__(self.input)
+
+
 @widget_template('django/forms/widgets/checkbox.html')
 class MDCSwitchWidget(MDCField):
     sass = """
@@ -70,13 +78,10 @@ class MDCSwitchWidget(MDCField):
         label
             margin-right: 32px
     """
-    @classmethod
-    def from_boundfield(cls, bf, **attrs):
-        attrs.update(widget_attrs(bf))
-        del attrs['type']
-        return cls(
+    def __init__(self, bf, label, **attrs):
+        super().__init__(
             Div(
-                Label(bf.label, **{'for': attrs['id']}),
+                Label(label, **{'for': attrs['id']}),
                 MDCSwitch(MDCSwitchInput(**attrs)),
                 cls='inner-switch-field'
             ),
@@ -84,9 +89,37 @@ class MDCSwitchWidget(MDCField):
             cls='MDCField switch-field'
         )
 
+    @classmethod
+    def from_boundfield(cls, bf, **attrs):
+        attrs.update(widget_attrs(bf))
+        del attrs['type']
+        return cls(bf, bf.label, **attrs)
+
+
+@widget_template('django/forms/widgets/checkbox_option.html')
+class MDCCheckbox(MDCCheckboxInput):
+    pass
+
 
 @widget_template('django/forms/widgets/checkbox_select.html')
 class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
+    option_template_name = 'django/forms/widgets/switch_option.html'
+
+    sass = """
+    .mdc-select-multiple
+        display: flex
+        flex-flow: column wrap
+        gap: 8px
+
+        .select-multiple-option
+            display: flex
+            flex-flow: row
+            justify-content: space-between
+            align-items: center
+            margin: 8px
+            gap: 8px
+    """
+
     @classmethod
     def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
@@ -97,20 +130,23 @@ class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
             choices += options
 
         content = []
+        option_template = widget_templates[cls.option_template_name]
         for choice in choices:
-            cb_input = MDCCheckboxInput(**context_attrs(choice))
-            cb_label = Label(
-                choice['label'],
-                style=dict(cursor='pointer'),
-                **{'for': cb_input.input.id}
-            )
+            choice_input = option_template(**context_attrs(choice))
             content.append(
-                Div(MDCFormField(cb_input, cb_label))
+                Div(
+                    Label(choice['label'], **{'for': choice_input.input.id}),
+                    choice_input,
+                    cls='select-multiple-option'
+                )
             )
 
         return cls(
             Label(bf.label),
-            *content,
+            Div(
+                *content,
+                cls='mdc-select-multiple'
+            ),
             **field_kwargs(bf),
         )
 
@@ -204,8 +240,7 @@ class FileInputWidget(MDCField):
             attrs['label'] = 'Select file'
 
         name = attrs['name']
-        label = Label(bf.label, id=name + '_label_id', style=dict(
-            font_size='0.8rem', color='rgba(0, 0, 0, 0.6)'))
+        label = Label(bf.label, id=name + '_label_id')
         return Div(
             cls(
                 label,
