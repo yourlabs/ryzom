@@ -864,6 +864,7 @@ class MDCAccordionMenu(Div):
         super().__init__(
             *content,
             cls='MDCAccordionMenu',
+            addcls=context.pop('addcls', ''),
             style=dict(
                 display='block',
                 overflow='clip',
@@ -908,9 +909,10 @@ class MDCAccordionMenu(Div):
             this.ariaHidden = 'false'
             this.start_layout()
             this.end_layout()
-            this.querySelectorAll('[tabindex]').forEach(
-                lambda elem: elem.setAttribute('tabindex', 0)
-            )
+            i = 0
+            for elem in this.querySelectorAll('[tabindex]'):
+                elem.setAttribute('tabindex', i)
+                i += 1
 
         def close(self):
             this.ariaHidden = 'true'
@@ -923,11 +925,17 @@ class MDCAccordionMenu(Div):
 class MDCAccordionSection(MDCList):
     tag = 'mdc-accordion-section'
 
-    def __init__(self, *content, **context):
+    def __init__(self, *content, toggle=None, menu=None, **context):
+        label = context.pop('label', None)
+        if toggle is None:
+            toggle = MDCAccordionToggle(label, **context)
+        if menu is None:
+            menu = MDCAccordionMenu(*content, **context)
+
         super().__init__(
-            MDCAccordionToggle(context.pop('label', None), **context),
-            MDCAccordionMenu(*content, **context),
-            addcls='mdc-accordion',
+            toggle,
+            menu,
+            addcls='mdc-accordion' + (' active' if context.get('opened', False) else '')
         )
 
     class HTMLElement:

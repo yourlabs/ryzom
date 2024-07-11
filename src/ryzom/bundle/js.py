@@ -84,7 +84,7 @@ def bundle(*modules):
         for key, value in mod.__dict__.items():
             if value in done:
                 continue
-            if hasattr(value, 'HTMLElement'):
+            if hasattr(value, 'HTMLElement') and value.HTMLElement:
                 if key in value.HTMLElement.__qualname__:
                     out += webcomponent(value)
             if callable(getattr(value, 'py2js', None)):

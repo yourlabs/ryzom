@@ -138,7 +138,15 @@
   removeDOM = function(params) {
     var parentNode = getElementByUuid(params.parent);
     var node = getElementByUuid(params.id);
-    parentNode.removeChild(node);
+    // animate on delete
+    if (node.dataset.ryzomAod) {
+      node.style.animation = node.dataset.ryzomAod;
+      node.addEventListener('animationend', function() {
+	parentNode.removeChild(node);
+      });
+    } else {
+        parentNode.removeChild(node);
+    }
   };
 
   changeDOM = function(params) {

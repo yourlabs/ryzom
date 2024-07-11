@@ -1,6 +1,3 @@
-.Body {
-  margin: 0;
-}
 .MDCField {
   margin-top: 32px;
   margin-bottom: 32px;
@@ -24,6 +21,32 @@
   color: rgba(0, 0, 0, 0.6);
   padding-left: 10px;
 }
+.arrow {
+  animation: rotate 0.4s ease-out;
+  --webkit-animation: rotate 0.4s ease-out; }
+
+.arrow.right {
+  transform: rotate(-45deg);
+  --webkit-transform: rotate(-45deg); }
+
+.arrow.down {
+  transform: rotate(45deg);
+  --webkit-transform: rotate(45deg); }
+
+@media (max-width: 700px) {
+  .MDCDataTableResponsive thead {
+    display: none; }
+  .MDCDataTableResponsive tr {
+    display: block; }
+  .MDCDataTableResponsive td {
+    display: block;
+    text-align: right;
+    height: auto; }
+  .MDCDataTableResponsive td:before {
+    content: attr(data-label);
+    float: left;
+    font-weight: bold; } }
+
 .ToggleNextElement svg {
   transition: all 0.5s ease;
 }
@@ -34,24 +57,38 @@
   display: flex;
   justify-content: space-between;
 }
+@media (max-width: 700px) {
+  .MDCDataTablePagination [slot] {
+    display: block; } }
+
 .InlineForm {
   display: inline-block;
 }
 .InlineForm .MDCField {
   display: inline-block;
 }
-.PageMenu {
-  margin-bottom: 10px;
-}
-.NarrowCard {
-  max-width: 25em;
-  margin: auto;
-  padding: 1em;
-  margin-top: 2em;
-}
-.NarrowCardbutton {
-  width: 100%;
-}
-.NarrowCard.MDCField label {
-  width: 100%;
-}
+.switch-field .inner-switch-field {
+  display: flex;
+  flex-flow: row; }
+
+.switch-field label {
+  margin-right: 32px; }
+
+.mdc-select-multiple {
+  display: flex;
+  flex-flow: column wrap;
+  gap: 8px; }
+  .mdc-select-multiple .select-multiple-option {
+    display: flex;
+    flex-flow: row;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px;
+    gap: 8px; }
+
+select-widget input {
+  border: 0;
+  outline: 0; }
+
+select-widget input:focus {
+  outline: none !important; }
