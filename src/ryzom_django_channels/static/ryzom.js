@@ -101,7 +101,9 @@
         var c = createDOMelement(child);
         var prev = elem.children[c.position]
         elem.insertBefore(c, prev);
-        eval(child.script);
+	if (child.script) {
+	    window.addEventListener('load', () => { eval(child.script) });
+        }
       });
     };
 
@@ -132,6 +134,7 @@
       eval(component.script);
     });
 
+    dispatchEvent(new Event('load'));
     //setRoutes();
   };
 
@@ -147,6 +150,7 @@
     } else {
         parentNode.removeChild(node);
     }
+    dispatchEvent(new Event('load'));
   };
 
   changeDOM = function(params) {
@@ -156,6 +160,7 @@
     parent.insertBefore(cur_node, prev_node)
     parent.removeChild(prev_node);
     eval(params.script);
+    dispatchEvent(new Event('load'));
   };
 
   /*

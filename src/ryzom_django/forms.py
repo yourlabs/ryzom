@@ -31,6 +31,11 @@ def boundfield_to_html(bf, **context):
 forms.BoundField.to_html = boundfield_to_html
 
 
+def boundfield_to_obj(bf, **context):
+    return bf.to_component().to_obj(**context)
+forms.BoundField.to_obj = boundfield_to_obj
+
+
 def form_to_component(form):
     content = []
     if non_field_errors := form.non_field_errors():

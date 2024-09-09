@@ -1573,7 +1573,6 @@ class MDCDialog(Div):
     tag = 'mdc-dialog'
     attrs = {
         'class': 'mdc-dialog',
-        'data-mdc-auto-init': 'MDCDialog'
     }
 
     def __init__(self, *content, **attrs):
@@ -1588,10 +1587,15 @@ class MDCDialog(Div):
 
     class HTMLElement:
         def connectedCallback(self):
+            print('connected')
+            window.addEventListener('load', this.init.bind(this))
             this.addEventListener('MDCDialog:closing', self.handle_closing.bind(this))
             this.addEventListener('MDCDialog:closed', self.handle_closed.bind(this))
             this.addEventListener('MDCDialog:opening', self.handle_opening.bind(this))
             this.addEventListener('MDCDialog:opened', self.handle_opened.bind(this))
+        
+        def init(self):
+            this.MDCDialog = new.mdc.dialog.MDCDialog(this)
 
         def onclosing(self, event):
             pass
