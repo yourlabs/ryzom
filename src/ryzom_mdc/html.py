@@ -420,6 +420,35 @@ class MDCCheckboxInput(Div):
         )
 
 
+class MDCCheckboxRadioInput(Div):
+    """
+    The actual input HTML element (widget).
+
+    TODO: stop hijacking attrs like this because it enforces downstream
+    boilerplate
+    """
+    def __init__(self, input=None, **attrs):
+        attrs.setdefault('type', 'checkbox')
+        super().__init__(
+            cls='mdc-checkbox',
+            input=input or MDCInputCheckboxNativeControl(**attrs),
+            checkbox=Div(
+                Component(
+                    Component(
+                        tag='circle', fill='none', stroke_width='3',
+                        cx='17', cy='17', r='15', stroke='black',
+                        cls='mdc-checkbox-radio__checkmark-path'),
+                    Component(
+                        tag='circle', fill='none', stroke_width='3',
+                        cx='17', cy='17', r='8', stroke='black',
+                        cls='mdc-checkbox-radio__checkmark-path'),
+                    tag='svg', viewBox='0 0 24 24',
+                ),
+                Div(cls='mdc-checkbox__mixedmark'),
+            ),
+        )
+
+
 class MDCCheckboxField(MDCField):
     def __init__(self, input, *content, name, label=None, help_text=None, value=None,
                  errors=None):
@@ -631,6 +660,33 @@ class MDCOption(Li):
             role='option',
             **extra_attrs,
         )
+
+
+@template('django/forms/widgets/select_option.html')
+class MDCOption(Li):
+    def __init__(self, index, **choice):
+        extra_attrs = dict()
+
+        selected = choice.get('selected', False)
+        if selected:
+            extra_attrs['addcls'] = 'mdc-list-item--selected'
+            extra_attrs['aria-selected'] = 'true'
+
+        if index == '0':
+            extra_attrs['tabindex'] = 0
+
+        super().__init__(
+            Span(cls='mdc-list-item__ripple'),
+            Span(
+                choice['label'] if choice['value'] else '',
+                cls='mdc-list-item__text'
+            ),
+            data_value=choice['value'],
+            cls='mdc-list-item',
+            role='option',
+            **extra_attrs,
+        )
+
 
 class MDCOptionMixin:
     def create_options(self, choices):
@@ -1642,6 +1698,25 @@ class MDCChip(Div):
             ticon or icon,
             **attrs
         )
+
+
+class MDCTooltip(Div):
+    def __init__(self, *content, **attrs):
+        super().__init__(
+            Div(*content, cls='mdc-tooltip__surface mdc-tooltip__surface-animation'),
+            cls='mdc-tooltip',
+            role='tooltip',
+            aria_hidden='true',
+            mdc_auto_init='MDCTooltip',
+            **attrs
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            this.tooltip = new.mdc.tooltip.MDCTooltip(this)
 
 
 class MDCMenu(Div):
