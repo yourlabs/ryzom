@@ -144,11 +144,12 @@ class MDCField(Div):
 
 
 class MDCTextFieldOutlined(MDCField):
-    def __init__(self, html_input, label=None, help_text=None, errors=None, licon=None, ticon=None, **attrs):
+    def __init__(self, html_input, *content, label=None, help_text=None, errors=None, licon=None, ticon=None, **attrs):
         self.html_input = html_input
         self.html_input.attrs.addcls = 'mdc-text-field__input'
 
         name = self.html_input.attrs.name
+        input_id = f'id_{name}'
         label_id = f'id_{name}_label'
         helper_id = f'id_{name}_helper'
         errors_id = f'id_{name}_errors'
@@ -275,6 +276,7 @@ class MDCSplitDateTime(Div):
                 value=time,
                 type='time',
                 **kwargs),
+            cls='mdc-split-datetime'
         )
 
     def set_error(self, error):
@@ -454,12 +456,13 @@ class MDCCheckboxField(MDCField):
                  errors=None):
         super().__init__(
             MDCFormField(
-                input, *content,
                 Label(
                     label or name.capitalize(),
-                    style=dict(cursor='pointer'),
+                    style=dict(cursor='pointer', margin_right='10px'),
                     **{'for': input.input.id}
                 ),
+                input, *content,
+                style='flex-flow: row nowrap; align-items: center; justify-content: start;'
             ),
             name=name,
             errors=errors,
@@ -669,20 +672,20 @@ class MDCOption(Li):
 
         selected = choice.get('selected', False)
         if selected:
-            extra_attrs['addcls'] = 'mdc-list-item--selected'
+            extra_attrs['addcls'] = 'mdc-list-item--selected mdc-deprecated-list-item--selected'
             extra_attrs['aria-selected'] = 'true'
 
         if index == '0':
             extra_attrs['tabindex'] = 0
 
         super().__init__(
-            Span(cls='mdc-list-item__ripple'),
+            Span(cls='mdc-deprecated-list-item__ripple'),
             Span(
                 choice['label'] if choice['value'] else '',
-                cls='mdc-list-item__text'
+                cls='mdc-list-item__text mdc-deprecated-list-item__text'
             ),
             data_value=choice['value'],
-            cls='mdc-list-item',
+            cls='mdc-list-item mdc-deprecated-list-item',
             role='option',
             **extra_attrs,
         )
@@ -771,7 +774,8 @@ class MDCSelectMenu(Div):
                     for group_name, group_choices, group_index
                     in optgroups
                 ),
-                cls='mdc-deprecated-list'
+                cls='mdc-deprecated-list mdc-list',
+                role='listbox',
             ),
             cls='mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth',
         )
@@ -820,8 +824,7 @@ class MDCSelectOutlined(Div):
             hidden = this.querySelector('input[type=hidden]')
             option = this.querySelector('[aria-selected=true]')
             hidden.value = option.dataset.value
-            input = event.target.querySelector('input')
-            up.emit(input, 'change')
+
 
 class Arrow(Span):
     sass = """
@@ -859,7 +862,7 @@ class MDCAccordionToggle(Li):
     tag = 'mdc-accordion-toggle'
 
     def __init__(self, *content, icon=None, ripple=True, **attrs):
-        mdc_icon = MDCIcon(icon, role='img', addcls='mdc-list-item__graphic')
+        mdc_icon = MDCIcon(icon, role='img', addcls='mdc-deprecated-list-item__graphic')
         opened = attrs.pop('opened', False)
         arrow = Arrow(color='var(--mdc-theme-primary)', way='down' if opened else 'right')
         super().__init__(
@@ -1688,7 +1691,7 @@ class MDCDialog(Div):
 
 
 class MDCChip(Div):
-    attrs = {'class': 'mdc-chip', 'role': 'row'}
+    attrs = {'class': 'mdc-deprecated-chip', 'role': 'row'}
 
     def __init__(self, *content, licon=None, ticon=None, icon=None, **attrs):
         super().__init__(
@@ -1728,7 +1731,7 @@ class MDCMenu(Div):
         )
 
         for c in content:
-            if not getattr(c.attrs, 'role', None):
+            if c and not getattr(c.attrs, 'role', None):
                 c.attrs.role = 'menuitem'
 
         super().__init__(
@@ -1762,6 +1765,52 @@ class MDCMenu(Div):
                 this.open()
 
 
+class MDCTabBar(Div):
+    def __init__(self, *content, **attrs):
+        super().__init__(
+            Div(
+                Div(
+                    Div(
+                        *content,
+                        cls='mdc-tab-scroller__scroll-content',
+                    ),
+                    cls='mdc-tab-scroller__scroll-area',
+                ),
+                cls='mdc-tab-scroller',
+            ),
+            cls='mdc-tab-bar',
+            role='tablist',
+            **attrs
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            this.tabBar = new.mdc.tabBar.MDCTabBar(this)
+
+        def layout(self):
+            this.tabBar.layout()
+
+
+class MDCTab(Div):
+    def __init__(self, content, icon=None, active=False, **attrs):
+        super().__init__(
+            Span(
+                Span(icon, cls='mdc-tab__icon') if icon else None,
+                Span(content, cls='mdc-tab__text-label'),
+                cls='mdc-tab__content',
+            ),
+            Span(
+                Span(cls='mdc-tab-indicator__content mdc-tab-indicator__content--underline'),
+                cls='mdc-tab-indicator' + ' mdc-tab-indicator--active' if active else '',
+            ),
+            Span(cls='mdc-tab__ripple'),
+            cls='mdc-tab',
+            role='tab',
+            aria_selected='true' if active else 'false',
+            **attrs
+        )
+
+
 class MDCSwitchInput(Input):
     def __init__(self, **attrs):
         super().__init__(
@@ -1772,23 +1821,38 @@ class MDCSwitchInput(Input):
         )
 
 
-class MDCSwitch(Div):
+class MDCSwitch(Button):
     def __init__(self, *content, **attrs):
+        checked = attrs.pop('checked', False)
+        if checked:
+            attrs['cls'] = 'mdc-switch mdc-switch--selected'
+        else:
+            attrs['cls'] = 'mdc-switch mdc-switch--unselected'
         super().__init__(
             Div(
-                Div(cls='mdc-switch__track'),
+                Span(*content, style='opacity:0'),
+                cls='mdc-switch__track'),
+            Div(
                 Div(
-                    Div(*content, cls='mdc-switch__thumb'),
-                    cls='mdc-switch__thumb-underlay',
-                )
+                    Div(
+                        Div(cls='mdc-elevation-overlay'),
+                        cls='mdc-switch__shadow'
+                    ),
+                    Div(cls='mdc-switch__ripple'),
+                    cls='mdc-switch__handle'
+                ),
+                cls='mdc-switch__handle-track'
             ),
+            role='switch',
+            type='button',
+            aria_checked='true' if checked else 'false',
             data_mdc_auto_init='MDCSwitch',
-            addcls='mdc-switch',
             **attrs
         )
 
+
 class MDCChipRipple(Div):
-    attrs = {'class': 'mdc-chip__ripple'}
+    attrs = {'class': 'mdc-deprecated-chip__ripple'}
 
 
 class Gridcell(Span):

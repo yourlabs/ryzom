@@ -44,7 +44,7 @@ for tag in BASIC_TAGS:
 
 SELFCLOSE_TAGS = (
     'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'link', 'meta',
-    'param', 'source', 'track', 'wbr',
+    'path', 'param', 'source', 'track', 'wbr',
 )
 
 for tag in SELFCLOSE_TAGS:

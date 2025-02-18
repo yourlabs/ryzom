@@ -50,6 +50,7 @@ class MDCDateInputWidget(MDCInputWidget):
         )
 
 
+@widget_template('django/forms/widgets/checkbox.html')
 class MDCCheckboxWidget(MDCCheckboxField):
     @classmethod
     def from_boundfield(cls, bf, **attrs):
@@ -68,7 +69,6 @@ class MDCSwitchOption(MDCSwitch):
         super().__init__(self.input)
 
 
-@widget_template('django/forms/widgets/checkbox.html')
 class MDCSwitchWidget(MDCField):
     sass = """
     .switch-field
@@ -82,7 +82,7 @@ class MDCSwitchWidget(MDCField):
         super().__init__(
             Div(
                 Label(label, **{'for': attrs['id']}),
-                MDCSwitch(MDCSwitchInput(**attrs)),
+                MDCSwitch(MDCSwitchInput(**attrs), checked=attrs.get('checked', False)),
                 cls='inner-switch-field'
             ),
             **field_kwargs(bf),
@@ -103,7 +103,7 @@ class MDCCheckbox(MDCCheckboxInput):
 
 @widget_template('django/forms/widgets/checkbox_select.html')
 class MDCCheckboxSelectMultipleWidget(MDCCheckboxSelectField):
-    option_template_name = 'django/forms/widgets/switch_option.html'
+    option_template_name = 'django/forms/widgets/checkbox_option.html'
 
     sass = """
     .mdc-select-multiple
@@ -193,12 +193,19 @@ class SplitDateTimeWidget(MDCField):
     def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
         date_context = context_attrs(context['subwidgets'][0])
+        date_lead = date_context.pop('leading_icon', '')
+        date_trail = date_context.pop('trailing_icon', '')
+        if date_lead:
+            icon = I(date_lead, cls='material-icons mdc-text-field__icon mdc-text-field__icon--leading')
+        if date_trail:
+            icon = I(date_trail, cls='material-icons mdc-text-field__icon mdc-text-field__icon--trailing')
         time_context = context_attrs(context['subwidgets'][1])
         return cls(
             Label(bf.label, style='display: block'),
             MDCFormField(
                 MDCTextFieldOutlined(
                     Input(**date_context),
+                    icon if date_lead or date_trail else None,
                     label='label' in date_context
                           and date_context['label'] or 'Date',
                     style=cls.date_style
@@ -209,6 +216,7 @@ class SplitDateTimeWidget(MDCField):
                           and time_context['label'] or 'Time',
                     style=cls.time_style,
                 ),
+                cls='split-datetime',
             ),
             **field_kwargs(bf),
         )
