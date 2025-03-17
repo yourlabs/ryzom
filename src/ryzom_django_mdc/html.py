@@ -216,6 +216,7 @@ class SplitDateTimeWidget(MDCField):
                           and time_context['label'] or 'Time',
                     style=cls.time_style,
                 ),
+                name='',
                 cls='split-datetime',
             ),
             **field_kwargs(bf),
@@ -272,20 +273,23 @@ class SelectWidget(MDCField):
         return cls(
             MDCFormField(
                 MDCSelectOutlined(**context),
+                **field_kwargs(bf),
             ),
             name=attrs['name']
         )
 
 
 @widget_template('django/forms/widgets/radio.html')
-class RadioSelectWidget(MDCRadio):
+class RadioSelectWidget(MDCField):
     @classmethod
     def from_boundfield(cls, bf, **attrs):
         context = widget_context(bf)
         attrs.update(widget_attrs(bf))
+        context['label'] = bf.label
         return cls(
-            bf.label,
-            Input(**context)
+            *[MDCRadio(radio_input[1][0]['label'], Input(**context_attrs(radio_input[1][0])))
+              for radio_input in context['optgroups']],
+            **field_kwargs(bf),
         )
 
 

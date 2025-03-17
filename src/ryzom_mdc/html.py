@@ -213,8 +213,21 @@ class MDCTextareaFieldOutlined(MDCTextFieldOutlined):
 class MDCFormField(Div):
     attrs = {'class': 'mdc-form-field'}
 
-    def __init__(self, *content, **kwargs):
-        super().__init__(*content, **self.attrs, **kwargs)
+    def __init__(self, *content, name, label=None, help_text=None, value=None, errors=None, **kwargs):
+        helper_id = f'id_{name}_helper'
+        errors_id = f'id_{name}_errors'
+
+        if errors:
+            self.errors = MDCErrorList(*errors, id=errors_id)
+        else:
+            self.errors = ''
+
+        if help_text:
+            self.help_text = MDCHelpText(help_text, id=helper_id)
+        else:
+            self.help_text = ''
+
+        super().__init__(*content, self.errors, self.help_text, **kwargs)
 
 
 class MDCFileField(Div):
@@ -462,6 +475,9 @@ class MDCCheckboxField(MDCField):
                     **{'for': input.input.id}
                 ),
                 input, *content,
+                name=name,
+                errors=errors,
+                help_text=help_text,
                 style='flex-flow: row nowrap; align-items: center; justify-content: start;'
             ),
             name=name,
@@ -1877,21 +1893,20 @@ class Body(Body):
 
 class MDCRadio(Div):
     def __init__(self, label, input, **kwargs):
-        id = kwargs.get('id')
-        input.cls = 'mdc-radio__native-control'
+        input.attrs['cls'] = 'mdc-radio__native-control'
         super().__init__(
+            Label(label, **{'for': input.id}),
             Div(
                 input,
                 Div(
+                    Div(cls='mdc-radio__outer-circle'),
                     Div(cls='mdc-radio__inner-circle'),
                     cls='mdc-radio__background'
                 ),
                 Div(cls='mdc-radio__ripple'),
                 cls='mdc-radio',
             ),
-            Label(label, **{'for': id}),
-            cls='mdc-form-field',
-            **kwargs,
+            style='display: flex; align-items: center',
         )
 
 
