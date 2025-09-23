@@ -33,6 +33,10 @@ class MDCInputWidget(MDCTextFieldOutlined):
             label=bf.label,
             help_text=bf.help_text,
             errors=bf.errors,
+            licon=attrs.get('licon', ''),
+            ticon=attrs.get('ticon', ''),
+            suffix=attrs.get('suffix', ''),
+
         )
 
 

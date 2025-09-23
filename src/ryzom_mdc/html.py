@@ -144,7 +144,7 @@ class MDCField(Div):
 
 
 class MDCTextFieldOutlined(MDCField):
-    def __init__(self, html_input, *content, label=None, help_text=None, errors=None, licon=None, ticon=None, **attrs):
+    def __init__(self, html_input, *content, label=None, help_text=None, errors=None, licon=None, ticon=None, suffix=None, **attrs):
         self.html_input = html_input
         self.html_input.attrs.addcls = 'mdc-text-field__input'
 
@@ -163,11 +163,15 @@ class MDCTextFieldOutlined(MDCField):
         if ticon:
             classes += ' mdc-text-field--with-trailing-icon'
 
+        if suffix:
+            suffix = Span(suffix, cls='mdc-text-field__affix mdc-text-field__affix--suffix')
+
         self.label = Label(
             notch_outline,
             licon,
             *content,
             ticon,
+            suffix,
             cls=classes,
             data_mdc_auto_init='MDCTextField',
             **{'for': input_id}
@@ -1781,18 +1785,32 @@ class MDCMenu(Div):
                 this.open()
 
 
-class MDCTabBar(Div):
+class MDCTabBarScroller(Div):
     def __init__(self, *content, **attrs):
         super().__init__(
             Div(
                 Div(
-                    Div(
-                        *content,
-                        cls='mdc-tab-scroller__scroll-content',
-                    ),
-                    cls='mdc-tab-scroller__scroll-area',
+                    *content,
+                    cls='mdc-tab-scroller__scroll-content',
                 ),
-                cls='mdc-tab-scroller',
+                cls='mdc-tab-scroller__scroll-area',
+            ),
+            cls='mdc-tab-scroller',
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            this.tabScroller = new.mdc.tabScroller.MDCTabScroller(this)
+
+
+class MDCTabBar(Div):
+    def __init__(self, *content, **attrs):
+        super().__init__(
+            Div(
+                MDCTabBarScroller(*content)
             ),
             cls='mdc-tab-bar',
             role='tablist',
@@ -1817,14 +1835,22 @@ class MDCTab(Div):
             ),
             Span(
                 Span(cls='mdc-tab-indicator__content mdc-tab-indicator__content--underline'),
-                cls='mdc-tab-indicator' + ' mdc-tab-indicator--active' if active else '',
+                cls='mdc-tab-indicator' + (' mdc-tab-indicator--active' if active else ''),
             ),
             Span(cls='mdc-tab__ripple'),
-            cls='mdc-tab',
+            cls='mdc-tab' + (' mdc-tab--active' if active else ''),
             role='tab',
             aria_selected='true' if active else 'false',
             **attrs
         )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            this.tab = new.mdc.tab.MDCTab(this)
+
 
 
 class MDCSwitchInput(Input):
