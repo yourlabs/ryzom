@@ -120,6 +120,7 @@ DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
         'NAME': os.getenv('DB_NAME', 'ryzom_django_example'),
+        'PORT': os.getenv('DB_PORT', '5432'),
         'HOST': os.getenv('DB_HOST'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
@@ -166,4 +167,3 @@ STATIC_ROOT = BASE_DIR / 'static'
 
 CELERY_BROKER_URL = 'redis://redis:6379'
 CELERY_RESULT_BACKEND = 'redis://redis:6379'
-

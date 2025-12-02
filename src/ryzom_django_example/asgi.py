@@ -2,7 +2,7 @@ import os
 
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from django.conf.urls import url
+from django.urls import re_path
 from django.core.asgi import get_asgi_application
 
 from ryzom_django_channels.consumers import Consumer
@@ -13,7 +13,7 @@ application = ProtocolTypeRouter({
 
     'websocket': AuthMiddlewareStack(
         URLRouter([
-            url(r"^ws/ddp/$", Consumer.as_asgi()),
+            re_path(r"^ws/ddp/$", Consumer.as_asgi()),
         ])
     ),
 })

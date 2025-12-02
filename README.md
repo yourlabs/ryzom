@@ -40,6 +40,14 @@ pip install -e .[project]
 py.test
 ```
 
+## Reactive (Django Channels)
+
+Ryzom can push HTML updates over websockets with ``ryzom_django_channels``:
+components subscribe to published querysets, server code can ``register`` and
+refresh specific components, and pages stay in sync without manual JS. See
+``docs/source/ryzom.reactive.rst`` and the example app in
+``src/ryzom_django_channels_example`` for a minimal end-to-end setup.
+
 ## Usage
 
 ### HTML

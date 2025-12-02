@@ -12,6 +12,8 @@ Welcome to ryzom's documentation!
 
    install
    ryzom
+   ryzom_mdc
+   ryzom_django_mdc
 
 
 Indices and tables
