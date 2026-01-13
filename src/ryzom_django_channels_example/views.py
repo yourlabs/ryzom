@@ -16,35 +16,46 @@ from ryzom_django_mdc.html import *
 from .models import Message, Room
 
 
-class AjaxFormMixin:
-    async def on_form_submit(event):
-        event.preventDefault()
+class AjaxForm(Component):
+    """
+    Wrapper component for forms that submits via AJAX.
+    Wraps the native <form> to preserve its functionality while adding AJAX behavior.
+    """
+    tag = 'ajax-form'
 
-        form = event.target
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
 
-        await fetch(form.action, {
-            'method': form.method,
-            'body': new.FormData(form)
-        }).then(
-            lambda response : print(response)
-        )
+        def init(self):
+            this.form = this.querySelector('form')
+            if this.form:
+                this.form.addEventListener('submit', this.on_form_submit.bind(this))
 
-        form.reset()
+        async def on_form_submit(self, event):
+            event.preventDefault()
+            form = event.target
+            await fetch(form.action, {
+                'method': form.method,
+                'body': new.FormData(form)
+            }).then(
+                lambda response: print(response)
+            )
+            form.reset()
 
-    def py2js(self):
-        form = getElementByUuid(self.id)
-        form.addEventListener('submit', self.on_form_submit)
 
-
-class MessageFormComponent(AjaxFormMixin, Form):
+class MessageFormComponent(AjaxForm):
+    """Form component wrapped with AjaxForm for AJAX submission."""
     def __init__(self, *content, view, form, **context):
         super().__init__(
-            Div(
-                form,
-                MDCButton(form.submit_label or 'submit'),
-                style='display:flex; flex-flow: row nowrap; align-items: baseline;'),
-            CSRFInput(view.request),
-            method='POST',
+            Form(
+                Div(
+                    form,
+                    MDCButton(form.submit_label or 'submit'),
+                    style='display:flex; flex-flow: row nowrap; align-items: baseline;'),
+                CSRFInput(view.request),
+                method='POST',
+            ),
             **context)
 
 

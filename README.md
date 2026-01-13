@@ -1,5 +1,16 @@
 # Ryzom: Replace HTML Templates with Python Components
 
+## Packages
+
+- **[ryzom](src/ryzom/README.md)** - Core component library
+- **[py2js](src/py2js/README.md)** - Python to JavaScript transpiler
+- **[ryzom_django](src/ryzom_django/README.md)** - Django integration
+- **[ryzom_django_autocomplete](src/ryzom_django_autocomplete/README.md)** - Autocomplete widgets for Django
+- **[ryzom_django_channels](src/ryzom_django_channels/README.md)** - Real-time reactive features with WebSockets
+- **[ryzom_django_mdc](src/ryzom_django_mdc/README.md)** - Material Design Components for Django forms
+- **[ryzom_mdc](src/ryzom_mdc/README.md)** - Material Design Components base
+- **[ryzom_unpoly](src/ryzom_unpoly/README.md)** - Unpoly integration
+
 ## Why?
 
 Because while frameworks like Django claim that "templates include a restricted

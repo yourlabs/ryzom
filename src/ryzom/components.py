@@ -10,7 +10,6 @@ import re
 import uuid
 
 from lxml import html
-from py2js.transpiler import transpile_body
 
 try:
     from django.utils.safestring import mark_safe
@@ -208,9 +207,13 @@ class ComponentMetaclass(type):
         cls = super().__new__(cls, name, bases, class_attrs)
 
         from ryzom.bundle.js import AUTOCOMPILE
+        handlers = []
         for method in AUTOCOMPILE:
             if getattr(cls, method, None):
-                class_attrs['attrs'][method] = f'{name}_{method}(this)'
+                handlers.append(method)
+        if handlers:
+            class_attrs['attrs']['data-ryzom-component'] = name
+            class_attrs['attrs']['data-ryzom-handlers'] = ','.join(handlers)
 
         return cls
 
@@ -469,12 +472,8 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
             content = content or self.content
             html += self.content_html(*content, **context)
-            if render_js_str := self.render_js():
-                html += '\n'.join([
-                    '\n<script type="text/javascript">',
-                    render_js_str.strip(),
-                    '</script>',
-                ])
+            # Note: Removed inline script embedding for CSP compliance
+            # Components should use HTMLElement.connectedCallback instead of py2js
             if self.content and getattr(self.content[-1], 'tag', None) != 'text':
                 newline = '\n'
             else:
@@ -491,22 +490,14 @@ class Component(metaclass=ComponentMetaclass):
         return self.to_html(*content, **context)
 
     def render_js(self):
-        if hasattr(self, 'py2js'):
-            return mark_safe(transpile_body(self.py2js, self=self))
+        # Deprecated: py2js methods are no longer supported for CSP compliance
+        # Components should use HTMLElement.connectedCallback instead
+        # The bundle system will generate JS for HTMLElement classes
         return ''
 
     def render_js_tree(self, lvl=0):
-        js_str = str(self.render_js())
-
-        if js_str:
-            js_str = js_str
-
-        if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
-            for c in self.content:
-                if isinstance(c, Component):
-                    js_str += c.render_js_tree(lvl+1)
-
-        return js_str
+        # Deprecated: py2js methods are no longer supported for CSP compliance
+        return ''
 
 
 class CTree(Component):

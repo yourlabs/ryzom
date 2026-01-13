@@ -234,40 +234,59 @@ class MDCFormField(Div):
         super().__init__(*content, self.errors, self.help_text, **kwargs)
 
 
-class MDCFileField(Div):
+class MDCFileField(Component):
+    """
+    File input field with label update on file selection.
+    Uses HTMLElement pattern for CSP compliance.
+    """
+    tag = 'mdc-file-field'
+
     def __init__(self, html_input, label=None, help_text=None, errors=None, **attrs):
         self.btn = MDCButtonLabelOutlined(label, False, style=dict(margin=0))
-        self.input_id = html_input.attrs['id']
-        self.btn.attrs['for'] = self.input_id
+        input_id = html_input.attrs['id']
+        self.btn.attrs['for'] = input_id
         if 'empty_value' in attrs:
-            self.empty_value = str(attrs['empty_value'])
+            empty_value = str(attrs.pop('empty_value'))
         else:
-            self.empty_value = 'No file selected'
+            empty_value = 'No file selected'
 
-        self.selected_text = Span(self.empty_value)
-        self.label_id = self.selected_text.id
+        selected_text = Span(empty_value)
+        label_id = selected_text.id
         super().__init__(
             Span(
                 html_input,
                 style='display:block;width:0;height:0;overflow:hidden'
             ),
             self.btn,
-            self.selected_text,
+            selected_text,
             style=dict(
                 margin_bottom='24px'
-            )
+            ),
+            **{
+                'data-input-id': input_id,
+                'data-label-id': str(label_id),
+                'data-empty-value': empty_value
+            }
         )
 
-    def set_update_name(input_id, label_id, empty_value):
-        def update_name(event):
-            file_name = event.target.value
-            label = getElementByUuid(label_id)
-            label.innerHTML = file_name or empty_value
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
 
-        document.querySelector('#'+input_id).addEventListener('change', update_name)
+        def init(self):
+            input_id = this.dataset.inputId
+            label_id = this.dataset.labelId
+            empty_value = this.dataset.emptyValue
 
-    def py2js(self):
-        self.set_update_name(self.input_id, self.label_id, self.empty_value)
+            def update_name(event):
+                file_name = event.target.value
+                label = getElementByUuid(label_id)
+                if label:
+                    label.innerHTML = file_name or empty_value
+
+            file_input = document.getElementById(input_id)
+            if file_input:
+                file_input.addEventListener('change', update_name)
 
 
 class MDCSplitDateTime(Div):
@@ -513,7 +532,13 @@ class MDCCheckboxSelectField(MDCField):
             self.help_text.attrs.style.margin_top = '-10px'
 
 
-class MDCCheckboxListItem(Li):
+class MDCCheckboxListItem(Component):
+    """
+    Checkbox list item that triggers input on click.
+    Uses HTMLElement pattern for CSP compliance.
+    """
+    tag = 'mdc-checkbox-list-item'
+
     def __init__(self, title, id, checked=False, **kwargs):
         self.input_id = id
         if checked:
@@ -549,20 +574,28 @@ class MDCCheckboxListItem(Li):
             }
         )
 
-    def click_input(event):
-        event.stopPropagation()
-        elem = event.target.querySelector('input')
-        if elem:
-            elem.click()
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
 
-    def py2js(self):
-        elem = getElementByUuid(self.id)
-        elem.onclick = self.click_input
+        def init(self):
+            this.addEventListener('click', this.click_input.bind(this))
+
+        def click_input(self, event):
+            event.stopPropagation()
+            elem = this.querySelector('input')
+            if elem:
+                elem.click()
 
 
-class MDCMultipleChoicesCheckbox(Ul):
+class MDCMultipleChoicesCheckbox(Component):
+    """
+    Multiple choice checkbox list with selection limit.
+    Uses HTMLElement pattern for CSP compliance.
+    """
+    tag = 'mdc-multiple-choices-checkbox'
+
     def __init__(self, name, choices, n=1, **kwargs):
-        self.max = n
         alabel = kwargs.pop('aria-label', 'Label')
         super().__init__(
             *(MDCCheckboxListItem(
@@ -574,35 +607,45 @@ class MDCMultipleChoicesCheckbox(Ul):
             ) for i, title, value in choices),
             cls='mdc-deprecated-list',
             role='group',
-            **{'aria-label': alabel}
+            **{
+                'aria-label': alabel,
+                'data-max': str(n)
+            }
         )
 
-    def update_inputs(event):
-        input_list = event.currentTarget
-        checked = input_list.querySelectorAll('input:checked')
-        unchecked = input_list.querySelectorAll('input:not(:checked)')
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
 
-        def disable(elem, pos, arr):
-            elem.disabled = True
-            list_item = document.querySelector(
-                '[data-list-item-of="' + elem.id + '"]'
-            ).classList.add('mdc-deprecated-list-item--disabled')
+        def init(self):
+            this.max = parseInt(this.dataset.max)
+            this.addEventListener('change', this.update_inputs.bind(this))
 
-        def enable(elem, pas, arr):
-            elem.disabled = undefined
-            list_item = document.querySelector(
-                '[data-list-item-of="' + elem.id + '"]'
-            ).classList.remove('mdc-deprecated-list-item--disabled')
+        def update_inputs(self, event):
+            checked = this.querySelectorAll('input:checked')
+            unchecked = this.querySelectorAll('input:not(:checked)')
+            max_selections = this.max
 
-        if checked.length >= self.max:
-            unchecked.forEach(disable)
-        else:
-            unchecked.forEach(enable)
+            def disable(elem, pos, arr):
+                elem.disabled = True
+                list_item = document.querySelector(
+                    '[data-list-item-of="' + elem.id + '"]'
+                )
+                if list_item:
+                    list_item.classList.add('mdc-deprecated-list-item--disabled')
 
-    def py2js(self):
-        input_list = getElementByUuid(self.id)
-        input_list.max = self.max
-        input_list.addEventListener('change', self.update_inputs)
+            def enable(elem, pos, arr):
+                elem.disabled = undefined
+                list_item = document.querySelector(
+                    '[data-list-item-of="' + elem.id + '"]'
+                )
+                if list_item:
+                    list_item.classList.remove('mdc-deprecated-list-item--disabled')
+
+            if checked.length >= max_selections:
+                unchecked.forEach(disable)
+            else:
+                unchecked.forEach(enable)
 
 
 class MDCSelect(Div):
@@ -1910,11 +1953,35 @@ class InlineForm(Form):
     }
 
 
-class Body(Body):
+class MDCInit(Component):
+    """
+    Component that initializes Material Design Components.
+    Uses HTMLElement pattern for CSP compliance.
+    """
+    tag = 'mdc-init'
+
+    def __init__(self):
+        super().__init__(style='display:none')
+
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            mdc.autoInit()
+
+
+class MDCBody(Body):
+    """MDC-styled body element with auto-initialization."""
     attrs = {'class': 'mdc-typography'}
 
-    def py2js(self):
-        mdc.autoInit()
+    def __init__(self, *content, **attrs):
+        # Add MDCInit component to handle mdc.autoInit()
+        super().__init__(*content, MDCInit(), **attrs)
+
+
+# Backwards compatibility alias
+Body = MDCBody
 
 
 class MDCRadio(Div):

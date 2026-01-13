@@ -21,7 +21,41 @@
     window.components['head'] = document.getElementsByTagName('head')[0];
     window.components['body'] = document.getElementsByTagName('body')[0];
 
+    // Setup event delegation for CSP-compliant event handling
+    setupEventDelegation();
+
     // setRoutes();
+  }
+
+  // Event delegation for data-ryzom-handlers attributes
+  // This replaces inline event handlers for CSP compliance
+  setupEventDelegation = function() {
+    var events = ['click', 'mouseover', 'submit', 'change', 'input'];
+
+    events.forEach(function(eventType) {
+      document.addEventListener(eventType, function(event) {
+        // Find the closest element with ryzom handlers
+        var target = event.target;
+        while (target && target !== document) {
+          var handlers = target.getAttribute('data-ryzom-handlers');
+          var component = target.getAttribute('data-ryzom-component');
+
+          if (handlers && component) {
+            var handlerList = handlers.split(',');
+            var handlerName = 'on' + eventType;
+
+            if (handlerList.indexOf(handlerName) !== -1) {
+              // Call the bundled function: ComponentName_oneventtype(target)
+              var funcName = component + '_' + handlerName;
+              if (typeof window[funcName] === 'function') {
+                window[funcName](target);
+              }
+            }
+          }
+          target = target.parentElement;
+        }
+      }, true); // Use capture phase to handle events before they bubble
+    });
   }
 
   setRoutes = function() {
@@ -62,20 +96,31 @@
   }
 
   createDOMelement = function(component) {
-    var elem; 
+    var elem;
     if (component.tag == 'text')
       elem = document.createTextNode(decodeHtml(component.content));
     else if (typeof(component) == 'string')
       elem = document.createTextNode(component);
     else {
       if (Array.isArray(component)) {
-	console.log('component is array')
-	elem = document.createElement('p');
-	component = {content: component};
+        console.log('component is array')
+        elem = document.createElement('p');
+        component = {content: component};
       } else {
-	elem = document.createElement(component.tag);
+        elem = document.createElement(component.tag);
       }
 
+      // Create and append all children FIRST, before setting attributes
+      // This ensures children are available when connectedCallback fires
+      if (component.content && typeof(component.content) != 'string' && component.content.length) {
+        component.content.forEach(function(child) {
+          var c = createDOMelement(child);
+          var prev = elem.children[c.position]
+          elem.insertBefore(c, prev);
+        });
+      }
+
+      // Set attributes after children are in place
       if (component.attrs) {
         Object.keys(component.attrs).forEach(function(k) {
           val = component.attrs[k];
@@ -94,18 +139,7 @@
       ryzom.subscribe(component.publication, component.subscription, component.id, function(r, e) {
         if (e) { console.log(e); }
       });
-    };
-
-    if (component.content && typeof(component.content) != 'string' && component.content.length) {
-      component.content.forEach(function(child) {
-        var c = createDOMelement(child);
-        var prev = elem.children[c.position]
-        elem.insertBefore(c, prev);
-	if (child.script) {
-	    window.addEventListener('load', () => { eval(child.script) });
-        }
-      });
-    };
+    }
 
     registerComponent(component, elem)
 
@@ -131,7 +165,8 @@
       var parent = getElementByUuid(component.parent)
       var prev = parent.children[component.position]
       parent.insertBefore(elem, prev);
-      eval(component.script);
+      // Note: removed eval(component.script) for CSP compliance
+      // Components should use HTMLElement.connectedCallback instead of py2js
     });
 
     dispatchEvent(new Event('load'));
@@ -159,7 +194,8 @@
     var parent = getElementByUuid(params.parent);
     parent.insertBefore(cur_node, prev_node)
     parent.removeChild(prev_node);
-    eval(params.script);
+    // Note: removed eval(params.script) for CSP compliance
+    // Components should use HTMLElement.connectedCallback instead of py2js
     dispatchEvent(new Event('load'));
   };
 

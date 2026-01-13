@@ -1,3 +1,5 @@
+import warnings
+
 from ryzom.components import CList, Component, CTree, HTMLPayload, Markdown, Text
 from py2js.transpiler import transpile_body
 
@@ -130,6 +132,15 @@ class Html(Component):
             if hasattr(src, 'to_html'):
                 self.head.content.append(src)
             elif callable(src):
+                # Callable scripts generate inline JS which violates CSP.
+                # Prefer using Component.HTMLElement for CSP compliance.
+                warnings.warn(
+                    f'Callable script {src.__name__} generates inline JS. '
+                    'For CSP compliance, use Component with HTMLElement class instead. '
+                    'See ryzom documentation for migration guide.',
+                    DeprecationWarning,
+                    stacklevel=2
+                )
                 self.head.content.append(
                     Script(mark_safe(transpile_body(src)))
                 )
