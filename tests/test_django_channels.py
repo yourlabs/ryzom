@@ -156,9 +156,13 @@ async def ws(ws_token):
 def test_get_token(view):
     assert not Client.objects.all().count()
 
-    js_string = view.get_token()
-    assert 'window.token =' in js_string
-    assert 'ws_connect()' in js_string
+    meta = view.get_token()
+    # get_token now returns a meta Component instead of inline script
+    assert meta.tag == 'meta'
+    assert meta.attrs['name'] == 'ryzom-config'
+    assert 'content' in meta.attrs  # token
+    assert 'data-ws-host' in meta.attrs
+    assert 'data-ws-port' in meta.attrs
     assert Client.objects.all().count()
 
 

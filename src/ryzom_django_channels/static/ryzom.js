@@ -258,12 +258,36 @@
 
   var ws;
 
+  // Read websocket config from meta tag (CSP-compliant, no inline scripts)
+  getRyzomConfig = function() {
+    var meta = document.querySelector('meta[name="ryzom-config"]');
+    if (meta) {
+      return {
+        token: meta.getAttribute('content'),
+        ws_host: meta.getAttribute('data-ws-host'),
+        ws_port: meta.getAttribute('data-ws-port')
+      };
+    }
+    // Fallback to window globals for backwards compatibility
+    if ('token' in window) {
+      return {
+        token: window.token,
+        ws_host: window.ws_host,
+        ws_port: window.ws_port
+      };
+    }
+    return null;
+  };
+
   ws_connect = function(reconnecting) {
-    ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-    ws_host = ws_host ? ws_host : window.location.hostname
-    ws_port = ws_port ? ws_port : window.location.port
-    ws_path = ws_scheme + '://' + ws_host + ':' + ws_port + '/ws/ddp/'
-    ws_path += '?' + token
+    var config = getRyzomConfig();
+    if (!config) return;
+
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    var ws_host = config.ws_host ? config.ws_host : window.location.hostname;
+    var ws_port = config.ws_port ? config.ws_port : window.location.port;
+    var ws_path = ws_scheme + '://' + ws_host + ':' + ws_port + '/ws/ddp/';
+    ws_path += '?' + config.token;
     ws = new WebSocket(ws_path);
 
     if (reconnecting) {
@@ -303,7 +327,8 @@
     ws.callbacks = [];
   };
 
-  if ('token' in window)
+  // Auto-connect if config is available
+  if (getRyzomConfig())
     ws_connect();
 
   ws_send = function(data, cb) {

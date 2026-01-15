@@ -12,7 +12,6 @@ from django import http
 from django.conf import settings
 
 from channels.layers import get_channel_layer
-from py2js.renderer import JS, autoexec
 from ryzom.components import Component
 from ryzom_django_channels.models import (Client, Publication, Registration,
                                           Subscription)
@@ -28,17 +27,16 @@ class ReactiveMixin:
 
         view.client = client
 
-        def js_set_token():
-            window.token = token
-            window.ws_host = host
-            window.ws_port = port
-            ws_connect()
-
-        return autoexec(JS(js_set_token, dict(
-            token=client.token,
-            host=settings.WS_HOST,
-            port=settings.WS_PORT,
-        )))
+        # Use a meta tag instead of inline script for CSP compliance
+        return Component(
+            'meta',
+            name='ryzom-config',
+            content=client.token,
+            **{
+                'data-ws-host': settings.WS_HOST,
+                'data-ws-port': settings.WS_PORT,
+            }
+        )
 
 
 class RegisterManager:
