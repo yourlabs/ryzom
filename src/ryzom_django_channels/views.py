@@ -12,7 +12,7 @@ from django import http
 from django.conf import settings
 
 from channels.layers import get_channel_layer
-from ryzom.components import Component
+from ryzom.html import Meta
 from ryzom_django_channels.models import (Client, Publication, Registration,
                                           Subscription)
 
@@ -28,8 +28,7 @@ class ReactiveMixin:
         view.client = client
 
         # Use a meta tag instead of inline script for CSP compliance
-        return Component(
-            'meta',
+        return Meta(
             name='ryzom-config',
             content=client.token,
             **{
