@@ -369,7 +369,6 @@ class MDCListItem(Li):
 
 class MDCSnackBar(Div):
     def __init__(self, msg, status='success', delay=0):
-        self.delay = delay
         super().__init__(
             Div(
                 Div(
@@ -392,12 +391,18 @@ class MDCSnackBar(Div):
                 **{'aria-relevant': 'addition'}
             ),
             cls='mdc-snackbar',
-            **{'data-mdc-auto-init': 'MDCSnackbar'}
+            **{'data-delay': delay}
         )
 
     class HTMLElement:
         def connectedCallback(self):
-            new.mdc.snackbar.MDCSnackbar(this).open(),
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            delay = parseInt(this.dataset.delay, 10) or 0
+            def open():
+                new.mdc.snackbar.MDCSnackbar(this).open()
+            setTimeout(open, delay)
 
 
 class MDCErrorListItem(Li):
