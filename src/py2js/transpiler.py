@@ -288,12 +288,16 @@ class JS(object):
                 prep = 'async ' + prep
                 self.is_async = False
             self.write(prep)
+            # Save outer scope and create new scope for this function
+            outer_scope = self._scope
             self._scope = [arg.arg for arg in node.args.args]
             self.indent()
             for stmt in node.body:
                 self.visit(stmt)
             self.dedent()
             self.write("}")
+            # Restore outer scope
+            self._scope = outer_scope
 
     @scope
     def visit_ClassDef(self, node):
