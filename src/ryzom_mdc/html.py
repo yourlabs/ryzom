@@ -400,9 +400,10 @@ class MDCSnackBar(Div):
 
         def init(self):
             delay = parseInt(this.dataset.delay, 10) or 0
-            def open():
-                new.mdc.snackbar.MDCSnackbar(this).open()
-            setTimeout(open, delay)
+            setTimeout(this.open.bind(this), delay)
+
+        def open(self):
+            new.mdc.snackbar.MDCSnackbar(this).open()
 
 
 class MDCErrorListItem(Li):
