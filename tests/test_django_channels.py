@@ -86,9 +86,8 @@ def pub():
     Publication.objects.create(name='test_pub')
 
 
-def find_token(js_str):
-    s = re.search(r'token = "(?P<token>.*)";', js_str)
-    return s.group(1)
+def find_token(meta):
+    return meta.attrs['content']
 
 
 @pytest.fixture
