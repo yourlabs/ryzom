@@ -357,8 +357,9 @@ class Component(metaclass=ComponentMetaclass):
         :param Component component: The child component to add to the \
                 content of the current instance
         '''
-        component.position = len(self.content)
-        component.parent = self
+        if isinstance(component, Component):
+            component.position = len(self.content)
+            component.parent = self
         self.content.append(component)
 
     def addchildren(self, components):
