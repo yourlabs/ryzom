@@ -10,6 +10,7 @@ import re
 import uuid
 
 from lxml import html
+from py2js.transpiler import transpile_body
 
 try:
     from django.utils.safestring import mark_safe
