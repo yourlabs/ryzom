@@ -67,7 +67,6 @@ def _ddp_insert_change(sender, **kwargs):
 
 
 def ddp_insert_change(sender_mod, sender_name, created, instance_id):
-    print('ddp_insert_change')
     subscriptions = Subscription.objects.filter(
         publication__model_class=sender_name,
         publication__model_module=sender_mod
@@ -114,7 +113,7 @@ def ddp_insert_change(sender_mod, sender_name, created, instance_id):
             # are handling only one entry, the queryset shouldn't
             # move by more that one in and/or one out
             for id in diff['removed']:
-                send_remove(sub, template, qs.get(pk=id))
+                send_remove(sub, template, model.objects.get(pk=id))
             for id in diff['inserted']:
                 send_insert(sub, template, qs.get(pk=id))
 
