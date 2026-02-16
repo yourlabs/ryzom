@@ -115,6 +115,12 @@ class JS(object):
         self._functions = {}
         self.in_str = False
 
+        # For better error messages
+        self._source = None
+        self._current_class = None
+        self._current_method = None
+        self._visit_stack = []
+
         if context:
             _copy_context = context.copy()
             for key in _copy_context.keys():
@@ -154,15 +160,54 @@ class JS(object):
         return self.comparison_op[node.__class__.__name__]
 
     def visit(self, node, scope=None):
-        try:
-            visitor = getattr(self, 'visit_' + self.name(node))
-        except AttributeError:
-            raise JSError("syntax not supported (%s)" % node)
+        if node is None:
+            # Handle None nodes gracefully - return 'null' in JS
+            return 'null'
 
-        if hasattr(visitor, 'statement'):
-            return visitor(node, scope)
-        else:
-            return visitor(node)
+        node_name = self.name(node)
+        self._visit_stack.append(node_name)
+
+        try:
+            visitor = getattr(self, 'visit_' + node_name)
+        except AttributeError:
+            # Better error message with location info
+            location = ''
+            if hasattr(node, 'lineno') and hasattr(node, 'col_offset'):
+                location = f' at line {node.lineno}, column {node.col_offset}'
+            if hasattr(node, 'end_lineno') and hasattr(node, 'end_col_offset'):
+                location += f' to line {node.end_lineno}, column {node.end_col_offset}'
+
+            # Try to get source segment if available
+            source_hint = ''
+            if self._source and hasattr(node, 'lineno'):
+                lines = self._source.split('\n')
+                if 0 < node.lineno <= len(lines):
+                    source_hint = f'\n  Source: {lines[node.lineno - 1].strip()}'
+
+            # Context info
+            context = ''
+            if self._current_class:
+                context = f'\n  In class: {self._current_class}'
+            if self._current_method:
+                context += f'\n  In method: {self._current_method}'
+
+            # Visit stack
+            stack_info = f'\n  Visit stack: {" -> ".join(self._visit_stack[-10:])}'
+
+            raise JSError(
+                f"syntax not supported: {node_name}{location}{source_hint}{context}{stack_info}"
+                f"\n  Node dump: {ast.dump(node) if hasattr(ast, 'dump') else node}"
+            )
+
+        try:
+            if hasattr(visitor, 'statement'):
+                result = visitor(node, scope)
+            else:
+                result = visitor(node)
+        finally:
+            self._visit_stack.pop()
+
+        return result
 
     def visit_Module(self, node):
         for stmt in node.body:
@@ -189,6 +234,9 @@ class JS(object):
 
     @scope
     def visit_FunctionDef(self, node):
+        old_method = self._current_method
+        self._current_method = node.name
+
         is_static = False
         is_javascript = False
         if node.decorator_list:
@@ -298,9 +346,14 @@ class JS(object):
             self.write("}")
             # Restore outer scope
             self._scope = outer_scope
+            # Restore method name for error tracking
+            self._current_method = old_method
 
     @scope
     def visit_ClassDef(self, node):
+        old_class = self._current_class
+        self._current_class = node.name
+
         if node.bases:
             self.write(f"class {node.name} extends {node.bases[0].id}" + " {")
         else:
@@ -318,6 +371,8 @@ class JS(object):
 
         self.dedent()
         self.write("}")
+        # Restore class name for error tracking
+        self._current_class = old_class
 
     def visit_Return(self, node):
         if node.value is not None:
@@ -653,6 +708,13 @@ class JS(object):
                     self.visit(comp)
                     )
 
+    def visit_IfExp(self, node):
+        return "(%s ? %s : %s)" % (
+            self.visit(node.test),
+            self.visit(node.body),
+            self.visit(node.orelse),
+        )
+
     def visit_Name(self, node):
         id = node.id
         try:
@@ -850,8 +912,10 @@ def convert_py2js(s, context=None):
     'x.__getitem__(slice(3, null));'
 
     """
-    t = ast.parse(textwrap.dedent(s))
+    source = textwrap.dedent(s)
+    t = ast.parse(source)
     v = JS(context)
+    v._source = source  # Store source for better error messages
     v.visit(t)
     js = v.read()
     return js
