@@ -4,6 +4,76 @@ Functions to communicate DDP messages to the channel layer.
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+from ryzom_django_channels.messagequeue import push_message
+
+
+def _client_is_available(client):
+    '''Check if a client is reachable via its transport.'''
+    if client is None:
+        return False
+    if client.transport == 'poll':
+        return True
+    return client.channel != ''
+
+
+def _translate_ddp(handle_ddp_params):
+    '''
+    Translate handle.ddp params into the DDP format the JS client expects.
+
+    The Consumer's handle_ddp method does this translation for WS clients;
+    for poll clients we do it here before pushing to Redis.
+
+    Translation map:
+    - inserted → {type: 'insert', params: instance}
+    - changed  → {type: 'change', params: instance}
+    - removed  → {type: 'remove', params: {id: ..., parent: ...}}
+    '''
+    ddp_type = handle_ddp_params['type']
+    if ddp_type == 'inserted':
+        return {
+            'type': 'DDP',
+            'params': {
+                'type': 'insert',
+                'params': handle_ddp_params['instance'],
+            },
+        }
+    elif ddp_type == 'changed':
+        return {
+            'type': 'DDP',
+            'params': {
+                'type': 'change',
+                'params': handle_ddp_params['instance'],
+            },
+        }
+    elif ddp_type == 'removed':
+        return {
+            'type': 'DDP',
+            'params': {
+                'type': 'remove',
+                'params': {
+                    'id': handle_ddp_params['id'],
+                    'parent': handle_ddp_params['parent'],
+                },
+            },
+        }
+    return None
+
+
+def _send_to_client(client, data):
+    '''
+    Send a handle.ddp message to a client via the appropriate transport.
+
+    For WebSocket clients: send through the channel layer as before.
+    For poll clients: translate to DDP format and push to Redis queue.
+    '''
+    if client.transport == 'poll':
+        msg = _translate_ddp(data['params'])
+        if msg:
+            push_message(client.token, msg)
+    else:
+        channel = get_channel_layer()
+        async_to_sync(channel.send)(client.channel, data)
+
 
 def send_insert(sub, tmpl, instance):
     '''
@@ -22,7 +92,7 @@ def send_insert(sub, tmpl, instance):
             the model instance
     :param int id: The id of the model to insert
     '''
-    if sub.client is None or sub.client.channel == '':
+    if not _client_is_available(sub.client):
         return
 
     tmpl_instance = tmpl(instance)
@@ -35,8 +105,7 @@ def send_insert(sub, tmpl, instance):
             'instance': tmpl_instance.to_obj()
         }
     }
-    channel = get_channel_layer()
-    async_to_sync(channel.send)(sub.client.channel, data)
+    _send_to_client(sub.client, data)
 
 
 def send_change(sub, tmpl, instance):
@@ -56,7 +125,7 @@ def send_change(sub, tmpl, instance):
             the model instance
     :param int id: The id of the model to change
     '''
-    if sub.client is None or sub.client.channel == '':
+    if not _client_is_available(sub.client):
         return
 
     tmpl_instance = tmpl(instance)
@@ -69,8 +138,7 @@ def send_change(sub, tmpl, instance):
             'instance': tmpl_instance.to_obj()
         }
     }
-    channel = get_channel_layer()
-    async_to_sync(channel.send)(sub.client.channel, data)
+    _send_to_client(sub.client, data)
 
 
 def send_remove(sub, tmpl, instance):
@@ -91,7 +159,7 @@ def send_remove(sub, tmpl, instance):
             the model instance
     :param int id: The id of the model to remove
     '''
-    if sub.client is None or sub.client.channel == '':
+    if not _client_is_available(sub.client):
         return
 
     tmpl_instance = tmpl(instance)
@@ -103,5 +171,4 @@ def send_remove(sub, tmpl, instance):
             'parent': sub.subscriber_id
         }
     }
-    channel = get_channel_layer()
-    async_to_sync(channel.send)(sub.client.channel, data)
+    _send_to_client(sub.client, data)

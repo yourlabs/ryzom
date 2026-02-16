@@ -12,3 +12,6 @@ if settings.CHANNELS_ENABLE:
     urlpatterns.append(
         path('reactive/', include('ryzom_django_channels_example.views')),
     )
+    urlpatterns.append(
+        path('', include('ryzom_django_channels.urls')),
+    )

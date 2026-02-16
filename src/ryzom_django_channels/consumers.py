@@ -1,10 +1,7 @@
 '''
 Consumer for Django channels.
 Handles websockets messages from client and channels layer
-ddp_urlpattern and server_methods are subject to change in a
-near future. Both will be handled in a separate file
 '''
-import importlib
 import json
 from datetime import timedelta
 
@@ -12,10 +9,7 @@ from asgiref.sync import async_to_sync
 from channels.auth import get_user, login
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.conf import settings
-from django.contrib.auth import authenticate
 from django.utils import timezone
-
-from ryzom_django_channels.methods import Methods
 
 
 AUTH_BACKEND = settings.AUTHENTICATION_BACKENDS[0]
@@ -24,17 +18,6 @@ class Consumer(JsonWebsocketConsumer):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
-    '''
-    Import all user defined server methods
-    '''
-    def __init__(self, *args, **kwargs):
-        self.ddp_urlpatterns = importlib.import_module(
-            settings.WS_URLPATTERNS).urlpatterns
-
-        for module in settings.SERVER_METHODS:
-            importlib.import_module(module)
-
-        super().__init__(*args, **kwargs)
 
     def connect(self):
         from ryzom_django_channels.models import Client
@@ -68,6 +51,7 @@ class Consumer(JsonWebsocketConsumer):
 
     def disconnect(self, close_code):
         from ryzom_django_channels.models import Client
+        from ryzom_django_channels.messagequeue import clear_queue
         '''
         Websocket disconnect handler.
         Removes the ryzom.models.Client entry attached to this
@@ -75,12 +59,14 @@ class Consumer(JsonWebsocketConsumer):
         Zombies that may stay in our DB on server reboots are removed in
         the ryzom.apps Appconfig.ready() function
         '''
-        client = Client.objects.filter(channel=self.channel_name)
-        if client.count():
-            client.delete()
+        clients = Client.objects.filter(channel=self.channel_name)
+        for c in clients:
+            clear_queue(c.token)
+        clients.delete()
 
         expiration = timezone.now() - timedelta(minutes=2)
-        deadclients = Client.objects.filter(channel='', created__lt=expiration)
+        deadclients = Client.objects.filter(
+            channel='', transport='ws', created__lt=expiration)
         deadclients.delete()
 
     def receive(self, text_data):
@@ -88,11 +74,8 @@ class Consumer(JsonWebsocketConsumer):
         '''
         Websocket message handler.
         Dispatches message to type specific subhandlers after some
-        error checking on the message format
-        Known message types are 'subscribe', 'unsubscribe', 'method'
-        and 'geturl'.
-        In a near future, login and logout could be handled too,
-        unless we use another way to do it, by method call or anything else
+        error checking on the message format.
+        Known message type: 'ping'.
         A message should have:
         - an 'id' key, which is used to find the right
         callback function the client defined
@@ -121,10 +104,7 @@ class Consumer(JsonWebsocketConsumer):
             }))
             return
 
-        if msg_type in [
-                'subscribe', 'unsubscribe',
-                'method', 'geturl',
-                'login', 'logout', 'ping']:
+        if msg_type in ['ping']:
             func = getattr(self, f'recv_{msg_type}', None)
             if func:
                 if data.get('params', None) is None:
@@ -153,106 +133,6 @@ class Consumer(JsonWebsocketConsumer):
             'id': data['id'],
             'type': 'pong'
         }))
-
-    def recv_login(self, data):
-        credentials = data['params']
-        user = authenticate(**credentials)
-        if user:
-            async_to_sync(login)(self.scope, user)
-            self.scope['session'].save()
-            client = Client.objects.get(channel=self.channel_name)
-            client.user = user
-            client.save()
-            self.send(json.dumps({
-                'id': data['id'],
-                'type': 'Success',
-                'params': {
-                    'token': f'{client.token}'
-                }
-            }))
-        else:
-            self.send(json.dumps({
-                'id': data['id'],
-                'type': 'Error',
-                'params': {
-                    'name': 'Credentials mismatch',
-                    'message': 'Wrong username/password combination'
-                }
-            }))
-
-    def recv_logout(self, data):
-        pass
-
-    def recv_geturl(self, data):
-        '''
-        geturl message handler.
-        Creates a new ryzom.views.View based on ddp_urlpattern configuration
-        and attach it to this consumer instance.
-        Renders the view then send it to the client
-        If a view as already been created, destroy it and creates the new one
-        view's callback (oncreate, ondestroy) are called here
-        '''
-        to_url = data['params'].get('url', '/')
-        to_query = data['params'].get('query', '')
-        for url in Consumer.ddp_urlpatterns:
-            if url.pattern.match(to_url):
-                cview = getattr(self, 'view', None)
-                if not cview or not isinstance(cview, url.callback):
-                    if cview:
-                        cview.ondestroy()
-                    client = Client.objects.filter(channel=self.channel_name).last()
-                    req = Request(client, url.callback)
-                    cview = self.view = url.callback(req)
-                    cview.oncreate(to_url)
-                if (cview.onurl(to_url)):
-                    self.send(json.dumps({
-                        'id': data['id'],
-                        'type': 'Success',
-                        'params': []
-                    }))
-                else:
-                    data = {
-                        'id': data['id'],
-                        'type': 'Error',
-                        'params': ''
-                    }
-                    self.send(json.dumps(data))
-                break
-
-    def recv_method(self, data):
-        '''
-        method message handler.
-        Lookup methods then call them with the 'params' key as parameter.
-        Methods writers should handle that params.
-        Methods should return a value that evaluates to True on Success.
-        Methods return value should be serializable, it will be sent
-        to the client as parameter for the callback
-        '''
-        to_send = {'id': data['id']}
-        params = data['params']
-        method = Methods.get(params['name'])
-        if method is None:
-            to_send.update({
-                'type': 'Error',
-                'params': {
-                    'name': 'Not found',
-                    'message': f'Method {params["name"]} not found'
-                }
-            })
-        else:
-            user = async_to_sync(get_user)(self.scope)
-            ret = method(user, params['params'])
-            if ret:
-                to_send.update({
-                    'type': 'Success',
-                    'params': ret
-                })
-            else:
-                to_send.update({
-                    'type': 'Error',
-                    'params': ret
-                })
-        self.send(json.dumps(to_send))
 
     def insert_component(self, data, change=False):
         '''
@@ -298,79 +178,3 @@ class Consumer(JsonWebsocketConsumer):
         elif data['params']['type'] == 'removed':
             self.remove_component(data['params'])
 
-    def recv_subscribe(self, data):
-        from ryzom_django_channels.models import Client, Publication, Subscription
-        '''
-        subscribe message handler.
-        Creates a new subscription for the current Client.
-        'subscribe' params should contain:
-        - an 'id' key, which refer to the component that asks for
-        a subscription
-        - a 'name' key, corresponding to the name of the publication
-        this subscription is about
-        '''
-        params = data['params']
-        to_send = {'id': data['id']}
-        client = Client.objects.get(channel=self.channel_name)
-        print(f'GOT SUBSCRIBE FOR CLIENT {client}')
-        for key in ['name', 'sub_id']:
-            if key not in params:
-                to_send.update({
-                    'type': 'Error',
-                    'params': {
-                        'name': 'Bad format',
-                        'message': f'Subscription {key} not found'
-                    }
-                })
-                self.send(json.dumps(to_send))
-                return
-        if not client:
-            to_send.update({
-                'type': 'Error',
-                'params': {
-                    'name': 'Client not found',
-                    'message': 'No client was found for this channel name'
-                }
-            })
-        else:
-            pub = Publication.objects.get(name=params['name'])
-            sub = Subscription.objects.filter(
-                publication=pub,
-                parent=params['parent_id'],
-                client=client).first()
-            if not sub:
-                sub = Subscription(
-                        publication=pub,
-                        parent=params['parent_id'],
-                        client=client)
-                sub.save()
-            else:
-                print('SUBSCRIPTION FOUND')
-                sub.exec_query(params['opts'])
-            print(sub.client, sub)
-
-            to_send.update({
-                'type': 'Success',
-                'params': {
-                    'name': params['name'],
-                    'sub_id': f"{sub.id}",
-                    'length': len(sub.queryset)
-                }
-            })
-        self.send(json.dumps(to_send))
-
-    def recv_unsubscribe(self, data):
-        '''
-        unsubscribe message handler.
-        not implemented yes but meant to delete the subscription
-        attached to the current Client/Publication name from DB
-        '''
-        params = data['params']
-        self.send(json.dumps({
-            'id': data['id'],
-            'type': 'unsubscribed',
-            'message': 'Got unsub',
-            'params': {
-                'name': params['name']
-            }
-        }))

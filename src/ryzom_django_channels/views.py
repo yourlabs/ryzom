@@ -13,6 +13,7 @@ from django.conf import settings
 
 from channels.layers import get_channel_layer
 from ryzom.html import Meta
+from ryzom_django_channels.messagequeue import push_message
 from ryzom_django_channels.models import (Client, Publication, Registration,
                                           Subscription)
 
@@ -25,6 +26,13 @@ class ReactiveMixin:
         except ValueError:
             client = Client.objects.create()
 
+        transport = getattr(settings, 'RYZOM_TRANSPORT', 'auto')
+        poll_url = getattr(settings, 'RYZOM_POLL_URL', '/ddp/')
+
+        if transport == 'poll':
+            client.transport = 'poll'
+            client.save()
+
         view.client = client
 
         # Use a meta tag instead of inline script for CSP compliance
@@ -34,6 +42,8 @@ class ReactiveMixin:
             **{
                 'data-ws-host': settings.WS_HOST,
                 'data-ws-port': settings.WS_PORT,
+                'data-transport': transport,
+                'data-poll-url': poll_url,
             }
         )
 
@@ -55,11 +65,15 @@ class RegisterManager:
         content = content_class(*args, user=user, **kwargs)
         content.id = registration.subscriber_id
         content.parent = registration.subscriber_parent
-        channel_name = registration.client.channel
-        if channel_name:
-            self.send(channel_name, content)
+
+        if registration.client.transport == 'poll':
+            self._send_poll(registration.client, content)
         else:
-            self.defer(registration.client, content)
+            channel_name = registration.client.channel
+            if channel_name:
+                self.send(channel_name, content)
+            else:
+                self.defer(registration.client, content)
 
     def refresh(self, *args, **kwargs):
         for registration in self.queryset:
@@ -85,6 +99,18 @@ class RegisterManager:
                 }
             })
 
+    def _send_poll(self, client, content):
+        '''Send a DDP change message to a poll client via Redis queue.'''
+        inner = content.to_obj()
+        msg = {
+            'type': 'DDP',
+            'params': {
+                'type': 'change',
+                'params': inner,
+            },
+        }
+        push_message(client.token, msg)
+
     def defer(self, client, content):
         Thread(
             target=self.wait,
@@ -97,7 +123,11 @@ class RegisterManager:
                 client.refresh_from_db()
             except client.__class__.DoesNotExist:
                 break
-            if client.channel:
+
+            if client.transport == 'poll':
+                self._send_poll(client, content)
+                break
+            elif client.channel:
                 self._send(client.channel, content)
                 break
             else:

@@ -23,8 +23,6 @@
 
     // Setup event delegation for CSP-compliant event handling
     setupEventDelegation();
-
-    // setRoutes();
   }
 
   // Event delegation for data-ryzom-handlers attributes
@@ -58,24 +56,6 @@
     });
   }
 
-  setRoutes = function() {
-    document.addEventListener('click', function(event) {
-      if (event.defaultPrevented)
-        return;
-
-      var elem = event.target;
-      while (elem && !(elem instanceof HTMLAnchorElement))
-        elem = elem.parentNode;
-      if (!elem)
-        return;
-
-      if (elem.origin == window.location.origin)
-        event.preventDefault();
-        if (elem.href != window.location.href)
-          route(elem.pathname, elem.search);
-    });
-  };
-
   registerComponent = function(component, DOMelem) {
     window.components[component.id] = DOMelem;
   };
@@ -103,7 +83,6 @@
       elem = document.createTextNode(component);
     else {
       if (Array.isArray(component)) {
-        console.log('component is array')
         elem = document.createElement('p');
         component = {content: component};
       } else {
@@ -135,12 +114,6 @@
       }
     }
 
-    if (component.publication) {
-      ryzom.subscribe(component.publication, component.subscription, component.id, function(r, e) {
-        if (e) { console.log(e); }
-      });
-    }
-
     registerComponent(component, elem)
 
     return elem;
@@ -165,12 +138,9 @@
       var parent = getElementByUuid(component.parent)
       var prev = parent.children[component.position]
       parent.insertBefore(elem, prev);
-      // Note: removed eval(component.script) for CSP compliance
-      // Components should use HTMLElement.connectedCallback instead of py2js
     });
 
     dispatchEvent(new Event('load'));
-    //setRoutes();
   };
 
   removeDOM = function(params) {
@@ -194,57 +164,8 @@
     var parent = getElementByUuid(params.parent);
     parent.insertBefore(cur_node, prev_node)
     parent.removeChild(prev_node);
-    // Note: removed eval(params.script) for CSP compliance
-    // Components should use HTMLElement.connectedCallback instead of py2js
     dispatchEvent(new Event('load'));
   };
-
-  /*
-  pushState = function(url, q) {
-    path = url;
-    if (q && q.length)
-      path += '?' + q;
-    state = window.location.protocol + '//' +
-      window.location.hostname + ':' +
-      window.location.port + '/' +
-      path;
-    if (!history.state || history.state.fullpath != state)
-      history.pushState({fullpath: state, path: path}, null, state)
-  };
-
-  route = function(url, q, backward=false) {
-    if (!('token' in window)) {
-      if (q)
-        url += '?' + q
-      window.location.href = url
-      return;
-    }
-    ws_send({
-      type: 'geturl',
-      params: {
-        url: url,
-        query: q
-      }
-    }, function(r, e) {
-      if (e)
-        console.log(e);
-      else {
-        constructDOM(r.params);
-        if (initialized && !backward)
-          pushState(url, q);
-      }
-    });
-  };
-
-  window.onpopstate = function(event) {
-    if (event.state) {
-      route(event.state.path, '', true);
-      event.preventDefault()
-    } else {
-      history.back()
-    }
-  };
-  */
 
   init = function() {
     if (window.onwsready_cb) {
@@ -252,36 +173,55 @@
         cb();
       });
     }
-    //pushState(current_url, query_string);
     initialized = true;
   };
 
   var ws;
+  // Track active transport: 'ws' or 'poll'
+  var activeTransport = null;
+  // Track if we already fell back to prevent WS onclose from retrying
+  var fellBackToPoll = false;
+  // Polling state
+  var pollTimer = null;
+  var pollInterval = 500;
+  var pollIntervalMin = 500;
+  var pollIntervalMax = 5000;
+  var pollIntervalStep = 500;
 
-  // Read websocket config from meta tag (CSP-compliant, no inline scripts)
+  // Read config from meta tag (CSP-compliant)
   getRyzomConfig = function() {
     var meta = document.querySelector('meta[name="ryzom-config"]');
-    if (meta) {
-      return {
-        token: meta.getAttribute('content'),
-        ws_host: meta.getAttribute('data-ws-host'),
-        ws_port: meta.getAttribute('data-ws-port')
-      };
+    if (!meta) return null;
+    return {
+      token: meta.getAttribute('content'),
+      ws_host: meta.getAttribute('data-ws-host'),
+      ws_port: meta.getAttribute('data-ws-port'),
+      transport: meta.getAttribute('data-transport') || 'auto',
+      poll_url: meta.getAttribute('data-poll-url') || '/ddp/'
+    };
+  };
+
+  // Main entry point: choose transport based on config
+  ryzom_connect = function() {
+    var config = getRyzomConfig();
+    if (!config) return;
+
+    if (config.transport === 'poll') {
+      poll_connect();
+    } else if (config.transport === 'ws') {
+      ws_connect();
+    } else {
+      // 'auto': try WS first, fall back to poll on failure
+      ws_connect();
     }
-    // Fallback to window globals for backwards compatibility
-    if ('token' in window) {
-      return {
-        token: window.token,
-        ws_host: window.ws_host,
-        ws_port: window.ws_port
-      };
-    }
-    return null;
   };
 
   ws_connect = function(reconnecting) {
     var config = getRyzomConfig();
     if (!config) return;
+
+    // If we already fell back to poll, don't try WS again
+    if (fellBackToPoll) return;
 
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     var ws_host = config.ws_host ? config.ws_host : window.location.hostname;
@@ -289,14 +229,32 @@
     var ws_path = ws_scheme + '://' + ws_host + ':' + ws_port + '/ws/ddp/';
     ws_path += '?' + config.token;
     ws = new WebSocket(ws_path);
+    activeTransport = 'ws';
+
+    var wsConnected = false;
+
+    // 5s connection timeout: fall back to poll if WS doesn't connect
+    var connectTimeout = setTimeout(function() {
+      if (!wsConnected) {
+        ws.onclose = function() {}; // prevent retry
+        ws.onerror = function() {};
+        ws.close();
+        notify_transport_switch(config);
+        poll_connect();
+      }
+    }, 5000);
 
     if (reconnecting) {
       ws.onopen = function() {
+        wsConnected = true;
+        clearTimeout(connectTimeout);
         window.location.reload(true);
       };
     } else {
       ws.onopen = function(e) {
-        setInterval(ws_ping, 5000)
+        wsConnected = true;
+        clearTimeout(connectTimeout);
+        setInterval(ws_ping, 5000);
       }
     }
 
@@ -318,7 +276,18 @@
       };
     };
 
+    ws.onerror = function(e) {
+      if (!wsConnected && config.transport !== 'ws') {
+        // WS failed before connecting and we're in auto mode: fall back
+        clearTimeout(connectTimeout);
+        ws.onclose = function() {}; // prevent retry
+        notify_transport_switch(config);
+        poll_connect();
+      }
+    };
+
     ws.onclose = function(e) {
+      if (fellBackToPoll) return;
       setTimeout(function() {
         ws_connect();
       }, 1000);
@@ -327,25 +296,138 @@
     ws.callbacks = [];
   };
 
-  // Auto-connect if config is available
-  if (getRyzomConfig())
-    ws_connect();
+  // Notify the server that this client is switching to poll transport
+  notify_transport_switch = function(config) {
+    fellBackToPoll = true;
+    activeTransport = 'poll';
+    var url = config.poll_url + 'switch/';
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Ryzom-Token': config.token
+      },
+      body: '{}'
+    }).catch(function() {});
+  };
 
-  ws_send = function(data, cb) {
+  // Start HTTP polling transport
+  poll_connect = function() {
+    activeTransport = 'poll';
+    fellBackToPoll = true;
+    // Initialize immediately (fire onwsready callbacks etc.)
+    init();
+    // Start the polling loop
+    poll_loop();
+  };
+
+  poll_loop = function() {
+    poll_receive(function() {
+      pollTimer = setTimeout(poll_loop, pollInterval);
+    });
+  };
+
+  // Fetch pending messages from the server
+  poll_receive = function(done) {
+    var config = getRyzomConfig();
+    if (!config) { if (done) done(); return; }
+
+    var url = config.poll_url + 'poll/';
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Ryzom-Token': config.token
+      }
+    }).then(function(resp) {
+      return resp.json();
+    }).then(function(data) {
+      if (data.messages && data.messages.length > 0) {
+        // Got messages: process them and speed up polling
+        pollInterval = pollIntervalMin;
+        data.messages.forEach(function(msg) {
+          if (msg.type === 'DDP') {
+            handleDDP(msg.params);
+          } else if (msg.type === 'Reload') {
+            document.location.reload();
+          }
+        });
+      } else {
+        // No messages: slow down polling (adaptive)
+        if (pollInterval < pollIntervalMax) {
+          pollInterval += pollIntervalStep;
+        }
+      }
+      if (done) done();
+    }).catch(function() {
+      // On error, slow down
+      if (pollInterval < pollIntervalMax) {
+        pollInterval += pollIntervalStep;
+      }
+      if (done) done();
+    });
+  };
+
+  // Send a DDP command via HTTP POST
+  poll_send = function(data, cb) {
+    var config = getRyzomConfig();
+    if (!config) return;
+
+    var url = config.poll_url + 'send/';
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Ryzom-Token': config.token
+      },
+      body: JSON.stringify(data)
+    }).then(function(resp) {
+      return resp.json();
+    }).then(function(result) {
+      var r = null, e = null;
+      if (result.type === 'Error') {
+        e = result;
+      } else {
+        r = result;
+      }
+      if (cb) cb(r, e);
+      // Trigger an immediate poll to pick up any server-side changes
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+      }
+      pollInterval = pollIntervalMin;
+      poll_loop();
+    }).catch(function(err) {
+      if (cb) cb(null, {type: 'Error', params: {name: 'Network error', message: String(err)}});
+    });
+  };
+
+  // Unified send: dispatch to WS or poll based on active transport
+  ryzom_send = function(data, cb) {
     var id = ID();
     data.id = id;
-    ws.callbacks[id] = cb;
-    if (initialized)
-      ws.send(JSON.stringify(data));
-    else {
-      onwsready(function() {
+    if (activeTransport === 'poll') {
+      poll_send(data, cb);
+    } else {
+      ws.callbacks[id] = cb;
+      if (initialized)
         ws.send(JSON.stringify(data));
-      });
+      else {
+        onwsready(function() {
+          ws.send(JSON.stringify(data));
+        });
+      }
     }
   };
 
+  // Auto-connect if config is available
+  if (getRyzomConfig())
+    ryzom_connect();
+
+  // Keep ws_send as alias for backwards compatibility
+  ws_send = ryzom_send;
+
   ws_ping = function(cb) {
-    ws_send({type: 'ping', params: {}}, function(r, e) {
+    ryzom_send({type: 'ping', params: {}}, function(r, e) {
       if (e) { window.location.reload(true); }
     })
   }
@@ -357,47 +439,6 @@
     window.onwsready_cb.push(cb);
   };
 
-  ryzom = {
-    login: function(credentials) {
-      ws_send({
-        type: 'login',
-        params: credentials
-      }, function(r, e) {
-        if (e)
-          console.log(e);
-        else
-          localStorage.setItem('auth_token', r.params.token)
-      });
-    },
-
-    logout: function() {
-    },
-
-    call: function(name, params) {
-      ws_send({
-        type: 'method',
-        params: {
-          name: name,
-          params: params
-        }
-      }, function(r, e) {
-        if (e)
-          console.log(e);
-      });
-    },
-
-    subscribe: function(name, id, pid, cb) {
-      console.log(pid)
-      ws_send({
-        type: 'subscribe',
-        params: {
-          name: name,
-          parent_id: pid,
-          sub_id: id,
-          opts: []
-        }
-      }, cb);
-    }
-  };
+  ryzom = {};
 
   setup();

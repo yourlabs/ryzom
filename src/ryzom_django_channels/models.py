@@ -22,9 +22,19 @@ class Client(models.Model):
     it will be used to store the user using this channel
     once it's connected
     '''
+    TRANSPORT_CHOICES = [
+        ('ws', 'WebSocket'),
+        ('poll', 'HTTP Polling'),
+    ]
+
     token = models.CharField(default=secrets.token_urlsafe,
                              max_length=255, unique=True)
     channel = models.CharField(max_length=255)
+    transport = models.CharField(
+        max_length=4,
+        choices=TRANSPORT_CHOICES,
+        default='ws',
+    )
     user = models.ForeignKey(
                 settings.AUTH_USER_MODEL,
                 models.SET_NULL,

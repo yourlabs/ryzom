@@ -100,8 +100,6 @@ if CHANNELS_ENABLE:
 ROOT_URLCONF = 'ryzom_django_example.urls'
 WS_HOST = ''
 WS_PORT = 0
-WS_URLPATTERNS = ROOT_URLCONF
-SERVER_METHODS = []
 
 ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
 
