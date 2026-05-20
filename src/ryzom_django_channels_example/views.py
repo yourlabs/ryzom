@@ -190,19 +190,19 @@ class Home(Html):
         body.addchildren([
             ReactiveTitle(current_room),
             A('test forms', href='form/'),
-            Div(
-                Div(
-                    RoomForm(
-                        view.request.GET.get('order_by', 'name')),
-                    style='min-width: 20%'),
-                Div(
+            Div(style='display:flex; flex-flow: row wrap;')(
+                Div(style='min-width: 20%')(
+                    RoomForm(view.request.GET.get('order_by', 'name')),
+                ),
+                Div(style='flex-grow: 1; height: 100%;')(
                     ChatRoom(current_room_name),
                     message_form=MessageFormComponent(
+                        style='width:100%'
                         view=view,
                         form=form,
-                        style='width:100%'),
-                    style='flex-grow: 1; height: 100%;'),
-                style='display:flex; flex-flow: row wrap;'),
+                    ),
+                ),
+            ),
             Script(mark_safe(view.get_token())),
             Script('mdc.autoInit();'),
         ])
