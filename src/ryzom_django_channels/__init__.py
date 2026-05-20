@@ -1,1 +1,3 @@
-default_app_config = 'ryzom_django_channels.apps.BaseConfig'
+from .celery import app as celery_app
+
+__all__ = ['celery_app']

@@ -13,27 +13,32 @@ from channels.auth import get_user, login
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from django.utils import timezone
 
 from ryzom_django_channels.methods import Methods
-from ryzom_django_channels.models import Client, Publication, Subscription
 
+
+AUTH_BACKEND = settings.AUTHENTICATION_BACKENDS[0]
 
 class Consumer(JsonWebsocketConsumer):
     '''
     Consumer class, inherited from the channels' JsonWebsocketConsumer
     '''
-    ddp_urlpatterns = importlib.import_module(
-        settings.WS_URLPATTERNS).urlpatterns
-
     '''
     Import all user defined server methods
     '''
-    for module in settings.SERVER_METHODS:
-        importlib.import_module(module)
+    def __init__(self, *args, **kwargs):
+        self.ddp_urlpatterns = importlib.import_module(
+            settings.WS_URLPATTERNS).urlpatterns
+
+        for module in settings.SERVER_METHODS:
+            importlib.import_module(module)
+
+        super().__init__(*args, **kwargs)
 
     def connect(self):
+        from ryzom_django_channels.models import Client
+        from django.contrib.auth import get_user_model
         '''
         Websocket connect handler.
         This method tries to get the user connecting and create a new
@@ -41,25 +46,28 @@ class Consumer(JsonWebsocketConsumer):
         access from the channel layer.
         sends back a 'Connected' message to the client
         '''
+        User = get_user_model()
         client = None
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
         if token:
             client = Client.objects.filter(token=token).last()
             if client and client.user:
-                async_to_sync(login)(self.scope, client.user)
+                async_to_sync(login)(self.scope, client.user, backend=AUTH_BACKEND)
                 self.scope['session'].save()
 
         self.accept()
         if client and client.channel != self.channel_name:
             client.channel = self.channel_name
-            client.user = user if isinstance(user, User) else None
+            if not client.user and isinstance(user, User):
+                client.user = user
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
-        else:
+        elif not client:
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
+        from ryzom_django_channels.models import Client
         '''
         Websocket disconnect handler.
         Removes the ryzom.models.Client entry attached to this
@@ -76,6 +84,7 @@ class Consumer(JsonWebsocketConsumer):
         deadclients.delete()
 
     def receive(self, text_data):
+        from ryzom_django_channels.models import Client
         '''
         Websocket message handler.
         Dispatches message to type specific subhandlers after some
@@ -290,6 +299,7 @@ class Consumer(JsonWebsocketConsumer):
             self.remove_component(data['params'])
 
     def recv_subscribe(self, data):
+        from ryzom_django_channels.models import Client, Publication, Subscription
         '''
         subscribe message handler.
         Creates a new subscription for the current Client.

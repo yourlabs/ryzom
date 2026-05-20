@@ -1,5 +1,16 @@
 # Ryzom: Replace HTML Templates with Python Components
 
+## Packages
+
+- **[ryzom](src/ryzom/README.md)** - Core component library
+- **[py2js](src/py2js/README.md)** - Python to JavaScript transpiler
+- **[ryzom_django](src/ryzom_django/README.md)** - Django integration
+- **[ryzom_django_autocomplete](src/ryzom_django_autocomplete/README.md)** - Autocomplete widgets for Django
+- **[ryzom_django_channels](src/ryzom_django_channels/README.md)** - Real-time reactive features with WebSockets
+- **[ryzom_django_mdc](src/ryzom_django_mdc/README.md)** - Material Design Components for Django forms
+- **[ryzom_mdc](src/ryzom_mdc/README.md)** - Material Design Components base
+- **[ryzom_unpoly](src/ryzom_unpoly/README.md)** - Unpoly integration
+
 ## Why?
 
 Because while frameworks like Django claim that "templates include a restricted
@@ -39,6 +50,14 @@ pip install -e .[project]
 # to run tests:
 py.test
 ```
+
+## Reactive (Django Channels)
+
+Ryzom can push HTML updates over websockets with ``ryzom_django_channels``:
+components subscribe to published querysets, server code can ``register`` and
+refresh specific components, and pages stay in sync without manual JS. See
+``docs/source/ryzom.reactive.rst`` and the example app in
+``src/ryzom_django_channels_example`` for a minimal end-to-end setup.
 
 ## Usage
 

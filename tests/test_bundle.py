@@ -59,7 +59,10 @@ class OtherComponent(Component):
 
 def test_bundle_js():
     assert_equals_fixture('test_bundle', bundle.js(__name__))
-    assert OtherComponent.attrs.onclick == 'OtherComponent_onclick(this)'
+    # AUTOCOMPILE handlers now use data attributes for CSP compliance
+    assert OtherComponent.attrs['data-ryzom-component'] == 'OtherComponent'
+    assert 'onclick' in OtherComponent.attrs['data-ryzom-handlers']
+    assert 'onmouseover' in OtherComponent.attrs['data-ryzom-handlers']
 
 
 def test_bundle_css():

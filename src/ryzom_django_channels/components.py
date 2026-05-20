@@ -1,3 +1,5 @@
+from ryzom.components import CList
+
 from ryzom_django_channels.models import (
     Publication,
     Subscription,
@@ -66,29 +68,32 @@ class SubscribeComponentMixin(ReactiveBase):
 
 
     def create_subscription(self):
+        subscriber_id = getattr(self, 'container', self).id
         publication = Publication.objects.get(name=self.publication)
-        subscription = Subscription.objects.create(
+        self.subscription = Subscription.objects.create(
             client=self.view.client,
             publication=publication,
-            subscriber_id=self.id,
+            subscriber_id=subscriber_id,
             subscriber_module=self.__module__,
             subscriber_class=self.__class__.__name__,
             options=self.subscribe_options,
         )
 
-        self.get_content(publication, subscription)
+        self.get_content()
 
-    def get_content(self, publication, subscription):
+    def get_content(self):
         template = model_templates[self.model_template]
 
         content = []
-        for obj in subscription.get_queryset():
+        self.queryset = self.subscription.get_queryset()
+        for obj in self.queryset:
             content.append(template(obj))
 
-        self.content = content
+        container = getattr(self, 'container', self)
+        container.content = content
 
     @classmethod
-    def get_queryset(self, qs, opts):
+    def get_queryset(self, usr, qs, opts):
         return qs
 
 
@@ -102,6 +107,9 @@ class ReactiveComponentMixin(ReactiveBase):
             self.create_registration()
 
     def create_registration(self):
+        if isinstance(self, CList):
+            raise Exception('Cannot register from CList')
+
         existent = Registration.objects.filter(
             name=self.get_register(),
             client=self.view.client
@@ -110,6 +118,8 @@ class ReactiveComponentMixin(ReactiveBase):
         if existent:
             existent.subscriber_id = self.id
             existent.subscriber_parent = self.parent.id
+            existent.subscriber_class = self.__class__.__name__
+            existent.subscriber_module = self.__module__
             existent.save()
 
         else:
@@ -118,6 +128,8 @@ class ReactiveComponentMixin(ReactiveBase):
                 client=self.view.client,
                 subscriber_id=self.id,
                 subscriber_parent=self.parent.id,
+                subscriber_class=self.__class__.__name__,
+                subscriber_module=self.__module__,
             )
 
     def get_register(self):

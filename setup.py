@@ -25,10 +25,13 @@ setup(
             'django',
             'channels',
             'channels-redis',
+            'daphne',
             'libsass',
             'daphne',
             'markdown',
-        ],
+            'celery',
+            'lxml'
+        ]
     ),
     classifiers=[
         'Development Status :: 1 - Planning',

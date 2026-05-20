@@ -9,6 +9,7 @@ import textwrap
 import re
 import uuid
 
+from lxml import html
 from py2js.transpiler import transpile_body
 
 try:
@@ -207,9 +208,13 @@ class ComponentMetaclass(type):
         cls = super().__new__(cls, name, bases, class_attrs)
 
         from ryzom.bundle.js import AUTOCOMPILE
+        handlers = []
         for method in AUTOCOMPILE:
             if getattr(cls, method, None):
-                class_attrs['attrs'][method] = f'{name}_{method}(this)'
+                handlers.append(method)
+        if handlers:
+            class_attrs['attrs']['data-ryzom-component'] = name
+            class_attrs['attrs']['data-ryzom-handlers'] = ','.join(handlers)
 
         return cls
 
@@ -326,17 +331,21 @@ class Component(metaclass=ComponentMetaclass):
         Moreover it sets the child's position attribute to its index
         in the current component's content list
         '''
+        to_delete = []
         for i, c in enumerate(self.content):
             if c is None:
-                del self.content[i]
-                i -= 1
+                to_delete.append(i)
                 continue
 
             if not hasattr(c, 'to_html'):
                 self.content[i] = c = Text(str(c))
 
             c.parent = self
-            c.position = i
+            c.position = i - len(to_delete)
+
+        to_delete.reverse()
+        for i in to_delete:
+            del self.content[i]
 
     def addchild(self, component):
         '''Add a child component
@@ -348,8 +357,9 @@ class Component(metaclass=ComponentMetaclass):
         :param Component component: The child component to add to the \
                 content of the current instance
         '''
-        component.position = len(self.content)
-        component.parent = self
+        if isinstance(component, Component):
+            component.position = len(self.content)
+            component.parent = self
         self.content.append(component)
 
     def addchildren(self, components):
@@ -397,12 +407,19 @@ class Component(metaclass=ComponentMetaclass):
                 if isinstance(c, (int, float, str)):
                     content.append(c)
                 else:
-                    content.append(c.to_obj())
+                    to_append = c.to_obj()
+                    if not isinstance(to_append, (list, tuple)):
+                        content.append(c.to_obj())
+                    else:
+                        content += to_append
 
         if isinstance(self.parent, str):
             parent_id = self.parent
         else:
-            parent_id = self.parent.id
+            if not self.parent:
+                parent_id = 'body'
+            else:
+                parent_id = self.parent.id
 
         return {
             'id': self.id,
@@ -457,12 +474,8 @@ class Component(metaclass=ComponentMetaclass):
             html = f'<{self.tag} {attrs}>'
             content = content or self.content
             html += self.content_html(*content, **context)
-            if render_js_str := self.render_js():
-                html += '\n'.join([
-                    '\n<script type="text/javascript">',
-                    render_js_str.strip(),
-                    '</script>',
-                ])
+            # Note: Removed inline script embedding for CSP compliance
+            # Components should use HTMLElement.connectedCallback instead of py2js
             if self.content and getattr(self.content[-1], 'tag', None) != 'text':
                 newline = '\n'
             else:
@@ -479,22 +492,14 @@ class Component(metaclass=ComponentMetaclass):
         return self.to_html(*content, **context)
 
     def render_js(self):
-        if hasattr(self, 'py2js'):
-            return mark_safe(transpile_body(self.py2js, self=self))
+        # Deprecated: py2js methods are no longer supported for CSP compliance
+        # Components should use HTMLElement.connectedCallback instead
+        # The bundle system will generate JS for HTMLElement classes
         return ''
 
     def render_js_tree(self, lvl=0):
-        js_str = str(self.render_js())
-
-        if js_str:
-            js_str = js_str
-
-        if hasattr(self, 'content') and isinstance(self.content, (list, tuple)):
-            for c in self.content:
-                if isinstance(c, Component):
-                    js_str += c.render_js_tree(lvl+1)
-
-        return js_str
+        # Deprecated: py2js methods are no longer supported for CSP compliance
+        return ''
 
 
 class CTree(Component):
@@ -534,18 +539,62 @@ class Text(Component):
 
 
 class Markdown(Text):
-    def __init__(self, *content, **kwargs):
+    def __init__(self, *content, strip_outer_p=False, **kwargs):
         self.kwargs = kwargs
+        self.strip_outer_p = strip_outer_p
         super().__init__(*content)
 
     def preparecontent(self):
         import markdown
         from django.utils.safestring import mark_safe
-        self.content = mark_safe(
-            markdown.markdown(
-                textwrap.dedent(
-                    '\n'.join(self.content),
-                ),
-                **self.kwargs,
-            )
+        rendered = markdown.markdown(
+            textwrap.dedent(
+                '\n'.join([str(c) for c in self.content]),
+            ),
+            **self.kwargs,
         )
+        if self.strip_outer_p:
+            rendered = rendered.removeprefix('<p>')
+            rendered = rendered.removesuffix('</p>')
+
+        self.content = mark_safe(rendered)
+
+    def parse_html_tree(self, tree):
+        """ recursively parse the html tree and return a list of components """
+        components = []
+        for element in tree:
+            component = Component(
+                tag=element.tag,
+                **element.attrib,
+            )
+            if element.text:
+                component.addchild(Text(str(element.text)))
+            component.addchildren(self.parse_html_tree(element))
+            components.append(component)
+            if element.tail:
+                components.append(Text(str(element.tail)))
+        return components
+
+    def to_obj(self, context=None):
+        tree = html.fromstring(self.content)
+        components = []
+        if tree.text:
+            components.append(Text(str(tree.text)))
+        components += self.parse_html_tree(tree)
+        if tree.tail:
+            components.append(Text(str(tree.tail)))
+
+        if tree.tag:
+            current = Component(
+                tag=tree.tag,
+                **tree.attrib,
+            )
+        else:
+            current = CList()
+        current.addchildren(components)
+        if self.parent and isinstance(self.parent, str):
+            current.parent = self.parent
+        elif self.parent:
+            current.parent = self.parent.id
+        current.parent = self.parent or None
+        return current.to_obj()

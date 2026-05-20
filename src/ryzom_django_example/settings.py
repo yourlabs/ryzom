@@ -28,7 +28,7 @@ for server in REDIS_SERVERS:
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -94,9 +94,12 @@ if CHANNELS_ENABLE:
         'ryzom_django_channels_example',
         'channels',
         'channels_redis',
+        'celery'
     ]
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
+WS_HOST = ''
+WS_PORT = 0
 WS_URLPATTERNS = ROOT_URLCONF
 SERVER_METHODS = []
 
@@ -117,6 +120,7 @@ DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
         'NAME': os.getenv('DB_NAME', 'ryzom_django_example'),
+        'PORT': os.getenv('DB_PORT', '5432'),
         'HOST': os.getenv('DB_HOST'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
@@ -160,3 +164,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
+
+CELERY_BROKER_URL = 'redis://redis:6379'
+CELERY_RESULT_BACKEND = 'redis://redis:6379'

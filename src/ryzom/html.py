@@ -1,3 +1,5 @@
+import warnings
+
 from ryzom.components import CList, Component, CTree, HTMLPayload, Markdown, Text
 from py2js.transpiler import transpile_body
 
@@ -44,7 +46,7 @@ for tag in BASIC_TAGS:
 
 SELFCLOSE_TAGS = (
     'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'link', 'meta',
-    'param', 'source', 'track', 'wbr',
+    'path', 'param', 'source', 'track', 'wbr',
 )
 
 for tag in SELFCLOSE_TAGS:
@@ -130,6 +132,15 @@ class Html(Component):
             if hasattr(src, 'to_html'):
                 self.head.content.append(src)
             elif callable(src):
+                # Callable scripts generate inline JS which violates CSP.
+                # Prefer using Component.HTMLElement for CSP compliance.
+                warnings.warn(
+                    f'Callable script {src.__name__} generates inline JS. '
+                    'For CSP compliance, use Component with HTMLElement class instead. '
+                    'See ryzom documentation for migration guide.',
+                    DeprecationWarning,
+                    stacklevel=2
+                )
                 self.head.content.append(
                     Script(mark_safe(transpile_body(src)))
                 )
@@ -139,3 +150,11 @@ class Html(Component):
         if title := getattr(self, 'title', None):
             self.__dict__['title'] = Title(title)
             self.head.addchild(self.title)
+
+    def to_html(self, *content, **context):
+        view = context.get('view')
+        if view and hasattr(view.request, 'LANGUAGE_CODE'):
+            self.attrs.lang = view.request.LANGUAGE_CODE
+        else:
+            self.attrs.lang = 'en'
+        return '<!DOCTYPE html>\n' + super().to_html(*content, **context)

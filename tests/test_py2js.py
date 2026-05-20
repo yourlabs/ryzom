@@ -193,6 +193,23 @@ def test_range():
     assert_equals_fixture('test_range', result)
 
 
+def test_list_comprehension():
+    def func():
+        a = [
+            {'b': 1, 'c': 2},
+            {'b': 3, 'c': 4},
+            {'b': 5, 'c': 6},
+        ]
+        b = [x['b'] for x in a]
+        c = [x.b.toString() for x in a]
+
+        print(b)
+        print(c)
+
+    result = JS(func)
+    assert_equals_fixture('test_list_comprehension', result)
+
+
 def test_len():
     def func():
         a = [1, 2, 3, 4, 5]
@@ -365,3 +382,105 @@ def test_transpile_template():
         return f'foo {bar}{1 + b}'
     result = py2js.transpile(foo)
     assert_equals_fixture('test_transpile_template', result)
+
+
+def test_try_except():
+    def func():
+        try:
+            do_something()
+        except Error:
+            handle_error()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_except', result)
+
+
+def test_try_except_as():
+    def func():
+        try:
+            do_something()
+        except Error as e:
+            handle_error(e)
+
+    result = JS(func)
+    assert_equals_fixture('test_try_except_as', result)
+
+
+def test_try_except_finally():
+    def func():
+        try:
+            do_something()
+        except Error:
+            handle_error()
+        finally:
+            cleanup()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_except_finally', result)
+
+
+def test_try_finally():
+    def func():
+        try:
+            do_something()
+        finally:
+            cleanup()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_finally', result)
+
+
+def test_try_except_else():
+    def func():
+        try:
+            do_something()
+        except Error:
+            handle_error()
+        else:
+            on_success()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_except_else', result)
+
+
+def test_try_multiple_except():
+    def func():
+        try:
+            do_something()
+        except TypeError:
+            handle_type_error()
+        except ValueError:
+            handle_value_error()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_multiple_except', result)
+
+
+def test_try_except_tuple():
+    def func():
+        try:
+            do_something()
+        except (TypeError, ValueError) as e:
+            handle_error(e)
+
+    result = JS(func)
+    assert_equals_fixture('test_try_except_tuple', result)
+
+
+def test_try_bare_except():
+    def func():
+        try:
+            do_something()
+        except:
+            handle_any_error()
+
+    result = JS(func)
+    assert_equals_fixture('test_try_bare_except', result)
+
+
+def test_raise():
+    def func():
+        raise Error('message')
+
+    result = JS(func)
+    assert_equals_fixture('test_raise', result)

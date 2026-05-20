@@ -21,11 +21,7 @@ class BaseConfig(AppConfig):
         '''
         import ryzom_django_channels.signals
         from ryzom_django_channels.pubsub import Publishable
-
         try:
-            Client = self.get_model('Client')
-            Client.objects.all().delete()
-
             for model in apps.get_models():
                 if issubclass(model, Publishable):
                     model.publish()

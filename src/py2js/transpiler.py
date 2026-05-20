@@ -288,12 +288,16 @@ class JS(object):
                 prep = 'async ' + prep
                 self.is_async = False
             self.write(prep)
+            # Save outer scope and create new scope for this function
+            outer_scope = self._scope
             self._scope = [arg.arg for arg in node.args.args]
             self.indent()
             for stmt in node.body:
                 self.visit(stmt)
             self.dedent()
             self.write("}")
+            # Restore outer scope
+            self._scope = outer_scope
 
     @scope
     def visit_ClassDef(self, node):
@@ -380,6 +384,16 @@ class JS(object):
             self.write("}")
 
     @scope
+    def visit_ListComp(self, node):
+        generator = node.generators[0]
+
+        arr = self.visit(node.elt)
+        for_target = self.visit(generator.target)
+        for_iter = self.visit(generator.iter)
+
+        return f"[...(function* f() {{ for (const {for_target} of {for_iter}) {{ yield {arr} }} }})()]"
+
+    @scope
     def visit_While(self, node):
 
         if not node.orelse:
@@ -428,16 +442,123 @@ class JS(object):
         pass
 
     @scope
-    def _visit_Raise(self, node):
-        pass
+    def visit_Try(self, node):
+        """
+        Transpile Python try/except/else/finally to JavaScript try/catch/finally.
 
-    @scope
-    def _visit_TryExcept(self, node):
-        pass
+        Python's else clause runs if no exception was raised. We handle this by
+        setting a flag and checking it in the finally block equivalent.
+        """
+        has_handlers = len(node.handlers) > 0
+        has_orelse = len(node.orelse) > 0
+        has_finalbody = len(node.finalbody) > 0
 
-    @scope
-    def _visit_TryFinally(self, node):
-        pass
+        # If we have an else clause, we need a flag to track if exception occurred
+        if has_orelse:
+            orelse_dummy = self.new_dummy()
+            self.write("var %s = true;" % orelse_dummy)
+
+        self.write("try {")
+        self.indent()
+        for stmt in node.body:
+            self.visit(stmt)
+        self.dedent()
+
+        if has_handlers:
+            # Generate catch block
+            except_var = self.new_dummy()
+            self.write("} catch (%s) {" % except_var)
+            self.indent()
+
+            # Mark that exception occurred (for else clause)
+            if has_orelse:
+                self.write("%s = false;" % orelse_dummy)
+
+            # Generate handler checks
+            for i, handler in enumerate(node.handlers):
+                if handler.type is None:
+                    # Bare except: catches everything
+                    if i > 0:
+                        self.write("} else {")
+                        self.indent()
+                    for stmt in handler.body:
+                        self.visit(stmt)
+                    if i > 0:
+                        self.dedent()
+                else:
+                    # Check exception type
+                    type_check = self._get_exception_type_check(handler.type, except_var)
+                    if i == 0:
+                        self.write("if (%s) {" % type_check)
+                    else:
+                        self.write("} else if (%s) {" % type_check)
+                    self.indent()
+
+                    # Bind exception to name if specified
+                    if handler.name:
+                        self.write("var %s = %s;" % (handler.name, except_var))
+                        self._scope.append(handler.name)
+
+                    for stmt in handler.body:
+                        self.visit(stmt)
+                    self.dedent()
+
+            # If all handlers had type checks, re-throw unhandled exceptions
+            if node.handlers and node.handlers[-1].type is not None:
+                self.write("} else {")
+                self.indent()
+                self.write("throw %s;" % except_var)
+                self.dedent()
+                self.write("}")
+
+            self.dedent()
+
+        if has_finalbody:
+            if has_handlers:
+                self.write("} finally {")
+            else:
+                self.write("} finally {")
+            self.indent()
+
+            # Execute else clause if no exception occurred
+            if has_orelse:
+                self.write("if (%s) {" % orelse_dummy)
+                self.indent()
+                for stmt in node.orelse:
+                    self.visit(stmt)
+                self.dedent()
+                self.write("}")
+
+            for stmt in node.finalbody:
+                self.visit(stmt)
+            self.dedent()
+            self.write("}")
+        elif has_orelse:
+            # No finally, but we have else - need a finally block for it
+            self.write("} finally {")
+            self.indent()
+            self.write("if (%s) {" % orelse_dummy)
+            self.indent()
+            for stmt in node.orelse:
+                self.visit(stmt)
+            self.dedent()
+            self.write("}")
+            self.dedent()
+            self.write("}")
+        else:
+            self.write("}")
+
+    def _get_exception_type_check(self, type_node, except_var):
+        """Generate instanceof check for exception type(s)."""
+        if isinstance(type_node, ast.Tuple):
+            # Multiple exception types: except (TypeError, ValueError):
+            checks = []
+            for elt in type_node.elts:
+                checks.append("%s instanceof %s" % (except_var, self.visit(elt)))
+            return "(%s)" % " || ".join(checks)
+        else:
+            # Single exception type
+            return "%s instanceof %s" % (except_var, self.visit(type_node))
 
     def visit_Assert(self, node):
         test = self.visit(node.test)
@@ -613,9 +734,11 @@ class JS(object):
             return "%s(%s)" % (func, js_args)
 
     def visit_Raise(self, node):
-        assert node.inst is None
-        assert node.tback is None
-        self.write("throw %s;" % self.visit(node.type))
+        if node.exc is None:
+            # Bare raise: re-raise current exception
+            self.write("throw;")
+        else:
+            self.write("throw %s;" % self.visit(node.exc))
 
     def visit_Print(self, node):
         assert node.dest is None

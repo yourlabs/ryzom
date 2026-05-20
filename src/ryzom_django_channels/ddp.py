@@ -5,7 +5,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 
-def send_insert(sub, model, tmpl, id):
+def send_insert(sub, tmpl, instance):
     '''
     Send insert message.
     Function used to send a DDP message to a specific client
@@ -25,9 +25,9 @@ def send_insert(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmpl_instance = tmpl(model.objects.get(id=id))
+    tmpl_instance = tmpl(instance)
     tmpl_instance.parent = sub.subscriber_id
-    tmpl_instance.position = sub.queryset.index(id)
+    tmpl_instance.position = sub.queryset.index(instance.pk)
     data = {
         'type': 'handle.ddp',
         'params': {
@@ -39,7 +39,7 @@ def send_insert(sub, model, tmpl, id):
     async_to_sync(channel.send)(sub.client.channel, data)
 
 
-def send_change(sub, model, tmpl, id):
+def send_change(sub, tmpl, instance):
     '''
     Send change message.
     Function used to send a DDP message to a specific client
@@ -59,9 +59,9 @@ def send_change(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmpl_instance = tmpl(model.objects.get(id=id))
+    tmpl_instance = tmpl(instance)
     tmpl_instance.parent = sub.subscriber_id
-    tmpl_instance.position = sub.queryset.index(id)
+    tmpl_instance.position = sub.queryset.index(instance.pk)
     data = {
         'type': 'handle.ddp',
         'params': {
@@ -73,7 +73,7 @@ def send_change(sub, model, tmpl, id):
     async_to_sync(channel.send)(sub.client.channel, data)
 
 
-def send_remove(sub, model, tmpl, id):
+def send_remove(sub, tmpl, instance):
     '''
     Send remove message.
     Function used to send a DDP message to a specific client
@@ -94,9 +94,7 @@ def send_remove(sub, model, tmpl, id):
     if sub.client is None or sub.client.channel == '':
         return
 
-    tmp = model()
-    tmp.id = id
-    tmpl_instance = tmpl(tmp)
+    tmpl_instance = tmpl(instance)
     data = {
         'type': 'handle.ddp',
         'params': {

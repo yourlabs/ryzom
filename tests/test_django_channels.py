@@ -23,6 +23,9 @@ if settings.CHANNELS_ENABLE:
     from ryzom_django_channels.views import register
 
     class RBase(html.Div):
+        def __init__(self, *content, view=None, user=None):
+            super().__init__(*content, view=view)
+
         def to_html(self, *content, view):
             self.view = view
             return super().to_html(content)
@@ -83,9 +86,8 @@ def pub():
     Publication.objects.create(name='test_pub')
 
 
-def find_token(js_str):
-    s = re.search(r'token = "(?P<token>.*)";', js_str)
-    return s.group(1)
+def find_token(meta):
+    return meta.attrs['content']
 
 
 @pytest.fixture
@@ -153,9 +155,13 @@ async def ws(ws_token):
 def test_get_token(view):
     assert not Client.objects.all().count()
 
-    js_string = view.get_token()
-    assert 'window.token =' in js_string
-    assert 'ws_connect()' in js_string
+    meta = view.get_token()
+    # get_token now returns a meta Component instead of inline script
+    assert meta.tag == 'meta'
+    assert meta.attrs['name'] == 'ryzom-config'
+    assert 'content' in meta.attrs  # token
+    assert 'data-ws-host' in meta.attrs
+    assert 'data-ws-port' in meta.attrs
     assert Client.objects.all().count()
 
 
@@ -213,8 +219,8 @@ async def test_register_changed(ws, async_reg_comp, view):
     await sync_to_async(async_reg_comp.render)(view=view)
 
     reg = await sync_to_async(register)('test_register')
-    await sync_to_async(reg.update)(
-        RegisterComp('changed')
+    await sync_to_async(reg.replace)(
+        RegisterComp, 'changed'
     )
     res = await ws.receive_json_from()
     assert res['type'] == 'DDP'

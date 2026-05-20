@@ -1,6 +1,6 @@
   initialized = false;
 
-  $ = function(q) {
+  _$ = function(q) {
     return document.querySelector(q);
   };
 
@@ -21,7 +21,41 @@
     window.components['head'] = document.getElementsByTagName('head')[0];
     window.components['body'] = document.getElementsByTagName('body')[0];
 
+    // Setup event delegation for CSP-compliant event handling
+    setupEventDelegation();
+
     // setRoutes();
+  }
+
+  // Event delegation for data-ryzom-handlers attributes
+  // This replaces inline event handlers for CSP compliance
+  setupEventDelegation = function() {
+    var events = ['click', 'mouseover', 'submit', 'change', 'input'];
+
+    events.forEach(function(eventType) {
+      document.addEventListener(eventType, function(event) {
+        // Find the closest element with ryzom handlers
+        var target = event.target;
+        while (target && target !== document) {
+          var handlers = target.getAttribute('data-ryzom-handlers');
+          var component = target.getAttribute('data-ryzom-component');
+
+          if (handlers && component) {
+            var handlerList = handlers.split(',');
+            var handlerName = 'on' + eventType;
+
+            if (handlerList.indexOf(handlerName) !== -1) {
+              // Call the bundled function: ComponentName_oneventtype(target)
+              var funcName = component + '_' + handlerName;
+              if (typeof window[funcName] === 'function') {
+                window[funcName](target);
+              }
+            }
+          }
+          target = target.parentElement;
+        }
+      }, true); // Use capture phase to handle events before they bubble
+    });
   }
 
   setRoutes = function() {
@@ -51,37 +85,61 @@
     if (elem != undefined )
       return elem
     else {
-      return $('[ryzom-id="'+uuid+'"]');
+      return _$('[ryzom-id="'+uuid+'"]');
     }
   };
+
+  decodeHtml = function(html) {
+    var txt = document.createElement('textarea');
+    txt.innerHTML = html
+    return txt.value
+  }
 
   createDOMelement = function(component) {
     var elem;
     if (component.tag == 'text')
-      elem = document.createTextNode(component.content);
+      elem = document.createTextNode(decodeHtml(component.content));
     else if (typeof(component) == 'string')
       elem = document.createTextNode(component);
     else {
-      elem = document.createElement(component.tag);
-      Object.keys(component.attrs).forEach(function(k) {
-        elem.setAttribute(k, component.attrs[k]);
-      });
+      if (Array.isArray(component)) {
+        console.log('component is array')
+        elem = document.createElement('p');
+        component = {content: component};
+      } else {
+        elem = document.createElement(component.tag);
+      }
+
+      // Create and append all children FIRST, before setting attributes
+      // This ensures children are available when connectedCallback fires
+      if (component.content && typeof(component.content) != 'string' && component.content.length) {
+        component.content.forEach(function(child) {
+          var c = createDOMelement(child);
+          var prev = elem.children[c.position]
+          elem.insertBefore(c, prev);
+        });
+      }
+
+      // Set attributes after children are in place
+      if (component.attrs) {
+        Object.keys(component.attrs).forEach(function(k) {
+          val = component.attrs[k];
+          if (k == 'style') {
+            Object.keys(val).forEach(function(sk) {
+              elem.style[sk] = val[sk];
+            });
+          } else {
+            elem.setAttribute(k, val);
+          }
+        });
+      }
     }
 
     if (component.publication) {
       ryzom.subscribe(component.publication, component.subscription, component.id, function(r, e) {
         if (e) { console.log(e); }
       });
-    };
-
-    if (component.content && typeof(component.content) != 'string' && component.content.length) {
-      component.content.forEach(function(child) {
-        var c = createDOMelement(child);
-        var prev = elem.childNodes[c.position]
-        elem.insertBefore(c, prev);
-        eval(child.script);
-      });
-    };
+    }
 
     registerComponent(component, elem)
 
@@ -105,27 +163,40 @@
     data.forEach(function(component) {
       var elem = createDOMelement(component);
       var parent = getElementByUuid(component.parent)
-      var prev = parent.childNodes[component.position]
+      var prev = parent.children[component.position]
       parent.insertBefore(elem, prev);
-      eval(component.script);
+      // Note: removed eval(component.script) for CSP compliance
+      // Components should use HTMLElement.connectedCallback instead of py2js
     });
 
+    dispatchEvent(new Event('load'));
     //setRoutes();
   };
 
   removeDOM = function(params) {
     var parentNode = getElementByUuid(params.parent);
     var node = getElementByUuid(params.id);
-    parentNode.removeChild(node);
+    // animate on delete
+    if (node.dataset.ryzomAod) {
+      node.style.animation = node.dataset.ryzomAod;
+      node.addEventListener('animationend', function() {
+	parentNode.removeChild(node);
+      });
+    } else {
+        parentNode.removeChild(node);
+    }
+    dispatchEvent(new Event('load'));
   };
 
   changeDOM = function(params) {
     var prev_node = getElementByUuid(params.id);
     var cur_node = createDOMelement(params);
     var parent = getElementByUuid(params.parent);
-    parent.removeChild(prev_node);
-    prev_node = parent.childNodes[params.position]
     parent.insertBefore(cur_node, prev_node)
+    parent.removeChild(prev_node);
+    // Note: removed eval(params.script) for CSP compliance
+    // Components should use HTMLElement.connectedCallback instead of py2js
+    dispatchEvent(new Event('load'));
   };
 
   /*
@@ -187,9 +258,36 @@
 
   var ws;
 
+  // Read websocket config from meta tag (CSP-compliant, no inline scripts)
+  getRyzomConfig = function() {
+    var meta = document.querySelector('meta[name="ryzom-config"]');
+    if (meta) {
+      return {
+        token: meta.getAttribute('content'),
+        ws_host: meta.getAttribute('data-ws-host'),
+        ws_port: meta.getAttribute('data-ws-port')
+      };
+    }
+    // Fallback to window globals for backwards compatibility
+    if ('token' in window) {
+      return {
+        token: window.token,
+        ws_host: window.ws_host,
+        ws_port: window.ws_port
+      };
+    }
+    return null;
+  };
+
   ws_connect = function(reconnecting) {
-    ws_path = 'ws://' + window.location.host + '/ws/ddp/'
-    ws_path += '?' + token
+    var config = getRyzomConfig();
+    if (!config) return;
+
+    var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+    var ws_host = config.ws_host ? config.ws_host : window.location.hostname;
+    var ws_port = config.ws_port ? config.ws_port : window.location.port;
+    var ws_path = ws_scheme + '://' + ws_host + ':' + ws_port + '/ws/ddp/';
+    ws_path += '?' + config.token;
     ws = new WebSocket(ws_path);
 
     if (reconnecting) {
@@ -229,7 +327,8 @@
     ws.callbacks = [];
   };
 
-  if ('token' in window)
+  // Auto-connect if config is available
+  if (getRyzomConfig())
     ws_connect();
 
   ws_send = function(data, cb) {
