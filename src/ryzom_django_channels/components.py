@@ -10,8 +10,28 @@ from ryzom_django_channels.models import (
 model_templates = dict()
 
 
-def model_template(name):
+def model_template(name_or_serializer):
     global model_templates
+
+    # Accept a DRF serializer class: derive the template name from it
+    if isinstance(name_or_serializer, type) and hasattr(name_or_serializer, 'Meta'):
+        serializer_class = name_or_serializer
+        name = f'drf-{serializer_class.Meta.model._meta.label_lower}'
+
+        def decorator(component):
+            model_templates[name] = component
+            # Also register in the ryzom_drf item cache if available
+            try:
+                from ryzom_drf.components import _item_components
+                _item_components[serializer_class] = component
+            except ImportError:
+                pass
+            return component
+        return decorator
+
+    # Original behavior: accept a string name
+    name = name_or_serializer
+
     def decorator(component):
         model_templates[name] = component
         return component

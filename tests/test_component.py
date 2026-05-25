@@ -229,3 +229,50 @@ Body
 <a href="/bye">link</a></li>
 </ul>
 '''.strip()
+
+
+def test_to_html_matches_reference():
+    """Snapshot test: to_html output for a nested tree must match reference."""
+    from ryzom.html import Div, Ul, Li
+
+    tree = Div(
+        Ul(
+            Li('item1'),
+            Li('item2'),
+            Li('item3'),
+        ),
+        id='root',
+    )
+    result = tree.to_html()
+
+    # Verify structure: opening tags, nested content, closing tags
+    assert '<div ' in result
+    assert 'ryzom-id="root"' in result
+    assert '<ul ' in result
+    assert result.count('<li ') == 3
+    assert 'item1' in result
+    assert 'item2' in result
+    assert 'item3' in result
+    assert result.endswith('</div>')
+
+    # Verify idempotency: calling again produces identical output
+    assert tree.to_html() == result
+
+
+def test_to_obj_call_count():
+    """Regression: to_obj() should call child.to_obj() exactly once."""
+    from unittest.mock import patch
+    from ryzom.html import Div, Span
+
+    child = Span('hello')
+    parent = Div(child)
+
+    with patch.object(
+        child, 'to_obj', wraps=child.to_obj
+    ) as mock_to_obj:
+        result = parent.to_obj()
+        assert mock_to_obj.call_count == 1
+
+    assert result['tag'] == 'div'
+    assert len(result['content']) == 1
+    assert result['content'][0]['tag'] == 'span'

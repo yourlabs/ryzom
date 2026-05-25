@@ -2,6 +2,7 @@
 This file defines the models needed for ryzom pub/sub system.
 They're not intended to be used by end-user.
 '''
+import contextlib
 import importlib
 import secrets
 import uuid
@@ -118,6 +119,49 @@ class Subscription(models.Model):
     @queryset.setter
     def queryset(self, value):
         self.qs = [str(i) for i in value]
+
+    def lock(self):
+        '''
+        Acquire (or re-enter) the batching lock for this subscription.
+
+        While locked, post_save/post_delete signals for this subscription's
+        model skip dispatching a Celery task for *this* subscription and
+        instead push events to a Redis queue. Other subscriptions on the
+        same model continue to receive live updates as usual. On release,
+        a single flush task replays the coalesced changes for this
+        subscription only.
+
+        Use as a context manager (recommended, reentrant-safe)::
+
+            with subscription.lock():
+                for item in big_list:
+                    Model.objects.create(...)
+        '''
+        return self._lock_cm()
+
+    @contextlib.contextmanager
+    def _lock_cm(self):
+        self.acquire_lock()
+        try:
+            yield self
+        finally:
+            self.release_lock()
+
+    def acquire_lock(self):
+        from ryzom_django_channels import locks
+        locks.lock(
+            self.pk,
+            self.publication.model_module,
+            self.publication.model_class,
+        )
+
+    def release_lock(self):
+        from ryzom_django_channels import locks
+        return locks.release(
+            self.pk,
+            self.publication.model_module,
+            self.publication.model_class,
+        )
 
     def get_queryset(self, opts=None):  # noqa: C901
         '''

@@ -344,7 +344,7 @@ class MDCVerticalMargin(Div):
     style = 'margin-top: 18px; margin-bottom: 18px'
 
 
-class MDCList(Div):
+class MDCList(Ul):
     attrs = {'class': 'mdc-deprecated-list', 'data-mdc-auto-init': 'MDCList'}
 
 
@@ -993,6 +993,7 @@ class MDCAccordionMenu(Div):
             *content,
             cls='MDCAccordionMenu',
             addcls=context.pop('addcls', ''),
+            role='list',
             style=dict(
                 display='block',
                 overflow='clip',
@@ -1760,7 +1761,7 @@ class MDCDialog(Div):
 
 
 class MDCChip(Div):
-    attrs = {'class': 'mdc-deprecated-chip', 'role': 'row'}
+    attrs = {'class': 'mdc-deprecated-chip'}
 
     def __init__(self, *content, licon=None, ticon=None, icon=None, **attrs):
         super().__init__(
@@ -1947,7 +1948,7 @@ class MDCChipRipple(Div):
 
 
 class Gridcell(Span):
-    attrs = {'role': 'gridcell'}
+    attrs = {}
 
 
 class InlineForm(Form):

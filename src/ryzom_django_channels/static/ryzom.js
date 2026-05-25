@@ -32,27 +32,21 @@
 
     events.forEach(function(eventType) {
       document.addEventListener(eventType, function(event) {
-        // Find the closest element with ryzom handlers
-        var target = event.target;
-        while (target && target !== document) {
-          var handlers = target.getAttribute('data-ryzom-handlers');
-          var component = target.getAttribute('data-ryzom-component');
+        var target = event.target.closest('[data-ryzom-component]');
+        if (!target) return;
 
-          if (handlers && component) {
-            var handlerList = handlers.split(',');
-            var handlerName = 'on' + eventType;
+        var handlers = target.getAttribute('data-ryzom-handlers');
+        var component = target.getAttribute('data-ryzom-component');
+        if (!handlers || !component) return;
 
-            if (handlerList.indexOf(handlerName) !== -1) {
-              // Call the bundled function: ComponentName_oneventtype(target)
-              var funcName = component + '_' + handlerName;
-              if (typeof window[funcName] === 'function') {
-                window[funcName](target);
-              }
-            }
+        var handlerName = 'on' + eventType;
+        if (handlers.split(',').indexOf(handlerName) !== -1) {
+          var funcName = component + '_' + handlerName;
+          if (typeof window[funcName] === 'function') {
+            window[funcName](target);
           }
-          target = target.parentElement;
         }
-      }, true); // Use capture phase to handle events before they bubble
+      }, true);
     });
   }
 
@@ -158,12 +152,117 @@
     dispatchEvent(new Event('load'));
   };
 
+  patchAttrs = function(elem, newAttrs) {
+    // Remove attributes not present in newAttrs
+    var toRemove = [];
+    for (var i = 0; i < elem.attributes.length; i++) {
+      var name = elem.attributes[i].name;
+      if (name === 'ryzom-id') continue;
+      if (!(name in newAttrs) && name !== 'style') {
+        toRemove.push(name);
+      }
+    }
+    toRemove.forEach(function(name) { elem.removeAttribute(name); });
+
+    // Set/update attributes
+    Object.keys(newAttrs).forEach(function(k) {
+      var val = newAttrs[k];
+      if (k === 'style') {
+        elem.style.cssText = '';
+        Object.keys(val).forEach(function(sk) {
+          elem.style[sk] = val[sk];
+        });
+      } else {
+        if (elem.getAttribute(k) !== String(val)) {
+          elem.setAttribute(k, val);
+        }
+      }
+    });
+  };
+
+  patchChildren = function(parentElem, newContent) {
+    if (typeof newContent === 'string') {
+      if (parentElem.textContent !== newContent) {
+        parentElem.textContent = newContent;
+      }
+      return;
+    }
+
+    var oldChildren = Array.prototype.slice.call(parentElem.childNodes);
+    var newLen = newContent.length;
+    var oldLen = oldChildren.length;
+    var minLen = Math.min(oldLen, newLen);
+
+    // Patch existing children in place
+    for (var i = 0; i < minLen; i++) {
+      var newChild = newContent[i];
+      var oldChild = oldChildren[i];
+
+      if (newChild.tag === 'text' || typeof newChild === 'string') {
+        // New child is text
+        var text = typeof newChild === 'string'
+          ? newChild
+          : decodeHtml(newChild.content);
+        if (oldChild.nodeType === 3) {
+          if (oldChild.textContent !== text) {
+            oldChild.textContent = text;
+          }
+        } else {
+          var textNode = document.createTextNode(text);
+          parentElem.replaceChild(textNode, oldChild);
+        }
+        if (typeof newChild !== 'string') {
+          registerComponent(newChild, parentElem.childNodes[i]);
+        }
+      } else if (
+        oldChild.nodeType === 1 &&
+        oldChild.tagName.toLowerCase() === newChild.tag
+      ) {
+        // Same element tag: patch in place
+        patchAttrs(oldChild, newChild.attrs || {});
+        patchChildren(oldChild, newChild.content || []);
+        registerComponent(newChild, oldChild);
+      } else {
+        // Tag mismatch: full replacement
+        var replacement = createDOMelement(newChild);
+        parentElem.replaceChild(replacement, oldChild);
+      }
+    }
+
+    // Append new children
+    for (var j = oldLen; j < newLen; j++) {
+      parentElem.appendChild(createDOMelement(newContent[j]));
+    }
+
+    // Remove excess old children
+    while (parentElem.childNodes.length > newLen) {
+      parentElem.removeChild(parentElem.childNodes[newLen]);
+    }
+  };
+
   changeDOM = function(params) {
     var prev_node = getElementByUuid(params.id);
-    var cur_node = createDOMelement(params);
     var parent = getElementByUuid(params.parent);
-    parent.insertBefore(cur_node, prev_node)
-    parent.removeChild(prev_node);
+
+    // Fall back to full replacement if node missing or tag changed
+    if (!prev_node || prev_node.nodeType !== 1 ||
+        prev_node.tagName.toLowerCase() !== params.tag) {
+      var cur_node = createDOMelement(params);
+      if (prev_node) {
+        parent.insertBefore(cur_node, prev_node);
+        parent.removeChild(prev_node);
+      } else {
+        var ref = parent.children[params.position];
+        parent.insertBefore(cur_node, ref);
+      }
+      dispatchEvent(new Event('load'));
+      return;
+    }
+
+    // Differential update: patch attrs and children in place
+    patchAttrs(prev_node, params.attrs || {});
+    patchChildren(prev_node, params.content || []);
+    registerComponent(params, prev_node);
     dispatchEvent(new Event('load'));
   };
 

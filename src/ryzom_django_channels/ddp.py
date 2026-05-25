@@ -75,6 +75,11 @@ def _send_to_client(client, data):
         async_to_sync(channel.send)(client.channel, data)
 
 
+def _position_map(sub):
+    '''Build a position dict from raw qs strings for O(1) lookup.'''
+    return {pk_str: i for i, pk_str in enumerate(sub.qs)}
+
+
 def send_insert(sub, tmpl, instance):
     '''
     Send insert message.
@@ -97,7 +102,7 @@ def send_insert(sub, tmpl, instance):
 
     tmpl_instance = tmpl(instance)
     tmpl_instance.parent = sub.subscriber_id
-    tmpl_instance.position = sub.queryset.index(instance.pk)
+    tmpl_instance.position = _position_map(sub)[str(instance.pk)]
     data = {
         'type': 'handle.ddp',
         'params': {
@@ -130,7 +135,7 @@ def send_change(sub, tmpl, instance):
 
     tmpl_instance = tmpl(instance)
     tmpl_instance.parent = sub.subscriber_id
-    tmpl_instance.position = sub.queryset.index(instance.pk)
+    tmpl_instance.position = _position_map(sub)[str(instance.pk)]
     data = {
         'type': 'handle.ddp',
         'params': {

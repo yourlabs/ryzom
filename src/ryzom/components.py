@@ -409,7 +409,7 @@ class Component(metaclass=ComponentMetaclass):
                 else:
                     to_append = c.to_obj()
                     if not isinstance(to_append, (list, tuple)):
-                        content.append(c.to_obj())
+                        content.append(to_append)
                     else:
                         content += to_append
 
@@ -440,15 +440,15 @@ class Component(metaclass=ComponentMetaclass):
         self.__publication = value
 
     def content_html(self, *content, **context):
-        html = ''
+        parts = []
         for c in content:
             if hasattr(c, 'to_html'):
-                newline = '' if getattr(c, 'tag', None) == 'text' else '\n'
-                html += newline + c.to_html(**context)
+                if getattr(c, 'tag', None) != 'text':
+                    parts.append('\n')
+                parts.append(c.to_html(**context))
             else:
-                html += str(c)
-
-        return html
+                parts.append(str(c))
+        return ''.join(parts)
 
     def context(self, *content, **context):
         for c in (content or self.content):
@@ -460,29 +460,23 @@ class Component(metaclass=ComponentMetaclass):
         if self.tag == 'text':
             return f'{self.content}'
 
-        attrs = ' '.join([
+        attrs_str = ' '.join([
             (attrs or self.attrs).to_html(),
             f'ryzom-id="{self.id}"'
         ])
-        html = ''
 
         if getattr(self, 'selfclose', False):
-            html = f'<{self.tag} {attrs}/>'
-        elif getattr(self, 'noclose', False):
-            html = f'<{self.tag} {attrs}>'
-        else:
-            html = f'<{self.tag} {attrs}>'
-            content = content or self.content
-            html += self.content_html(*content, **context)
-            # Note: Removed inline script embedding for CSP compliance
-            # Components should use HTMLElement.connectedCallback instead of py2js
-            if self.content and getattr(self.content[-1], 'tag', None) != 'text':
-                newline = '\n'
-            else:
-                newline = ''
-            html += f'{newline}</{self.tag}>'
+            return f'<{self.tag} {attrs_str}/>'
+        if getattr(self, 'noclose', False):
+            return f'<{self.tag} {attrs_str}>'
 
-        return html
+        content = content or self.content
+        parts = [f'<{self.tag} {attrs_str}>']
+        parts.append(self.content_html(*content, **context))
+        if self.content and getattr(self.content[-1], 'tag', None) != 'text':
+            parts.append('\n')
+        parts.append(f'</{self.tag}>')
+        return ''.join(parts)
 
     def render(self, *content, **context):
         if 'view' in context:

@@ -2,11 +2,12 @@
 Defines the django signals handlers.
 '''
 import time
+import traceback
 
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from ryzom_django_channels import celery_app
+from ryzom_django_channels import celery_app, locks
 
 from ryzom_django_channels.components import model_templates
 from ryzom_django_channels.ddp import send_change, send_insert, send_remove
@@ -20,25 +21,26 @@ def try_task(fn, *args, **kwargs):
         try:
             fn(*args, **kwargs)
             break
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
             retry -= 1
             time.sleep(0.2)
 
 
 @celery_app.task()
-def ddp_insert_change_task(sender_mod, sender_name, created, instance_id):
+def ddp_insert_change_task(sender_mod, sender_name, created, instance_id,
+                           excluded_subs=None):
     try_task(
         ddp_insert_change,
-        sender_mod, sender_name, created, instance_id
+        sender_mod, sender_name, created, instance_id, excluded_subs,
     )
 
 
 @celery_app.task()
-def ddp_delete_task(sender_mod, sender_name, instance_id):
+def ddp_delete_task(sender_mod, sender_name, instance_id, excluded_subs=None):
     try_task(
         ddp_delete,
-        sender_mod, sender_name, instance_id
+        sender_mod, sender_name, instance_id, excluded_subs,
     )
 
 
@@ -52,70 +54,71 @@ def _ddp_insert_change(sender, **kwargs):
     message for each id that was added or removed from the old
     queryset to the new one.
     '''
-    if Publishable in sender.mro():
-        instance = kwargs.get('instance')
-        sender_mod = instance.__module__
-        sender_name = instance.__class__.__name__
-        created = kwargs.get('created')
-        instance_id = str(instance.id)
-        ddp_insert_change_task.delay(
-            sender_mod,
-            sender_name,
-            created,
-            instance_id
-        )
+    if Publishable not in sender.mro():
+        return
+
+    instance = kwargs.get('instance')
+    sender_mod = instance.__module__
+    sender_name = instance.__class__.__name__
+    created = kwargs.get('created')
+    instance_id = str(instance.id)
+
+    locked = locks.locked_subs_for_model(sender_mod, sender_name)
+    if locked:
+        event = {
+            'op': 'save',
+            'created': bool(created),
+            'instance_id': instance_id,
+        }
+        for sub_id in locked:
+            locks.enqueue(sub_id, event)
+
+    ddp_insert_change_task.delay(
+        sender_mod,
+        sender_name,
+        created,
+        instance_id,
+        list(locked) if locked else None,
+    )
 
 
-def ddp_insert_change(sender_mod, sender_name, created, instance_id):
+def ddp_insert_change(sender_mod, sender_name, created, instance_id,
+                      excluded_subs=None):
     subscriptions = Subscription.objects.filter(
         publication__model_class=sender_name,
-        publication__model_module=sender_mod
+        publication__model_module=sender_mod,
     )
+    if excluded_subs:
+        subscriptions = subscriptions.exclude(pk__in=excluded_subs)
+
+    instance_id_str = str(instance_id)
 
     for sub in subscriptions:
         model = sub.publication.model
         template = model_templates[sub.subscriber.model_template]
-        old_qs = sub.queryset
+        to_python = model.id.field.to_python
+
+        # Snapshot raw string IDs before get_queryset() updates them
+        old_qs_strings = set(sub.qs)
 
         qs = sub.get_queryset()
         if not qs.query.can_filter():
             qs.query.clear_limits()
 
-        new_qs = sub.queryset
+        # Compare raw strings — avoids redundant to_python() conversions
+        new_qs_strings = set(sub.qs)
 
-        diff = {
-            'inserted': set(new_qs).difference(set(old_qs)),
-            'removed': set(old_qs).difference(set(new_qs))
-        }
-        # if sets are the same
-        if not diff['inserted'] and not diff['removed']:
-            # if created and sets are the same,
-            # entry has been filtered and can't be there
-            to_python = model.id.field.to_python
-            if to_python(instance_id) in new_qs:
-                # changed and may have moved
-                # just send new instance and pos
+        inserted = new_qs_strings - old_qs_strings
+        removed = old_qs_strings - new_qs_strings
+
+        if not inserted and not removed:
+            if instance_id_str in new_qs_strings:
                 send_change(sub, template, qs.get(pk=instance_id))
-                # getting from qs to keep annotations
-
-        # if sets aren't the same, then considering that only one entry
-        # was added or has changed:
-        # - it could have been removed if newly filtered (changed)
-        # - it could have been added if no more filtered (changed)
-        # - it could have been added if created and not filtered
-        # - it cannot have just moved neither changed or the set
-        #   would have been the same
-        # - it could have been added while not created, replacing
-        #   another entry because of filters, so created or not,
-        #   we have to handle both added and removed entries
         else:
-            # using loops for now but shouldn't be usefull as we
-            # are handling only one entry, the queryset shouldn't
-            # move by more that one in and/or one out
-            for id in diff['removed']:
-                send_remove(sub, template, model.objects.get(pk=id))
-            for id in diff['inserted']:
-                send_insert(sub, template, qs.get(pk=id))
+            for id_str in removed:
+                send_remove(sub, template, model.objects.get(pk=to_python(id_str)))
+            for id_str in inserted:
+                send_insert(sub, template, qs.get(pk=to_python(id_str)))
 
 
 @receiver(post_delete)
@@ -128,50 +131,60 @@ def _ddp_delete(sender, **kwargs):
     message for each id that was added or removed from the old
     queryset to the new one.
     '''
-    if Publishable in sender.mro():
-        instance = kwargs.get('instance')
-        sender_mod = instance.__module__
-        sender_name = instance.__class__.__name__
-        instance_id = str(instance.id)
-        ddp_delete_task.delay(
-            sender_mod,
-            sender_name,
-            instance_id
-        )
+    if Publishable not in sender.mro():
+        return
+
+    instance = kwargs.get('instance')
+    sender_mod = instance.__module__
+    sender_name = instance.__class__.__name__
+    instance_id = str(instance.id)
+
+    locked = locks.locked_subs_for_model(sender_mod, sender_name)
+    if locked:
+        event = {'op': 'delete', 'instance_id': instance_id}
+        for sub_id in locked:
+            locks.enqueue(sub_id, event)
+
+    ddp_delete_task.delay(
+        sender_mod,
+        sender_name,
+        instance_id,
+        list(locked) if locked else None,
+    )
 
 
-def ddp_delete(sender_mod, sender_name, instance_id):
+def ddp_delete(sender_mod, sender_name, instance_id, excluded_subs=None):
     subscriptions = Subscription.objects.filter(
         publication__model_class=sender_name,
-        publication__model_module=sender_mod
+        publication__model_module=sender_mod,
     )
+    if excluded_subs:
+        subscriptions = subscriptions.exclude(pk__in=excluded_subs)
+
+    instance_id_str = str(instance_id)
 
     for sub in subscriptions:
         model = sub.publication.model
         template = model_templates[sub.subscriber.model_template]
-
-        old_qs = sub.queryset
-
-        # if instance not in queryset, no need to remove it
-        # or update the queryset
-        # else:
         to_python = model.id.field.to_python
-        if to_python(instance_id) in old_qs:
-            qs = sub.get_queryset()
-            if not qs.query.can_filter():
-                qs.query.clear_limits()
 
-            new_qs = sub.queryset
+        # Check membership on raw strings — avoids to_python() conversion
+        if instance_id_str not in sub.qs:
+            continue
 
-            diff = {
-                'inserted': set(new_qs).difference(set(old_qs)),
-                'removed': set(old_qs).difference(set(new_qs))
-            }
+        old_qs_strings = set(sub.qs)
 
-            for id in diff['removed']:
-                # Should only be the deleted instance if it was in qs
-                instance = model(id=instance_id)
-                send_remove(sub, template, instance)
-            for id in diff['inserted']:
-                # May have been replace if limits were set
-                send_insert(sub, template, qs.get(pk=id))
+        qs = sub.get_queryset()
+        if not qs.query.can_filter():
+            qs.query.clear_limits()
+
+        new_qs_strings = set(sub.qs)
+
+        removed = old_qs_strings - new_qs_strings
+        inserted = new_qs_strings - old_qs_strings
+
+        for id_str in removed:
+            instance = model(id=instance_id)
+            send_remove(sub, template, instance)
+        for id_str in inserted:
+            send_insert(sub, template, qs.get(pk=to_python(id_str)))
