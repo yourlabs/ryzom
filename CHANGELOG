@@ -1,3 +1,17 @@
+0.7.1
+
+- Add 18-feature showcase in ryzom_django_example/simple.py covering
+  nesting, attrs, style/sass bundles, CList, Markdown, slots, @template
+  wrappers, context bubbling, event handlers, Web Components, form
+  rendering, @widget_template, and scripts/stylesheets.
+- Add SYNTHESIS.md: full project overview for all 8 packages.
+- Fix py2js transpiler compatibility with Python 3.12: ast.Num/ast.Str
+  removed, use node.value fallback; standalone methods with self as
+  first arg were emitting ES6 method shorthand instead of function
+  declarations — add _in_class tracking in visit_ClassDef to fix.
+- Fix ryzom.js event delegation: handlers received this=window instead
+  of the DOM element; changed call to .call(target, event).
+
 0.7.0
 
 - BACKWARD COMPATIBILITY BREAK: Escape HTML in text by default like in Django
