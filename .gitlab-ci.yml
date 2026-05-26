@@ -1,6 +1,7 @@
 test:
   image: yourlabs/python-arch
   script:
+  - sed -i '/^\[community\]/,+1d' /etc/pacman.conf
   - pacman -Sy --overwrite "*wheel*" python-wheel rust cargo --noconfirm
   - pip install -e .[project]
   - ./manage.py diffsettings

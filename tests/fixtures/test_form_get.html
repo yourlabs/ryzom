@@ -22,35 +22,21 @@
 <form enctype="multipart/form-data" method="POST" ryzom-id="">
 csrfmiddlewaretoken
 
-<div class="MDCField" ryzom-id="">
-<label class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField" for="id_char" ryzom-id="">
-<span class="mdc-notched-outline" ryzom-id="">
-<span class="mdc-notched-outline__leading" ryzom-id=""></span>
-<span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_char_label" class="mdc-floating-label" ryzom-id="">Char</span>
-</span>
-<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
-</span>
-<input name="char" required id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-describedby="id_char_helper" aria-controls="id_char_helper" ryzom-id=""></label>
-<div class="MDCHelpText" id="id_char_helper" ryzom-id="">Non required example text input</div>
+<div class="PlainInputWidget" ryzom-id="">
+<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Char</p>
+<input name="char" required aria-describedby="id_char_helptext" id="id_char" type="text" input-id="id_char" label-id="id_char_label" ryzom-id="">
+<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Non required example text input</p>
 </div>
-<div class="MDCField" ryzom-id="">
-<label class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField" for="id_email" ryzom-id="">
-<span class="mdc-notched-outline" ryzom-id="">
-<span class="mdc-notched-outline__leading" ryzom-id=""></span>
-<span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_email_label" class="mdc-floating-label" ryzom-id="">Email</span>
-</span>
-<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
-</span>
-<input name="email" maxlength="320" required id="id_email" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" aria-describedby="id_email_helper" aria-controls="id_email_helper" ryzom-id=""></label>
-<div class="MDCHelpText" id="id_email_helper" ryzom-id="">Valid email required</div>
+<div class="PlainInputWidget" ryzom-id="">
+<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Email</p>
+<input name="email" maxlength="320" required aria-describedby="id_email_helptext" id="id_email" type="email" input-id="id_email" label-id="id_email_label" ryzom-id="">
+<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Valid email required</p>
 </div>
 <div class="MDCField" ryzom-id="">
 <div class="mdc-form-field" style="flex-flow: row nowrap; align-items: center; justify-content: start" ryzom-id="">
 <label style="cursor: pointer; margin-right: 10px" for="id_boolean" ryzom-id="">Boolean</label>
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="boolean" required id="id_boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" slot="input" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="boolean" required aria-describedby="id_boolean_helptext" id="id_boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" slot="input" ryzom-id="">
 <div class="mdc-checkbox__background" slot="checkbox" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id=""></path>
@@ -129,7 +115,7 @@ csrfmiddlewaretoken
 <span class="mdc-notched-outline__trailing" ryzom-id=""></span>
 </span>
 <span class="mdc-text-field__resizer" ryzom-id="">
-<textarea aria-labelledby="id_textarea_label" name="textarea" cols="40" rows="10" required id="id_textarea" class="mdc-text-field__input" aria-describedby="id_textarea_helper" aria-controls="id_textarea_helper" ryzom-id=""></textarea>
+<textarea aria-labelledby="id_textarea_label" name="textarea" cols="40" rows="10" required aria-describedby="id_textarea_helper" id="id_textarea" class="mdc-text-field__input" aria-controls="id_textarea_helper" ryzom-id=""></textarea>
 </span>
 </label>
 <div class="MDCHelpText" id="id_textarea_helper" ryzom-id="">This is the help text</div>
@@ -139,7 +125,7 @@ csrfmiddlewaretoken
 <label id="document_label_id" ryzom-id="">Document</label>
 <mdc-file-field style="margin-bottom: 24px" data-input-id="id_document" data-label-id="" data-empty-value="No file selected" ryzom-id="">
 <span style="display: block; width: 0; height: 0; overflow: hidden" ryzom-id="">
-<input aria-labelledby="document_label_id" name="document" required id="id_document" type="file" label="Select file" input-id="id_document" label-id="id_document_label" ryzom-id="">
+<input aria-labelledby="document_label_id" name="document" required aria-describedby="id_document_helptext" id="id_document" type="file" label="Select file" input-id="id_document" label-id="id_document_label" ryzom-id="">
 </span>
 <label class="mdc-button mdc-button--outlined " style="margin: 0" for="id_document" ryzom-id="">
 <span class="mdc-button__ripple" ryzom-id=""></span>

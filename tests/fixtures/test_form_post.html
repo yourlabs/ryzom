@@ -1,39 +1,21 @@
 
-<div class="MDCField" ryzom-id="">
-<label class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" for="id_char" ryzom-id="">
-<span class="mdc-notched-outline" ryzom-id="">
-<span class="mdc-notched-outline__leading" ryzom-id=""></span>
-<span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_char_label" class="mdc-floating-label" ryzom-id="">Char</span>
-</span>
-<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
-</span>
-<input name="char" required id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-describedby="id_char_errors" aria-controls="id_char_errors" ryzom-id=""></label>
-<ul class="MDCErrorList" id="id_char_errors" ryzom-id="">
-<li class="MDCErrorListItem" ryzom-id="">This field is required.</li>
-</ul>
-<div class="MDCHelpText" id="id_char_helper" ryzom-id="">Non required example text input</div>
+<div class="PlainInputWidget" ryzom-id="">
+<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Char</p>
+<input name="char" required aria-invalid="true" aria-describedby="id_char_helptext id_char_error" id="id_char" type="text" input-id="id_char" label-id="id_char_label" ryzom-id="">
+<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Non required example text input</p>
+<p style="color: red; font-size: 0.85em" ryzom-id="">This field is required.</p>
 </div>
-<div class="MDCField" ryzom-id="">
-<label class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" for="id_email" ryzom-id="">
-<span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
-<span class="mdc-notched-outline__leading" ryzom-id=""></span>
-<span class="mdc-notched-outline__notch" ryzom-id="">
-<span id="id_email_label" class="mdc-floating-label mdc-floating-label--float-above" ryzom-id="">Email</span>
-</span>
-<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
-</span>
-<input name="email" value="foo@b.b" maxlength="320" required id="id_email" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" aria-describedby="id_email_errors" aria-controls="id_email_errors" ryzom-id=""></label>
-<ul class="MDCErrorList" id="id_email_errors" ryzom-id="">
-<li class="MDCErrorListItem" ryzom-id="">Enter a valid email address.</li>
-</ul>
-<div class="MDCHelpText" id="id_email_helper" ryzom-id="">Valid email required</div>
+<div class="PlainInputWidget" ryzom-id="">
+<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Email</p>
+<input name="email" value="foo@b.b" maxlength="320" required aria-invalid="true" aria-describedby="id_email_helptext id_email_error" id="id_email" type="email" input-id="id_email" label-id="id_email_label" ryzom-id="">
+<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Valid email required</p>
+<p style="color: red; font-size: 0.85em" ryzom-id="">Enter a valid email address.</p>
 </div>
 <div class="MDCField" ryzom-id="">
 <div class="mdc-form-field" style="flex-flow: row nowrap; align-items: center; justify-content: start" ryzom-id="">
 <label style="cursor: pointer; margin-right: 10px" for="id_boolean" ryzom-id="">Boolean</label>
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="boolean" required id="id_boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" slot="input" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="boolean" required aria-invalid="true" aria-describedby="id_boolean_helptext id_boolean_error" id="id_boolean" type="checkbox" input-id="id_boolean" label-id="id_boolean_label" slot="input" ryzom-id="">
 <div class="mdc-checkbox__background" slot="checkbox" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id=""></path>
@@ -57,7 +39,7 @@
 <div class="select-multiple-option" ryzom-id="">
 <label for="id_checkboxes_0" ryzom-id="">a</label>
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="checkboxes" value="a" id="id_checkboxes_0" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" slot="input" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="checkboxes" value="a" aria-invalid="true" id="id_checkboxes_0" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" slot="input" ryzom-id="">
 <div class="mdc-checkbox__background" slot="checkbox" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id=""></path>
@@ -69,7 +51,7 @@
 <div class="select-multiple-option" ryzom-id="">
 <label for="id_checkboxes_1" ryzom-id="">b</label>
 <div class="mdc-checkbox" ryzom-id="">
-<input class="mdc-checkbox__native-control" name="checkboxes" value="b" id="id_checkboxes_1" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" slot="input" ryzom-id="">
+<input class="mdc-checkbox__native-control" name="checkboxes" value="b" aria-invalid="true" id="id_checkboxes_1" type="checkbox" input-id="id_checkboxes" label-id="id_checkboxes_label" slot="input" ryzom-id="">
 <div class="mdc-checkbox__background" slot="checkbox" ryzom-id="">
 <svg viewBox="0 0 24 24" class="mdc-checkbox__checkmark" ryzom-id="">
 <path fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59" class="mdc-checkbox__checkmark-path" ryzom-id=""></path>
@@ -96,7 +78,7 @@
 </span>
 <span class="mdc-notched-outline__trailing" ryzom-id=""></span>
 </span>
-<input name="datetime_0" value="11/11/2020" required id="id_datetime_0" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" class="mdc-text-field__input" aria-labelledby="id_datetime_0_label" ryzom-id="">
+<input name="datetime_0" value="11/11/2020" required aria-invalid="true" id="id_datetime_0" type="date" input-id="id_datetime_0" label-id="id_datetime_0_label" class="mdc-text-field__input" aria-labelledby="id_datetime_0_label" ryzom-id="">
 </label></div>
 <div class="MDCField" style="margin-bottom: 0; margin-top: 12px" ryzom-id="">
 <label class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating" data-mdc-auto-init="MDCTextField" for="id_datetime_1" ryzom-id="">
@@ -107,7 +89,7 @@
 </span>
 <span class="mdc-notched-outline__trailing" ryzom-id=""></span>
 </span>
-<input name="datetime_1" value="aoeu" required id="id_datetime_1" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" class="mdc-text-field__input" aria-labelledby="id_datetime_1_label" ryzom-id="">
+<input name="datetime_1" value="aoeu" required aria-invalid="true" id="id_datetime_1" type="time" input-id="id_datetime_1" label-id="id_datetime_1_label" class="mdc-text-field__input" aria-labelledby="id_datetime_1_label" ryzom-id="">
 </label></div></div>
 <ul class="MDCErrorList" id="id_datetime_errors" ryzom-id="">
 <li class="MDCErrorListItem" ryzom-id="">Enter a valid time.</li>
@@ -124,7 +106,7 @@
 <span class="mdc-notched-outline__trailing" ryzom-id=""></span>
 </span>
 <span class="mdc-text-field__resizer" ryzom-id="">
-<textarea aria-labelledby="id_textarea_label" name="textarea" cols="40" rows="10" required id="id_textarea" class="mdc-text-field__input" aria-describedby="id_textarea_helper" aria-controls="id_textarea_helper" ryzom-id="">example textarea value</textarea>
+<textarea aria-labelledby="id_textarea_label" name="textarea" cols="40" rows="10" required aria-describedby="id_textarea_helper" id="id_textarea" class="mdc-text-field__input" aria-controls="id_textarea_helper" ryzom-id="">example textarea value</textarea>
 </span>
 </label>
 <div class="MDCHelpText" id="id_textarea_helper" ryzom-id="">This is the help text</div>
@@ -134,7 +116,7 @@
 <label id="document_label_id" ryzom-id="">Document</label>
 <mdc-file-field style="margin-bottom: 24px" data-input-id="id_document" data-label-id="" data-empty-value="No file selected" ryzom-id="">
 <span style="display: block; width: 0; height: 0; overflow: hidden" ryzom-id="">
-<input aria-labelledby="document_label_id" name="document" required id="id_document" type="file" label="Select file" input-id="id_document" label-id="id_document_label" ryzom-id="">
+<input aria-labelledby="document_label_id" name="document" required aria-invalid="true" aria-describedby="id_document_helptext id_document_error" id="id_document" type="file" label="Select file" input-id="id_document" label-id="id_document_label" ryzom-id="">
 </span>
 <label class="mdc-button mdc-button--outlined " style="margin: 0" for="id_document" ryzom-id="">
 <span class="mdc-button__ripple" ryzom-id=""></span>
