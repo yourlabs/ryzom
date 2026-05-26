@@ -80,10 +80,19 @@ csrf_re = r'[<][^<]*name="csrfmiddlewaretoken"[^>]*[>]'
 
 
 def assert_equals(expected, result):
+    import difflib
     from django.test.html import parse_html
-    expected = parse_html(expected)
-    result = parse_html(result)
-    assert result == expected
+    expected_parsed = parse_html(expected)
+    result_parsed = parse_html(result)
+    if result_parsed != expected_parsed:
+        diff = '\n'.join(difflib.unified_diff(
+            expected.splitlines(),
+            result.splitlines(),
+            fromfile='expected',
+            tofile='result',
+            lineterm='',
+        ))
+        pytest.fail(f'HTML mismatch:\n{diff}')
 
 
 def assert_equals_fixture(name, result):
