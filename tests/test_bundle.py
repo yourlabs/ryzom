@@ -4,6 +4,7 @@ Tests for ryzom.js.
 For py2js tests, see test_py2js.py
 """
 
+import pytest
 from ryzom.components import Component
 from ryzom import bundle
 from .test_py2js import assert_equals_fixture
@@ -66,4 +67,8 @@ def test_bundle_js():
 
 
 def test_bundle_css():
+    try:
+        import sass  # noqa: F401
+    except ImportError:
+        pytest.skip('libsass not installed')
     assert_equals_fixture('test_bundle', bundle.css(__name__), suffix='.css')

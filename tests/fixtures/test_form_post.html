@@ -1,15 +1,33 @@
 
-<div class="PlainInputWidget" ryzom-id="">
-<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Char</p>
-<input name="char" required aria-invalid="true" aria-describedby="id_char_helptext id_char_error" id="id_char" type="text" input-id="id_char" label-id="id_char_label" ryzom-id="">
-<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Non required example text input</p>
-<p style="color: red; font-size: 0.85em" ryzom-id="">This field is required.</p>
+<div class="MDCField" ryzom-id="">
+<label class="mdc-text-field mdc-text-field--outlined mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" for="id_char" ryzom-id="">
+<span class="mdc-notched-outline" ryzom-id="">
+<span class="mdc-notched-outline__leading" ryzom-id=""></span>
+<span class="mdc-notched-outline__notch" ryzom-id="">
+<span id="id_char_label" class="mdc-floating-label" ryzom-id="">Char</span>
+</span>
+<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
+</span>
+<input name="char" required aria-invalid="true" aria-describedby="id_char_errors" id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-controls="id_char_errors" ryzom-id=""></label>
+<ul class="MDCErrorList" id="id_char_errors" ryzom-id="">
+<li class="MDCErrorListItem" ryzom-id="">This field is required.</li>
+</ul>
+<div class="MDCHelpText" id="id_char_helper" ryzom-id="">Non required example text input</div>
 </div>
-<div class="PlainInputWidget" ryzom-id="">
-<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Email</p>
-<input name="email" value="foo@b.b" maxlength="320" required aria-invalid="true" aria-describedby="id_email_helptext id_email_error" id="id_email" type="email" input-id="id_email" label-id="id_email_label" ryzom-id="">
-<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Valid email required</p>
-<p style="color: red; font-size: 0.85em" ryzom-id="">Enter a valid email address.</p>
+<div class="MDCField" ryzom-id="">
+<label class="mdc-text-field mdc-text-field--outlined mdc-text-field--label-floating mdc-text-field--invalid" data-mdc-auto-init="MDCTextField" for="id_email" ryzom-id="">
+<span class="mdc-notched-outline mdc-notched-outline--notched" ryzom-id="">
+<span class="mdc-notched-outline__leading" ryzom-id=""></span>
+<span class="mdc-notched-outline__notch" ryzom-id="">
+<span id="id_email_label" class="mdc-floating-label mdc-floating-label--float-above" ryzom-id="">Email</span>
+</span>
+<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
+</span>
+<input name="email" value="foo@b.b" maxlength="320" required aria-invalid="true" aria-describedby="id_email_errors" id="id_email" type="email" input-id="id_email" label-id="id_email_label" class="mdc-text-field__input" aria-labelledby="id_email_label" aria-controls="id_email_errors" ryzom-id=""></label>
+<ul class="MDCErrorList" id="id_email_errors" ryzom-id="">
+<li class="MDCErrorListItem" ryzom-id="">Enter a valid email address.</li>
+</ul>
+<div class="MDCHelpText" id="id_email_helper" ryzom-id="">Valid email required</div>
 </div>
 <div class="MDCField" ryzom-id="">
 <div class="mdc-form-field" style="flex-flow: row nowrap; align-items: center; justify-content: start" ryzom-id="">

@@ -1,8 +1,15 @@
 
-<div class="PlainInputWidget" ryzom-id="">
-<p style="font-weight: bold; margin: 0 0 4px 0" ryzom-id="">Char</p>
-<input name="char" required aria-describedby="id_char_helptext" id="id_char" type="text" input-id="id_char" label-id="id_char_label" ryzom-id="">
-<p style="color: #666; font-size: 0.85em; margin: 2px 0" ryzom-id="">Non required example text input</p>
+<div class="MDCField" ryzom-id="">
+<label class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField" for="id_char" ryzom-id="">
+<span class="mdc-notched-outline" ryzom-id="">
+<span class="mdc-notched-outline__leading" ryzom-id=""></span>
+<span class="mdc-notched-outline__notch" ryzom-id="">
+<span id="id_char_label" class="mdc-floating-label" ryzom-id="">Char</span>
+</span>
+<span class="mdc-notched-outline__trailing" ryzom-id=""></span>
+</span>
+<input name="char" required aria-describedby="id_char_helper" id="id_char" type="text" input-id="id_char" label-id="id_char_label" class="mdc-text-field__input" aria-labelledby="id_char_label" aria-controls="id_char_helper" ryzom-id=""></label>
+<div class="MDCHelpText" id="id_char_helper" ryzom-id="">Non required example text input</div>
 </div>
 <div class="MDCField" ryzom-id="">
 <label style="display: block" ryzom-id="">Datetime</label>
