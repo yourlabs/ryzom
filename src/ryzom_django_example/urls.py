@@ -3,6 +3,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('', include('ryzom_django_example.views')),
+    path('simple/', include('ryzom_django_example.simple')),
 ]
 
 if settings.DEBUG:

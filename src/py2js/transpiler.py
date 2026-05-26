@@ -280,7 +280,7 @@ class JS(object):
             func_name = node.name
             if func_name == '__init__':
                 func_name = 'constructor'
-            if node.args.args and node.args.args[0].arg == 'self':
+            if node.args.args and node.args.args[0].arg == 'self' and getattr(self, '_in_class', False):
                 prep = "%s(%s) {" % (func_name, args)
             else:
                 prep = "function %s(%s) {" % (func_name, args)
@@ -307,6 +307,8 @@ class JS(object):
             self.write(f"class {node.name}" + " {")
         self.indent()
 
+        prev = getattr(self, '_in_class', False)
+        self._in_class = True
         for stmt in node.body:
             if isinstance(stmt, ast.Assign):
                 value = self.visit(stmt.value)
@@ -315,6 +317,7 @@ class JS(object):
                     self.write("%s = %s;" % (var, value))
             else:
                 self.visit(stmt)
+        self._in_class = prev
 
         self.dedent()
         self.write("}")
@@ -614,7 +617,7 @@ class JS(object):
         return "%s(%s)" % (self.get_unary_op(node), self.visit(node.operand))
 
     def visit_BinOp(self, node):
-        if isinstance(node.op, ast.Mod) and isinstance(node.left, ast.Str):
+        if isinstance(node.op, ast.Mod) and isinstance(node.left, (ast.Constant, ast.Str) if hasattr(ast, 'Str') else (ast.Constant,)) and isinstance(getattr(node.left, 's', None) or getattr(node.left, 'value', None), str):
             left = self.visit(node.left)
             if isinstance(node.right, (ast.Tuple, ast.List)):
                 right = self.visit(node.right)
@@ -685,15 +688,16 @@ class JS(object):
             return self.visit_Num(node)
 
     def visit_Num(self, node):
-        return node.n
+        return getattr(node, 'n', None) or node.value
 
     def visit_Str(self, node):
         # Uses the Python builtin repr() of a string and the strip string type
         # from it. This is to ensure Javascriptness, even when they use things
         # like b"\\x00" or u"\\u0000".
+        s = getattr(node, 's', None) or node.value
         if not self.in_str:
-            return "%s" % repr(node.s).lstrip("urb")
-        return node.s
+            return "%s" % repr(s).lstrip("urb")
+        return s
 
     def visit_Call(self, node):
         func = self.visit(node.func)
