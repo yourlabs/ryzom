@@ -5,7 +5,7 @@ test:
   - pacman-key --init
   - pacman -Sy --noconfirm archlinux-keyring
   - pacman-key --populate archlinux
-  - pacman -S --overwrite "*" python-wheel python-libsass rust cargo --noconfirm
+  - pacman -S --overwrite "*" python-wheel gcc rust cargo --noconfirm
   - pip install -e .[project]
   - ./manage.py diffsettings
   - py.test -vv --cov src --strict-markers -r fEsxXw
