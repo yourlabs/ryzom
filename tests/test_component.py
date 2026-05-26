@@ -53,14 +53,14 @@ def test_addcls_rmcls():
     assert MyComponent(cls=['a', 'b']).attrs['class'] == 'a b'
 
 
-class Test1(html.Div):
+class Comp1(html.Div):
     attrs = dict(
         x='x',
         y='y',
         z='z',
     )
 
-class Test2(Test1):
+class Comp2(Comp1):
     attrs = dict(
         x='xx',
         z=None,
@@ -69,19 +69,19 @@ class Test2(Test1):
 
 def test_attr_copy():
     # test that we didn't break the class (that attrs were copied)
-    assert Test1().attrs is not Test1.attrs
+    assert Comp1().attrs is not Comp1.attrs
 
 
 def test_attr_inheritance():
-    assert Test1.attrs.x == 'x'
-    assert Test2.attrs.x == 'xx'
-    assert Test2.attrs.y == 'y'
+    assert Comp1.attrs.x == 'x'
+    assert Comp2.attrs.x == 'xx'
+    assert Comp2.attrs.y == 'y'
 
 
 def test_attr_delete():
-    assert 'z' not in Test2.attrs
+    assert 'z' not in Comp2.attrs
 
-    test = Test2()
+    test = Comp2()
     assert test.attrs.x
     test.attrs.x = None
     assert 'x' not in test.attrs
@@ -90,11 +90,11 @@ def test_attr_delete():
     assert 'lol' not in test.attrs
 
 def test_attr_instance():
-    test = Test1()
+    test = Comp1()
     test.attrs.x = None
     assert 'x' not in test.attrs
     # test against any side effect on class
-    assert Test1.attrs.x == 'x'
+    assert Comp1.attrs.x == 'x'
 
 
 def test_attr_class():
@@ -127,7 +127,7 @@ def test_html_payload():
 
 
 def test_attrs_to_html():
-    comp = Test1()
+    comp = Comp1()
     comp.attrs['foo'] = True
     comp.attrs.y = False
     comp.attrs.z = None
