@@ -30,7 +30,8 @@ setup(
             'daphne',
             'markdown',
             'celery',
-            'lxml'
+            'lxml',
+            'pytest-asyncio',
         ]
     ),
     classifiers=[
