@@ -5,7 +5,7 @@ test:
   - pacman-key --init
   - pacman -Sy --noconfirm archlinux-keyring
   - pacman-key --populate archlinux
-  - pacman -S --overwrite "*" python-wheel rust cargo --noconfirm
+  - pacman -S --overwrite "*" python-wheel python-libsass rust cargo --noconfirm
   - pip install -e .[project]
   - ./manage.py diffsettings
   - py.test -vv --cov src --strict-markers -r fEsxXw
@@ -18,6 +18,7 @@ test:
     DEBUG: '1'
     PIP_ALLOW_EXTERNAL: 'true'
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    DB_ENGINE: django.db.backends.postgresql
     DB_HOST: postgres
     DB_USER: test
     DB_NAME: test
