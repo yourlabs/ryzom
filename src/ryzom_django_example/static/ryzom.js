@@ -1,5 +1,5 @@
 // Event delegation for data-ryzom-handlers attributes.
-// This is the only part of ryzom.js needed by the simple.py example app.
+// This is the only part of ryzom.js needed by the tutorial.py example app.
 // It wires onclick/onmouseover/etc. methods (transpiled by py2js into bundle.js)
 // to their DOM elements via data-ryzom-component / data-ryzom-handlers attributes.
 // The full WebSocket/DDP runtime lives in ryzom_django_channels/static/ryzom.js.

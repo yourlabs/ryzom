@@ -1,4 +1,4 @@
-from ryzom_django_example.simple import (
+from ryzom_django_example.tutorial import (
     AlertBox,
     SuccessBox,
     ErrorBox,

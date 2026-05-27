@@ -4,7 +4,7 @@ import pytest
 
 @pytest.fixture(autouse=True, scope='session')
 def _initial_widget_templates():
-    """Capture widget_templates state before any URL conf loads (e.g. simple.py)."""
+    """Capture widget_templates state before any URL conf loads (e.g. tutorial.py)."""
     from ryzom_django.forms import widget_templates
     return dict(widget_templates)
 
@@ -19,7 +19,7 @@ def isolate_widget_templates(_initial_widget_templates):
     # This guarantees simple.py's @widget_template decorators run again during
     # test_view_get even when a prior test (e.g. a channels Consumer) already
     # loaded the URL conf and triggered the simple.py import.
-    for mod in ('ryzom_django_example.simple', 'ryzom_django_example.urls'):
+    for mod in ('ryzom_django_example.tutorial', 'ryzom_django_example.urls'):
         sys.modules.pop(mod, None)
     clear_url_caches()
 

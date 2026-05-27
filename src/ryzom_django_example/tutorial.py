@@ -340,7 +340,7 @@ def nav_links():
     return CList(
         A("Home", href="/"),
         Span(" | "),
-        A("Simple", href="/simple/"),
+        A("Tutorial", href="/tutorial/"),
         Span(" | "),
         A("Bundles", href="/bundles/bundle.css"),
     )
@@ -358,7 +358,7 @@ section7 = Div(
     Div(
         A("Home", href="/"),
         Span(" | "),
-        A("Simple", href="/simple/"),
+        A("Tutorial", href="/tutorial/"),
     ),
 )
 
@@ -496,7 +496,7 @@ section9 = Div(
 # --- Feature 10: @template with layout wrappers ---
 #
 # @template(name) registers a component as the handler for a Django template name.
-# When Django renders template_name = 'simple.html', it instantiates SimplePage.
+# When Django renders template_name = 'tutorial.html', it instantiates SimplePage.
 #
 # @template(name, *wrappers) does the same thing but wraps the component inside
 # one or more layout components — replacing Django's {% extends %}.
@@ -535,7 +535,7 @@ class PageShell(Html):
         self.body.content.insert(
             0,
             Div(
-                A("← back to simple", href="/simple/"),
+                A("← back to tutorial", href="/tutorial/"),
                 style="padding: 8px; background: #333; color: white",
             ),
         )
@@ -555,7 +555,7 @@ class Section10Inner(Div):
                 "This page is rendered by Section10Inner, wrapped inside ContentBox, "
                 "wrapped inside PageShell."
             ),
-            P("The URL is /simple/layout/ — try it in the browser."),
+            P("The URL is /tutorial/layout/ — try it in the browser."),
             P("No {% extends %}, no base.html — just Python classes composing."),
             **context,
         )
@@ -571,7 +571,7 @@ section10 = Div(
         "The @template decorator can accept wrapper classes that act as layout "
         "shells — replacing Django's {% extends %}. "
         "Open ",
-        A("/simple/layout/", href="/simple/layout/"),
+        A("/tutorial/layout/", href="/tutorial/layout/"),
         " to see a standalone page built from three nested wrapper components.",
     ),
 )
@@ -1043,7 +1043,7 @@ section16 = Div(
     ),
     P(
         'Open ',
-        A('/simple/prism/', href='/simple/prism/'),
+        A('/tutorial/prism/', href='/tutorial/prism/'),
         ' to see a page that loads Prism.js from CDN via these class attributes.',
     ),
     P('The current page itself uses:'),
@@ -1089,7 +1089,7 @@ section16 = Div(
 # The auto-discovery scans these submodule names per app:
 #   views, urls, components, html
 #
-# That is why we created components.py — so our simple.py classes are found.
+# That is why we created components.py — so our tutorial.py classes are found.
 # Any class with:
 #   - style= or sass=  → contributes to bundle.css
 #   - class HTMLElement:  → contributes a customElements.define() to bundle.js
@@ -1120,13 +1120,13 @@ section17 = Div(
 )
 
 
-@template("simple.html")
+@template("tutorial.html")
 class SimplePage(Html):
     stylesheets = [CSSBundle()]
     scripts = ["/static/ryzom.js", JSBundle()]
 
     def to_html(self, *content, **context):
-        self.body.addchild(H1("Ryzom simple example"))
+        self.body.addchild(H1("Ryzom tutorial"))
         self.body.addchild(section1)
         self.body.addchild(section2)
         self.body.addchild(section3)
@@ -1148,7 +1148,7 @@ class SimplePage(Html):
 
 
 class SimpleView(generic.TemplateView):
-    template_name = "simple.html"
+    template_name = "tutorial.html"
 
 
 urlpatterns = [
