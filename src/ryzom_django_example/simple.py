@@ -706,6 +706,15 @@ class ColorToggle(Div):
 
 section12 = Div(
     H2("Inline event handlers — the HTML way"),
+    P(
+        "This section requires ",
+        Code("/static/ryzom.js"),
+        " (loaded by SimplePage.scripts). That file contains only the event "
+        "delegation glue that reads ",
+        Code("data-ryzom-handlers"),
+        " attributes and wires them to the transpiled JS functions in bundle.js. "
+        "It is NOT the full WebSocket/DDP runtime — that lives in ryzom_django_channels.",
+    ),
     P("Click the box to count clicks (handler transpiled from Python onclick method):"),
     ClickCounter(),
     P("Hover to cycle background colours (onmouseover):"),
