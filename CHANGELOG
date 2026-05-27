@@ -1,3 +1,19 @@
+0.7.2
+
+- Fix CI: switch to yourlabs/python image (updated nightly) from the
+  stale yourlabs/python-arch image (3 years without updates).
+- Fix CI: resolve test_view_get ordering dependency — widget_templates
+  isolation now drops URL conf modules from sys.modules before each test
+  so simple.py's @widget_template decorators always re-run.
+- Fix CI: improve assert_equals failure output with unified diff.
+- Fix CI: register asyncio marker and pytest-asyncio dependency.
+- Fix CI: remove unknown CHANNELS_ENABLE pytest config option.
+- Fix CI: suppress RuntimeWarning from app initialization DB access.
+- Fix CI: rename Test1/Test2 component fixtures to Comp1/Comp2 to avoid
+  PytestCollectionWarning.
+- Re-enable test_ws_connected and test_register_changed (require
+  PostgreSQL; were incorrectly skipped with a misleading reason).
+
 0.7.1
 
 - Add 18-feature showcase in ryzom_django_example/simple.py covering
