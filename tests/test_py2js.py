@@ -377,6 +377,22 @@ def test_transpile_function():
     assert_equals_fixture('test_transpile_function', result)
 
 
+def test_transpile_function_with_self():
+    # A standalone function whose first arg is ``self`` (e.g. a class method
+    # pulled out for event-handler bundling) must emit a real ``function``
+    # declaration, not ES6 method shorthand, which is only valid inside a
+    # class/object body.
+    class Comp:
+        def handler(self, event):
+            print(event)
+
+    result = py2js.transpile_function(Comp.handler, 'Comp__handler')
+    assert result == '''function Comp__handler(event) {
+    console.log(event);
+}
+'''
+
+
 def test_transpile_template():
     def foo():
         return f'foo {bar}{1 + b}'
