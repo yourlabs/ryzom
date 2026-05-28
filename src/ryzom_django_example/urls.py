@@ -4,6 +4,7 @@ from django.urls import include, path
 urlpatterns = [
     path('', include('ryzom_django_example.views')),
     path('tutorial/', include('ryzom_django_example.tutorial')),
+    path('crud/', include('ryzom_django_example.crud')),
 ]
 
 if settings.DEBUG:
