@@ -651,85 +651,7 @@ section11 = Div(
 )
 
 
-# --- Feature 12: Inline event handlers — the HTML way ---
-#
-# Define onclick, onsubmit, onchange, oninput, or onmouseover as a method
-# directly on the component class. Ryzom handles the rest:
-#
-#   1. ComponentMetaclass detects the method at class-creation time.
-#   2. It adds two data attributes to every instance of that class:
-#        data-ryzom-component="ClassName"
-#        data-ryzom-handlers="onclick"   (comma-separated list)
-#   3. The JS bundle transpiles the method as a global function:
-#        function ClassName_onclick(self) { ... }   (self → this)
-#   4. ryzom.js reads the data attributes on DOMContentLoaded and calls
-#        element.addEventListener('click', () => ClassName_onclick(element))
-#
-# You write the handler body in Python. py2js transpiles it to JavaScript.
-# Same translation rules as py2js: self → this, print → console.log, etc.
-#
-# Supported event methods: onclick, onmouseover, onsubmit, onchange, oninput
-#
-# The handler receives the event as a parameter (second arg after self).
-# IMPORTANT: no *args or **kwargs — py2js only supports simple positional args.
-
-
-class ClickCounter(Div):
-    def __init__(self, *content, **attrs):
-        super().__init__(
-            "Clicked 0 times",
-            style="cursor: pointer; padding: 10px; background: #e9ecef; display: inline-block",
-            **attrs,
-        )
-
-    def onclick(self, event):
-        # dataset values are strings — subtraction coerces to number, addition would concat
-        count = (self.dataset.count or 0) - -1
-        self.dataset.count = count
-        self.innerText = f"Clicked {count} times"
-
-
-class ColorToggle(Div):
-    def __init__(self, *content, **attrs):
-        super().__init__(
-            "Hover over me",
-            style="padding: 10px; background: #d4edda; display: inline-block",
-            **attrs,
-        )
-
-    def onmouseover(self, event):
-        colors = ["#d4edda", "#cce5ff", "#fff3cd", "#f8d7da"]
-        idx = ((self.dataset.colorIdx or 0) - -1) % colors.length
-        self.dataset.colorIdx = idx
-        self.style.backgroundColor = colors[idx]
-
-
-section12 = Div(
-    H2("Inline event handlers — the HTML way"),
-    P(
-        "This section requires ",
-        Code("/static/ryzom.js"),
-        " (loaded by SimplePage.scripts). That file contains only the event "
-        "delegation glue that reads ",
-        Code("data-ryzom-handlers"),
-        " attributes and wires them to the transpiled JS functions in bundle.js. "
-        "It is NOT the full WebSocket/DDP runtime — that lives in ryzom_django_channels.",
-    ),
-    P("Click the box to count clicks (handler transpiled from Python onclick method):"),
-    ClickCounter(),
-    P("Hover to cycle background colours (onmouseover):"),
-    ColorToggle(),
-    P(
-        "Inspect the elements — they have data-ryzom-component and "
-        "data-ryzom-handlers attributes. No inline onclick= attribute. "
-        "The JS is in ",
-        A("/bundles/bundle.js", href="/bundles/bundle.js"),
-        " — search for ClickCounter_onclick.",
-    ),
-)
-
-
-# --- Feature 13: class HTMLElement — the Web Component way ---
+# --- Feature 12: class HTMLElement — the Web Component way ---
 #
 # Instead of individual onclick/onmouseover methods, you can define a full
 # custom HTML element by nesting a class HTMLElement: inside your component.
@@ -747,7 +669,7 @@ section12 = Div(
 # (MyWidget → my-widget). This is a real browser custom element — it has its
 # own lifecycle, its own JS class, and is registered with customElements.define.
 #
-# Key differences from the HTML way (Feature 12):
+# Key differences from individual inline event handler methods:
 #
 #   HTML way:   one method per event, wired via data-ryzom-handlers at runtime
 #   WebComponent way: a full JS class, self-contained, browser-native lifecycle
@@ -819,7 +741,7 @@ section13 = Div(
 )
 
 
-# --- Feature 14: Form rendering ---
+# --- Feature 13: Form rendering ---
 #
 # Ryzom monkey-patches Django's form and BoundField classes with two methods:
 #
@@ -831,7 +753,7 @@ section13 = Div(
 # A BoundField (bf) is what you get when you iterate a form: `for bf in form`.
 # Each bf knows its field type, widget, value, errors, and label.
 #
-# The rendering is driven by @widget_template (Feature 15), which maps
+# The rendering is driven by @widget_template (Feature 14), which maps
 # widget template names to Ryzom component classes. If no mapping exists,
 # the field falls back to Django's default HTML string rendering.
 #
@@ -886,7 +808,7 @@ section14 = Div(
 )
 
 
-# --- Feature 15: @widget_template — custom widget component ---
+# --- Feature 14: @widget_template — custom widget component ---
 #
 # @widget_template(template_name) maps a Django widget template name to a
 # Ryzom component class. When bf.to_component() is called on a BoundField
@@ -959,7 +881,7 @@ section15 = Div(
 )
 
 
-# --- Feature 16: scripts & stylesheets on a component ---
+# --- Feature 15: scripts & stylesheets on a component ---
 #
 # Any Html subclass can declare class-level scripts and stylesheets lists.
 # Html.__init__ iterates them and injects tags into <head> automatically.
@@ -1007,7 +929,7 @@ class PrismPage(Html):
     scripts = [PRISM_JS, PRISM_PY]
 
     def to_html(self, *content, **context):
-        self.body.addchild(H1('Feature 16: scripts & stylesheets'))
+        self.body.addchild(H1('Feature 15: scripts & stylesheets'))
         self.body.addchild(P(
             'This page loaded Prism.js via the ',
             A('scripts', href='#'),
@@ -1049,13 +971,13 @@ section16 = Div(
     P('The current page itself uses:'),
     Div(
         P("stylesheets = [CSSBundle()]  → <link href='/bundles/bundle.css'>"),
-        P("scripts = ['/static/ryzom.js', JSBundle()]  → two <script> tags"),
+        P("scripts = [JSBundle()]  → <script src='/bundles/bundle.js'>"),
         style='background: #f8f9fa; padding: 12px; font-family: monospace; font-size: 0.9em',
     ),
 )
 
 
-# --- Feature 17 & 18: CSS and JS bundles served via BundleView ---
+# --- Feature 16 & 17: CSS and JS bundles served via BundleView ---
 #
 # In development (DEBUG=True), Ryzom serves bundles dynamically via two views:
 #
@@ -1123,7 +1045,7 @@ section17 = Div(
 @template("tutorial.html")
 class SimplePage(Html):
     stylesheets = [CSSBundle()]
-    scripts = ["/static/ryzom.js", JSBundle()]
+    scripts = [JSBundle()]
 
     def to_html(self, *content, **context):
         self.body.addchild(H1("Ryzom tutorial"))
@@ -1138,7 +1060,6 @@ class SimplePage(Html):
         self.body.addchild(section9)
         self.body.addchild(section10)
         self.body.addchild(section11)
-        self.body.addchild(section12)
         self.body.addchild(section13)
         self.body.addchild(section14)
         self.body.addchild(section15)
