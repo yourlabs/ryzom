@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.urls import include, path
 
-from ryzom_django_example.crud import UserRouter
+from ryzom_example_crud.crud import UserRouter
 
 urlpatterns = (
     # home/ login/ logout/ at root so reverse('login') works globally
@@ -9,7 +9,7 @@ urlpatterns = (
     + [
         path('', include('ryzom_django_example.views')),
         path('tutorial/', include('ryzom_django_example.tutorial')),
-        path('crud/users/', include('ryzom_django_example.crud')),
+        path('crud/users/', include('ryzom_example_crud.crud')),
     ]
 )
 

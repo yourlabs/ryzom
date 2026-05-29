@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'ryzom_django_example',
+    'ryzom_example_crud',
 
     # Enable components templates auto discover
     'ryzom_django',
