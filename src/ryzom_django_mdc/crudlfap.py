@@ -16,27 +16,9 @@ from ryzom_django_mdc.html import *
 # ---------------------------------------------------------------------------
 
 class ActionButton(A):
-    """Single bound view rendered as a navigation link or Unpoly modal trigger."""
+    """Single bound view rendered as a plain navigation link."""
 
-    def __init__(self, view, _next=None, _next_destructible=False, **attrs):
-        href = view.url
-        extra = {}
-
-        if getattr(view, 'controller', None) == 'modal':
-            extra['up_layer'] = 'new'
-            dangerous = _next_destructible and getattr(view, 'destructive', False)
-            if dangerous:
-                next_url = str(view.router['list'].url)
-                extra['up_on_accepted'] = f'up.visit("{next_url}")'
-            else:
-                next_url = _next
-            if next_url:
-                sep = '&' if '?' in href else '?'
-                href = href + sep + '_next=' + str(next_url)
-                extra['up_accept_location'] = str(next_url)
-        else:
-            extra['up_target'] = 'body'
-
+    def __init__(self, view, **attrs):
         super().__init__(
             MDCTextButton(
                 view.label.capitalize(),
@@ -47,21 +29,99 @@ class ActionButton(A):
                     'color': getattr(view, 'color', 'inherit'),
                 },
             ),
-            href=href,
+            href=view.url,
             style='text-decoration: none',
-            **extra,
             **attrs,
         )
 
 
+class ModalLayer(Component):
+    """Open a confirm/destructive action in an MDCDialog instead of navigating.
+
+    Renders a trigger button plus a pre-rendered ``MDCDialog`` whose form POSTs
+    straight to the action URL; on success the server redirects and the page
+    reloads. Replaces the former Unpoly ``up-layer`` mechanism — no AJAX.
+    """
+    tag = 'modal-layer'
+
+    def __init__(self, view, request=None, _next=None, _next_destructible=False,
+                 **attrs):
+        label = view.label.capitalize()
+        color = getattr(view, 'color', 'inherit')
+
+        # A destructive action launched from the object's own page can't return
+        # to a now-deleted object — send it to the list instead.
+        dangerous = _next_destructible and getattr(view, 'destructive', False)
+        next_url = str(view.router['list'].url) if dangerous else _next
+
+        super().__init__(
+            Span(
+                MDCTextButton(
+                    label,
+                    icon=getattr(view, 'icon', None),
+                    tag='span',
+                    style={'margin': '10px', 'color': color},
+                ),
+                cls='modal-layer__trigger',
+                style='cursor: pointer',
+            ),
+            MDCDialog(
+                f'{label}?',
+                Form(
+                    P(f'Are you sure you want to {view.label.lower()} this?'),
+                    CSRFInput(request) if request is not None else None,
+                    Input(type='hidden', name='_next', value=next_url)
+                    if next_url else None,
+                    Div(
+                        MDCButton(
+                            'Cancel', tag='button', type='button',
+                            data_mdc_dialog_action='close',
+                        ),
+                        MDCButtonRaised(
+                            label, tag='button', type='submit',
+                            style=f'background: {color}',
+                        ),
+                        cls='mdc-dialog__actions',
+                        style='display: flex; justify-content: space-around; gap: 1em',
+                    ),
+                    method='post',
+                    action=view.url,
+                ),
+                actions=Span(),
+            ),
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            trigger = this.querySelector('.modal-layer__trigger')
+            if trigger:
+                trigger.addEventListener('click', this.open.bind(this))
+
+        def open(self, event):
+            event.preventDefault()
+            dialog = this.querySelector('mdc-dialog')
+            if dialog:
+                dialog.open()
+
+
+def _action_surface(view, request=None, _next=None, _next_destructible=False):
+    """Pick the surface for a bound view: modal → ModalLayer, else a link."""
+    if getattr(view, 'controller', None) == 'modal':
+        return ModalLayer(view, request=request, _next=_next,
+                          _next_destructible=_next_destructible)
+    return ActionButton(view)
+
+
 class ActionMenu(Div):
-    """Row of ActionButtons for a single permission-scoped menu."""
+    """Row of action surfaces for a single permission-scoped menu."""
     attrs = {'class': 'mdc-elevation--z2', 'style': 'margin-bottom: 10px'}
 
-    def __init__(self, views, current_urlname=None, _next=None,
+    def __init__(self, views, current_urlname=None, request=None, _next=None,
                  _next_destructible=False, **attrs):
         buttons = [
-            ActionButton(view, _next=_next, _next_destructible=_next_destructible)
+            _action_surface(view, request=request, _next=_next,
+                            _next_destructible=_next_destructible)
             for view in views
             if getattr(view, 'urlname', None) != current_urlname
         ]
@@ -71,7 +131,8 @@ class ActionMenu(Div):
 class ActionDropdown(Component):
     """Per-row action menu: one action → button; many → icon-button + dropdown."""
 
-    def __init__(self, views, _next=None, _next_destructible=False, **attrs):
+    def __init__(self, views, request=None, _next=None, _next_destructible=False,
+                 **attrs):
         views = list(views)
 
         if not views:
@@ -79,8 +140,8 @@ class ActionDropdown(Component):
 
         elif len(views) == 1:
             super().__init__(
-                ActionButton(views[0], _next=_next,
-                             _next_destructible=_next_destructible),
+                _action_surface(views[0], request=request, _next=_next,
+                                _next_destructible=_next_destructible),
                 **attrs,
             )
 
@@ -91,7 +152,6 @@ class ActionDropdown(Component):
                         getattr(v, 'label', '').capitalize(),
                         href=v.url,
                         style='text-decoration: none; color: inherit; display: block',
-                        up_target='body',
                     ),
                 )
                 for v in views
@@ -204,7 +264,7 @@ def _url_drop(request, *drop_keys):
 class SortableHeader(MDCDataTableTh):
     """Column header that cycles sort: none → asc → desc → none."""
 
-    def __init__(self, field_name, request, region_id, **attrs):
+    def __init__(self, field_name, request, **attrs):
         sort = request.GET.get('sort', '')
         label = _field_label(field_name)
 
@@ -223,7 +283,7 @@ class SortableHeader(MDCDataTableTh):
         url = _url_replace(request, sort=next_sort)
 
         super().__init__(
-            A(label, href=url, up_target=f'#{region_id}',
+            A(label, href=url,
               style='text-decoration:none;color:inherit;cursor:pointer'),
             sort_icon,
             **attrs,
@@ -231,11 +291,11 @@ class SortableHeader(MDCDataTableTh):
 
 
 class SearchBar(Div):
-    """Text search with Unpoly autosubmit, targets list region."""
+    """Free-text search; submits on Enter (single text input) with a full reload."""
 
     style = {'margin': '8px 0'}
 
-    def __init__(self, request, region_id, **attrs):
+    def __init__(self, request, **attrs):
         q = request.GET.get('q', '')
         preserved = {k: v for k, v in request.GET.items() if k not in ('q', 'page')}
         hidden = [Input(type='hidden', name=k, value=v) for k, v in preserved.items()]
@@ -249,9 +309,6 @@ class SearchBar(Div):
                 *hidden,
                 action=request.path,
                 method='get',
-                up_autosubmit='',
-                up_delay='200',
-                up_target=f'#{region_id}',
                 style='display:flex;align-items:center',
             ),
             **attrs,
@@ -263,7 +320,7 @@ class FilterChips(Div):
 
     style = {'display': 'flex', 'flex-wrap': 'wrap', 'gap': '4px', 'margin': '4px 0'}
 
-    def __init__(self, active_filters, request, region_id, **attrs):
+    def __init__(self, active_filters, request, **attrs):
         chips = [
             A(
                 MDCChip(
@@ -271,7 +328,6 @@ class FilterChips(Div):
                     ticon=MDCIcon('cancel', style='font-size:16px'),
                 ),
                 href=_url_drop(request, f'f_{field}'),
-                up_target=f'#{region_id}',
                 style='text-decoration:none',
             )
             for field, value in active_filters.items()
@@ -280,11 +336,11 @@ class FilterChips(Div):
 
 
 class FilterDrawer(Div):
-    """Collapsible filter panel; autosubmits on input change."""
+    """Collapsible filter panel; applies via its submit button (full reload)."""
 
     style = {'margin': '8px 0'}
 
-    def __init__(self, router, request, region_id, **attrs):
+    def __init__(self, router, request, **attrs):
         filter_fields = getattr(router, 'filter_fields', None) or []
         preserved = {
             k: v for k, v in request.GET.items()
@@ -335,9 +391,6 @@ class FilterDrawer(Div):
                       style='margin:4px;align-self:flex-end'),
             action=request.path,
             method='get',
-            up_autosubmit='',
-            up_delay='400',
-            up_target=f'#{region_id}',
             style='display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;align-items:flex-end',
         )
 
@@ -367,7 +420,7 @@ class Pagination(Div):
         'font-size': '13px',
     }
 
-    def __init__(self, page, request, region_id, **attrs):
+    def __init__(self, page, request, **attrs):
         paginator = page.paginator
         current = page.number
         total_pages = paginator.num_pages
@@ -386,7 +439,6 @@ class Pagination(Div):
             params['page'] = n
             url = request.path + '?' + params.urlencode()
             return A(MDCIcon(icon, style='font-size:20px'), href=url,
-                     up_target=f'#{region_id}',
                      style=style + 'text-decoration:none;color:inherit;cursor:pointer')
 
         per_page_options = [10, 25, 50, 100]
@@ -404,7 +456,6 @@ class Pagination(Div):
                 A(
                     str(n),
                     href=_url_replace(request, per_page=str(n)),
-                    up_target=f'#{region_id}',
                     style=(
                         'margin:0 3px;text-decoration:none;font-weight:bold'
                         if n == per_page else
@@ -439,7 +490,6 @@ class BulkActionBar(Component):
                 href=v.url,
                 data_base_href=v.url,
                 style='text-decoration:none',
-                up_target='body',
             )
             for v in list_actions
         ]
@@ -495,7 +545,7 @@ class TableRow(MDCDataTableTr):
     """One data table row: optional checkbox, field cells, per-row ActionDropdown."""
 
     def __init__(self, obj, fields, row_actions=None, _next=None,
-                 show_checkbox=False, **attrs):
+                 show_checkbox=False, request=None, **attrs):
         cells = []
         if show_checkbox:
             cells.append(MDCDataTableTd(
@@ -507,7 +557,7 @@ class TableRow(MDCDataTableTr):
             for f in fields
         ]
         cells.append(MDCDataTableTd(
-            ActionDropdown(row_actions or [], _next=_next),
+            ActionDropdown(row_actions or [], request=request, _next=_next),
             style='text-align:right',
         ))
         super().__init__(*cells, **attrs)
@@ -520,8 +570,6 @@ class ObjectList(Div):
         fields = (router.get_table_fields()
                   if callable(getattr(router, 'get_table_fields', None))
                   else router.table_fields)
-
-        region_id = f'{router.model._meta.model_name}-list-region'
 
         # --- Queryset pipeline ---
         qs = queryset if queryset is not None else router.get_queryset(None)
@@ -581,7 +629,7 @@ class ObjectList(Div):
         header_cells = []
         if show_checkbox:
             header_cells.append(MDCDataTableTh('', style='width:1px'))
-        header_cells += [SortableHeader(f, request, region_id) for f in fields]
+        header_cells += [SortableHeader(f, request) for f in fields]
         header_cells.append(MDCDataTableTh('Actions', style='text-align:right'))
 
         thead = MDCDataTableThead(tr=MDCDataTableHeaderTr(*header_cells))
@@ -593,33 +641,33 @@ class ObjectList(Div):
         for obj in page_obj:
             row_actions = router.get_menu('object', request, object=obj)
             table.tbody.addchild(
-                TableRow(obj, fields, row_actions,
+                TableRow(obj, fields, row_actions, request=request,
                          _next=request.path, show_checkbox=show_checkbox)
             )
 
-        # --- Assemble refreshable region ---
-        region_children = []
+        # --- Assemble list body ---
+        body = []
 
         if search_fields:
-            region_children.append(SearchBar(request, region_id))
+            body.append(SearchBar(request))
 
         if filter_fields:
-            region_children.append(FilterDrawer(router, request, region_id))
+            body.append(FilterDrawer(router, request))
 
         if active_filters:
-            region_children.append(FilterChips(active_filters, request, region_id))
+            body.append(FilterChips(active_filters, request))
 
-        region_children.append(
+        body.append(
             Div(table, cls='mdc-drawer__content', style='overflow-y:unset')
         )
-        region_children.append(Pagination(page_obj, request, region_id))
+        body.append(Pagination(page_obj, request))
 
         if list_actions:
-            region_children.append(BulkActionBar(list_actions))
+            body.append(BulkActionBar(list_actions))
 
         super().__init__(
-            ActionMenu(model_actions, _next=request.path),
-            Div(*region_children, id=region_id),
+            ActionMenu(model_actions, request=request, _next=request.path),
+            Div(*body),
             **attrs,
         )
 
@@ -657,6 +705,7 @@ class ObjectDetail(Div):
         super().__init__(
             ActionMenu(
                 object_actions,
+                request=request,
                 _next=request.path,
                 _next_destructible=True,
             ),
@@ -675,7 +724,7 @@ class ObjectForm(FormContainer):
 
         back = None
         if next_ := request.GET.get('next', ''):
-            back = A(MDCButton('Back', tag='span'), href=next_, up_target='body')
+            back = A(MDCButton('Back', tag='span'), href=next_)
 
         super().__init__(
             H3(getattr(view, 'title', '')),
@@ -686,77 +735,27 @@ class ObjectForm(FormContainer):
                 back,
                 MDCButtonRaised(
                     getattr(view, 'title_submit', 'Submit'),
-                    up_target='body',
                     tag='button',
                     type='submit',
                 ),
                 method='post',
                 action=request.path_info,
-                up_target='body',
             ),
             **attrs,
         )
 
 
 # ---------------------------------------------------------------------------
-# Document with Unpoly wired in — used by Router views
+# Full-page document — used by Router views
 # ---------------------------------------------------------------------------
 
 class CRUDDocument(Html):
-    """Full-page document with Unpoly loaded for partial reloads and modals."""
-    scripts = Html.scripts + ['/static/unpoly.min.js']
-    stylesheets = Html.stylesheets + ['/static/unpoly.min.css']
+    """Full-page document. Navigation is plain server-rendered (no Unpoly)."""
 
 
 # ---------------------------------------------------------------------------
-# Tier 0 — App shell: Spinner, Messages, TopAppBar, NavDrawer, App
+# Tier 0 — App shell: Messages, TopAppBar, NavDrawer, App
 # ---------------------------------------------------------------------------
-
-class Spinner(Component):
-    """Overlay shown during slow Unpoly requests (up:request:late)."""
-
-    tag = 'app-spinner'
-    sass = '''
-app-spinner
-    display: none
-    position: fixed
-    top: 0
-    left: 0
-    right: 0
-    bottom: 0
-    z-index: 9998
-    align-items: center
-    justify-content: center
-    pointer-events: none
-app-spinner.active
-    display: flex
-.app-spinner__ring
-    width: 48px
-    height: 48px
-    border: 5px solid rgba(0,0,0,.12)
-    border-top-color: var(--mdc-theme-primary, #6200ee)
-    border-radius: 50%
-    animation: spinnerRotate 0.8s linear infinite
-@keyframes spinnerRotate
-    to
-        transform: rotate(360deg)
-'''
-
-    def __init__(self, **attrs):
-        super().__init__(Div(cls='app-spinner__ring'), **attrs)
-
-    class HTMLElement:
-        def connectedCallback(self):
-            document.addEventListener('up:request:late', this.show.bind(this))
-            document.addEventListener('up:request:recover', this.hide.bind(this))
-            document.addEventListener('up:request:fatal', this.hide.bind(this))
-
-        def show(self):
-            this.classList.add('active')
-
-        def hide(self):
-            this.classList.remove('active')
-
 
 class Messages(Component):
     """Django flash messages rendered as auto-fading toasts."""
@@ -996,7 +995,7 @@ body { margin: 0; font-family: Roboto, sans-serif; }
 
 
 class App(CRUDDocument):
-    """Full app shell: NavDrawer + TopAppBar + Spinner + Messages + content."""
+    """Full app shell: NavDrawer + TopAppBar + Messages + content."""
 
     def __init__(self, *content, request=None, title='', nav_items=(),
                  su_url=None, **attrs):
@@ -1033,7 +1032,6 @@ class App(CRUDDocument):
         super().__init__(
             NavDrawer(nav_items=all_nav, title=title, username=username),
             TopAppBar(title=title),
-            Spinner(),
             Messages(messages),
             Div(*content, cls='app-main-content'),
             extra_head=[Style(_APP_GLOBAL_CSS)],
@@ -1070,7 +1068,6 @@ class Home(Div):
             cta = A(
                 MDCButtonRaised('Login to continue', tag='span'),
                 href=login_url,
-                up_target='body',
                 style='text-decoration:none',
             )
         super().__init__(heading, cta, **attrs)
@@ -1090,7 +1087,6 @@ class LoggedOut(NarrowCard):
             A(
                 MDCButton('Log in again', tag='span'),
                 href=login_url,
-                up_target='body',
                 style='text-decoration:none',
             ),
             **attrs,
@@ -1114,7 +1110,6 @@ class LoginPage(NarrowCard):
                 ),
                 method='post',
                 action=request.path_info,
-                up_target='body',
                 style='display:flex;flex-direction:column;gap:8px',
             ),
             **attrs,
@@ -1379,7 +1374,6 @@ class Router:
                             MDCButton('Cancel', tag='span'),
                             href=reverse(f'{model_name}:list'),
                             style='text-decoration: none',
-                            up_target='body',
                         ),
                         method='post',
                         style='margin-top: 1em; display: flex; gap: 1em',
