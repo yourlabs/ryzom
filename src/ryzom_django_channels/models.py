@@ -109,28 +109,69 @@ class Subscription(models.Model):
     def queryset(self, value):
         self.qs = [str(i) for i in value]
 
+    def row_queryset(self, opts=None):
+        '''The subscriber's filtered, totally-ordered queryset, *unsliced*.
+
+        Used by the DDP signal handlers to fetch row instances by pk (a sliced
+        queryset can't be ``.get(pk=...)``'d) while preserving any annotations
+        the subscriber added.
+        '''
+        opts = opts if opts is not None else (self.options or {})
+        base = self.publication.publish_function(self.client.user)
+        qs = self.subscriber.get_queryset(self.client.user, base, opts)
+        order = getattr(self.subscriber, 'order', None)
+        if order:
+            qs = qs.order_by(*order)
+        return qs
+
     def get_queryset(self, opts=None):  # noqa: C901
         '''
-        This method computes the publication query and create/update the
-        queryset for the current subscription.
-        It supports somme special variables such as $count and $user that
-        are parsed and replaced with, respectively, the queryset.count()
-        value and the current user associated with the subscription client
-        More will come with special variables and function. Such as an $add
-        to replace that ugly tupple i'm using for now.. to be discussed
+        Compute the subscription's queryset and persist its id list.
+
+        Pagination is opt-in: when the subscriber declares ``paginate_by`` (and
+        a total ``order``), the stored ``qs`` is just the visible *window*
+        (``[offset:offset+per_page]``) and ``options`` is updated with the
+        clamped ``offset``/``per_page``, the ``total`` count, and the
+        ``first_key``/``last_key`` sort tuples. Subscribers without
+        ``paginate_by`` keep the previous behaviour (the whole filtered set).
         '''
+        opts = dict(opts if opts is not None else (self.options or {}))
+        queryset = self.row_queryset(opts)
 
-        queryset = self.publication.publish_function(self.client.user)
+        paginate_by = getattr(self.subscriber, 'paginate_by', None)
+        if not paginate_by:
+            self.options = opts
+            self.queryset = queryset.values_list('id', flat=True)
+            self.save()
+            return queryset
 
-        opts = opts or self.options
-        queryset = self.subscriber.get_queryset(
-            self.client.user, queryset, opts)
+        order = getattr(self.subscriber, 'order', ('id',))
+        per_page = max(1, int(opts.get('per_page') or paginate_by))
+        total = queryset.count()
 
-        # Single write: persist the new options + materialized id list together.
-        # (There used to be an extra save() here before the options/qs were
-        # computed, which wrote a half-updated row for no reason.)
+        # Clamp the offset onto a real page (deletes may have shrunk the set).
+        last_offset = ((total - 1) // per_page) * per_page if total else 0
+        offset = min(max(0, int(opts.get('offset') or 0)), last_offset)
+
+        window = list(queryset[offset:offset + per_page])
+        opts.update(
+            per_page=per_page,
+            offset=offset,
+            total=total,
+            first_key=self._order_key(window[0], order) if window else None,
+            last_key=self._order_key(window[-1], order) if window else None,
+        )
         self.options = opts
-        self.queryset = queryset.values_list('id', flat=True)
+        self.queryset = [obj.id for obj in window]
         self.save()
+        return window
 
-        return queryset
+    @staticmethod
+    def _order_key(obj, order):
+        '''The row's sort-key tuple as a JSON-storable list, e.g. [name, id].
+
+        Compared as a list against another row's key for the boundary skip, so
+        the order fields must be JSON-serialisable and mutually comparable
+        (str/int/bool). ``('name', 'id')`` satisfies this.
+        '''
+        return [getattr(obj, field) for field in order]

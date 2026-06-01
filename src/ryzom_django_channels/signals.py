@@ -114,59 +114,94 @@ def _locked_subscriptions(sender_mod, sender_name):
             yield sub
 
 
+def _push_window_delta(sub, changed_pk):
+    '''Re-window the subscription and push the minimal DDP delta.
+
+    Recomputes the subscription's window (a paginated subscriber stores only the
+    visible page; a non-paginated one stores the whole filtered set) and diffs
+    the old id list against the new one. A single base-row event changes a
+    window by at most: one row leaves + one row enters, plus the changed row's
+    own content/position. Everything is expressed with the existing
+    insert(position) / change(id) / remove(id) ops; ``position`` is the index
+    within the (re)stored window.
+
+    See ``PAGINATION.md`` for the window-ripple reasoning.
+    '''
+    template = model_templates[sub.subscriber.model_template]
+    model = sub.publication.model
+
+    old_window = list(sub.queryset)
+    sub.get_queryset()                      # recompute + persist the new window
+    new_window = list(sub.queryset)
+
+    old_set, new_set = set(old_window), set(new_window)
+    removed = old_set - new_set
+    added = new_set - old_set
+
+    # A row to insert/change can be deleted by a concurrent event between the
+    # re-window and this fetch; skip it then (a later task reconciles).
+    row_qs = sub.row_queryset()
+
+    def fetch(pk):
+        return row_qs.filter(pk=pk).first()
+
+    if not removed and not added:
+        # Same membership: only the changed row's content and/or position moved.
+        row = fetch(changed_pk) if changed_pk in new_set else None
+        if row is not None:
+            if old_window.index(changed_pk) == new_window.index(changed_pk):
+                send_change(sub, template, row)
+            else:                            # moved within the window
+                send_remove(sub, template, row)
+                send_insert(sub, template, row)
+        return
+
+    # Removes first, so the subsequent insert positions land at the right child
+    # index of the current DOM. A removed row usually still exists (filtered out
+    # or evicted to the next page) -> push the real instance; only a genuinely
+    # deleted row needs a bare shell (send_remove reads just its DOM id).
+    existing = {obj.pk: obj for obj in model.objects.filter(pk__in=removed)}
+    for pk in removed:
+        send_remove(sub, template, existing.get(pk) or model(pk=pk))
+
+    for pk in sorted(added, key=new_window.index):
+        row = fetch(pk)
+        if row is not None:
+            send_insert(sub, template, row)
+
+    # Changed row stayed in the window while a boundary rippled: refresh it.
+    if changed_pk in new_set and changed_pk not in added:
+        row = fetch(changed_pk)
+        if row is not None:
+            send_change(sub, template, row)
+
+
 def ddp_insert_change(sender_mod, sender_name, created, instance_id):
     '''
     Route a single save to every subscription on that model.
 
-    For each subscription we ask one cheap, indexed question — "does the row
-    that just changed belong in *this* subscription's filtered set?" — by
-    reusing the subscription's own ``get_queryset`` scoped to the changed pk
-    (``filter(pk=...).exists()``). Subscriptions the change can't affect (the
-    row neither was nor is a member) are skipped without recomputing their
-    queryset. Only an affected subscription pays the ordered requery needed to
-    keep its stored id list and compute the DOM insert/change position.
-
-    Note: there is no LIMIT today, so the affected-branch requery is the full
-    set. Real pagination (ORDER BY + LIMIT windows) needs explicit boundary
-    handling and replaces that step — deliberately out of scope here.
+    Non-paginated subscribers get the cheap ``filter(pk=...).exists()`` test:
+    if the changed row neither was nor is a member of the filtered set, the set
+    is unchanged and the subscription is skipped without a requery. Paginated
+    subscribers re-window every time (their stored id list is the window, not
+    the set, so "not in window" doesn't imply "didn't ripple the window" — a
+    change above the page shifts it). Reducing that fan-out soundly needs the
+    row's pre-change key; see ``PAGINATION.md`` §6.
     '''
     for sub in _locked_subscriptions(sender_mod, sender_name):
         model = sub.publication.model
-        template = model_templates[sub.subscriber.model_template]
         changed_pk = model.id.field.to_python(instance_id)
 
-        was_in = changed_pk in sub.queryset
-        # Cheap reverse test: reuse the publication base + the subscription's
-        # own filter (the single source of truth), scoped to just this row.
-        base = sub.publication.publish_function(sub.client.user)
-        now_in = sub.subscriber.get_queryset(
-            sub.client.user,
-            base.filter(pk=instance_id),
-            sub.options,
-        ).exists()
+        if not getattr(sub.subscriber, 'paginate_by', None):
+            was_in = changed_pk in sub.queryset
+            base = sub.publication.publish_function(sub.client.user)
+            now_in = sub.subscriber.get_queryset(
+                sub.client.user, base.filter(pk=instance_id), sub.options,
+            ).exists()
+            if not was_in and not now_in:
+                continue
 
-        if not was_in and not now_in:
-            # Row is outside this subscription's set before and after: nothing
-            # to push. The common case, answered by one indexed EXISTS instead
-            # of a full requery + whole-set diff.
-            continue
-
-        # Affected: refresh the stored ordered id list so the diff and the
-        # insert/change position stay correct.
-        qs = sub.get_queryset()
-        if not qs.query.can_filter():
-            qs.query.clear_limits()
-
-        if was_in and now_in:
-            # Still a member; its content (and possibly sort position) changed.
-            send_change(sub, template, qs.get(pk=instance_id))
-        elif now_in:
-            # Newly matches the filter -> it appears in the list.
-            send_insert(sub, template, qs.get(pk=instance_id))
-        else:
-            # No longer matches the filter -> it leaves the list. The row still
-            # exists (only filtered out), so push the real, live instance.
-            send_remove(sub, template, model.objects.get(pk=instance_id))
+        _push_window_delta(sub, changed_pk)
 
 
 @receiver(post_delete)
@@ -193,32 +228,18 @@ def _ddp_delete(sender, **kwargs):
 
 def ddp_delete(sender_mod, sender_name, instance_id):
     '''
-    Route a delete to every subscription that currently lists the row.
+    Route a delete to every subscription on that model.
 
-    A delete can only remove the row from a set (and, under a future LIMIT,
-    pull the next row up into the window), so subscriptions that never listed
-    it are skipped after the in-memory membership check — no requery needed.
+    A non-paginated subscription that never listed the row is skipped. A
+    paginated one re-windows regardless: deleting a row *above* the visible
+    page shifts the window even though the deleted row isn't on it.
     '''
     for sub in _locked_subscriptions(sender_mod, sender_name):
         model = sub.publication.model
-        template = model_templates[sub.subscriber.model_template]
         changed_pk = model.id.field.to_python(instance_id)
 
-        old_qs = sub.queryset
-        if changed_pk not in old_qs:
-            # This subscription never listed the deleted row.
+        if (not getattr(sub.subscriber, 'paginate_by', None)
+                and changed_pk not in sub.queryset):
             continue
 
-        qs = sub.get_queryset()
-        if not qs.query.can_filter():
-            qs.query.clear_limits()
-        new_qs = sub.queryset
-
-        for pk in set(old_qs) - set(new_qs):
-            # The deleted row (and, under a LIMIT, any row pushed out of the
-            # window). The row is gone from the DB, so hand send_remove a bare
-            # shell purely to derive the row's DOM id.
-            send_remove(sub, template, model(pk=pk))
-        for pk in set(new_qs) - set(old_qs):
-            # Only under a LIMIT: a row pulled up into the visible window.
-            send_insert(sub, template, qs.get(pk=pk))
+        _push_window_delta(sub, changed_pk)

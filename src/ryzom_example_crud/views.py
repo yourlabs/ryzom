@@ -22,6 +22,8 @@ from ryzom_example_crud.components import (
     ProductCreateForm,
     ProductDetail,
     ProductFilter,
+    ProductPager,
+    ProductRows,
     ProductTable,
 )
 from ryzom_example_crud.models import Product
@@ -39,6 +41,30 @@ def _ryzom_js():
     return Script(src='/static/ryzom.js')
 
 
+def _push_window_replace(sub, old_window, new_rows):
+    """Push the row delta between two windows over the websocket.
+
+    Shared by the filter and pager views: both do a read-modify-write of the
+    subscription's window and then need to bring the DOM in line. Removes go
+    first, then inserts in ascending window position so each insert(position)
+    lands at the right child index. Removed rows usually still exist (they
+    moved to another page / were filtered out), so we send the live instance.
+    """
+    from ryzom_django_channels.components import model_templates
+    from ryzom_django_channels.ddp import send_insert, send_remove
+
+    tmpl = model_templates[sub.subscriber.model_template]
+    new_window = [obj.id for obj in new_rows]
+    rows = {obj.pk: obj for obj in new_rows}
+    old_set, new_set = set(old_window), set(new_window)
+
+    for pk in old_set - new_set:
+        obj = Product.objects.filter(pk=pk).first() or Product(pk=pk)
+        send_remove(sub, tmpl, obj)
+    for pk in sorted(new_set - old_set, key=new_window.index):
+        send_insert(sub, tmpl, rows[pk])
+
+
 class ProductListView(ReactiveMixin, View):
     def get(self, request):
         token = self.get_token()  # sets self.client, returns the config <meta>
@@ -49,6 +75,8 @@ class ProductListView(ReactiveMixin, View):
             ProductCreateForm(request, style='margin:1em 0'),
             ProductFilter(),
             ProductTable(),
+            ProductPager(offset=0, per_page=ProductRows.paginate_by,
+                         total=Product.objects.count()),
             request=request,
             title='Products (live)',
             nav_items=_NAV,
@@ -103,18 +131,11 @@ class ProductFilterView(View):
     def post(self, request):
         from django.db import transaction
 
-        from ryzom_django_channels.components import model_templates
-        from ryzom_django_channels.ddp import send_insert, send_remove
         from ryzom_django_channels.models import Client, Subscription
 
         client = Client.objects.filter(token=request.POST.get('token', '')).last()
         if client is None:
             return HttpResponse(status=204)
-
-        opts = {
-            'q': request.POST.get('q', ''),
-            'in_stock': request.POST.get('in_stock') == '1',
-        }
 
         sub_id = (
             Subscription.objects
@@ -132,24 +153,97 @@ class ProductFilterView(View):
             # by pk (no joins) to avoid FOR UPDATE on the nullable client join.
             sub = Subscription.objects.select_for_update().get(pk=sub_id)
 
-            old = set(sub.queryset)
-            new_qs = sub.get_queryset(opts)   # updates stored opts + qs
-            new = set(sub.queryset)
+            # Merge into the stored window opts and reset to the first page;
+            # changing the filter changes the result set, so page 1 is the
+            # sensible landing (preserves the chosen per_page).
+            opts = dict(sub.options or {})
+            opts.update(
+                q=request.POST.get('q', ''),
+                in_stock=request.POST.get('in_stock') == '1',
+                offset=0,
+            )
 
-            tmpl = model_templates[sub.subscriber.model_template]
-            for pk in old - new:
-                # Filtered out, not deleted: the row still exists, so send the
-                # real instance rather than a hollow Product(id=pk) shell.
-                send_remove(sub, tmpl, Product.objects.get(pk=pk))
-            for pk in new - old:
-                send_insert(sub, tmpl, new_qs.get(pk=pk))
+            old_window = list(sub.queryset)
+            new_rows = list(sub.get_queryset(opts))  # re-windows + persists
+            _push_window_replace(sub, old_window, new_rows)
         return HttpResponse(status=204)
+
+
+class ProductPagerView(View):
+    """Numbered-page navigation for the live table.
+
+    Computes the new offset server-side from the pager action, updates the
+    client's products subscription window, pushes the row delta over the same
+    DDP channel the filter uses, and returns the new pager state as JSON so the
+    pager element can refresh its indicator and button states.
+    """
+    def post(self, request):
+        from django.db import transaction
+        from django.http import JsonResponse
+
+        from ryzom_django_channels.models import Client, Subscription
+
+        empty = {'offset': 0, 'per_page': 0, 'total': 0,
+                 'label': '', 'no_prev': True, 'no_next': True}
+
+        client = Client.objects.filter(token=request.POST.get('token', '')).last()
+        if client is None:
+            return JsonResponse(empty)
+        sub_id = (
+            Subscription.objects
+            .filter(client=client, publication__name='products')
+            .values_list('id', flat=True)
+            .last()
+        )
+        if sub_id is None:
+            return JsonResponse(empty)
+
+        action = request.POST.get('action', '')
+        with transaction.atomic():
+            sub = Subscription.objects.select_for_update().get(pk=sub_id)
+            opts = dict(sub.options or {})
+            cur_offset = int(opts.get('offset') or 0)
+            try:
+                per_page = max(1, int(request.POST.get('per_page')))
+            except (TypeError, ValueError):
+                per_page = int(opts.get('per_page') or ProductRows.paginate_by)
+
+            if action == 'first' or action == 'per_page':
+                offset = 0
+            elif action == 'prev':
+                offset = max(0, cur_offset - per_page)
+            elif action == 'next':
+                offset = cur_offset + per_page
+            elif action == 'last':
+                offset = 10 ** 15  # clamped to the last page by get_queryset
+            else:
+                offset = cur_offset
+            opts.update(offset=offset, per_page=per_page)
+
+            old_window = list(sub.queryset)
+            new_rows = list(sub.get_queryset(opts))  # clamps offset, re-windows
+            _push_window_replace(sub, old_window, new_rows)
+
+            # Re-read the clamped offset/total the windowing settled on.
+            offset = sub.options['offset']
+            per_page = sub.options['per_page']
+            total = sub.options['total']
+
+        start = offset + 1 if total else 0
+        end = min(offset + per_page, total)
+        return JsonResponse({
+            'offset': offset, 'per_page': per_page, 'total': total,
+            'label': f'{start}-{end} / {total}',
+            'no_prev': offset <= 0,
+            'no_next': offset + per_page >= total,
+        })
 
 
 urlpatterns = [
     path('', ProductListView.as_view(), name='list'),
     path('create/', ProductCreateView.as_view(), name='create'),
     path('filter/', ProductFilterView.as_view(), name='filter'),
+    path('page/', ProductPagerView.as_view(), name='page'),
     path('<int:pk>/', ProductDetailView.as_view(), name='detail'),
     path('<int:pk>/sell/', ProductSellView.as_view(), name='sell'),
 ]

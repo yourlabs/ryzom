@@ -52,18 +52,27 @@ class ProductRows(SubscribeComponentMixin, MDCDataTableTbody):
     publication = 'products'
     model_template = 'product-row'
 
+    # Pagination is opt-in: declaring paginate_by + a *total* order makes
+    # Subscription.get_queryset store only the visible window and the signal
+    # handler diff windows (with ripple) instead of the whole set. The id
+    # tiebreak gives a total order so two equal names have a defined rank.
+    paginate_by = 5
+    order = ('name', 'id')
+
     @classmethod
     def get_queryset(cls, user, qs, opts):
         # opts is stored on the Subscription and re-applied on every push, so
         # the live diff is filter-aware: a product edited to match/unmatch this
         # filter is inserted/removed live, not just on the next page load.
+        # (Ordering + the window slice are applied by the plumbing using
+        # `order`/`paginate_by`; we only express the filter here.)
         opts = opts or {}
         q = (opts.get('q') or '').strip()
         if q:
             qs = qs.filter(name__icontains=q)
         if opts.get('in_stock'):
             qs = qs.filter(stock_qty__gt=0)
-        return qs.order_by('name')
+        return qs
 
 
 class ProductTable(MDCDataTableResponsive):
@@ -256,3 +265,113 @@ class ProductFilter(Component):
             if this.again:
                 this.again = False
                 this.apply()
+
+
+class ProductPager(Component):
+    """Numbered-page pager (first / prev / next / last + rows-per-page),
+    reproducing the CRUDLFAP pager UX.
+
+    Navigation POSTs the action to ProductPagerView; the visible rows update via
+    the websocket push (same path as the filter), and this element refreshes its
+    own indicator + button states from the JSON response. All arithmetic is done
+    server-side, so the client only renders strings/booleans."""
+    tag = 'product-pager'
+
+    def __init__(self, offset=0, per_page=5, total=0, **attrs):
+        start = offset + 1 if total else 0
+        end = min(offset + per_page, total)
+        no_prev = offset <= 0
+        no_next = offset + per_page >= total
+
+        def btn(label, action, disabled):
+            kw = dict(disabled=True) if disabled else {}
+            return Button(label, tag='button', type='button',
+                          data_action=action,
+                          style='margin:0 2px;cursor:pointer', **kw)
+
+        super().__init__(
+            Span(f'{start}-{end} / {total}', cls='pager-status',
+                 style='margin-right:1em;min-width:7em;display:inline-block'),
+            btn('« first', 'first', no_prev),
+            btn('‹ prev', 'prev', no_prev),
+            btn('next ›', 'next', no_next),
+            btn('last »', 'last', no_next),
+            Label(
+                ' Rows: ',
+                Select(
+                    *[Option(str(i), value=str(i), selected=(i == per_page))
+                      for i in (3, 5, 10, 25)],
+                    name='per_page',
+                ),
+                style='margin-left:1em',
+            ),
+            data_offset=str(offset),
+            data_per_page=str(per_page),
+            style='display:flex;align-items:center;margin:1em 0',
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            # connectedCallback can fire before children are parsed; defer.
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # ryzom.js re-fires 'load' after every DDP patch; guard re-wiring.
+            if this.wired:
+                return
+            this.wired = True
+            this.status = this.querySelector('.pager-status')
+            this.select = this.querySelector('select[name="per_page"]')
+            this.inflight = False
+            this.querySelector('button[data-action="first"]').addEventListener(
+                'click', this.nav.bind(this))
+            this.querySelector('button[data-action="prev"]').addEventListener(
+                'click', this.nav.bind(this))
+            this.querySelector('button[data-action="next"]').addEventListener(
+                'click', this.nav.bind(this))
+            this.querySelector('button[data-action="last"]').addEventListener(
+                'click', this.nav.bind(this))
+            this.select.addEventListener('change', this.changePer.bind(this))
+
+        async def nav(self, event):
+            await this.apply(event.currentTarget.dataset.action, this.select.value)
+
+        async def changePer(self, event):
+            # Changing the page size resets to the first page (server-side).
+            await this.apply('per_page', this.select.value)
+
+        async def apply(self, action, per_page):
+            # One request in flight: the server does a read-modify-write of the
+            # subscription's offset, so overlapping requests would race it.
+            if this.inflight:
+                return
+            this.inflight = True
+            meta = document.querySelector('meta[name="ryzom-config"]')
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+            body = new.FormData()
+            body.append('token', meta.content)
+            body.append('action', action)
+            body.append('offset', this.dataset.offset)
+            body.append('per_page', per_page)
+            response = await fetch('/crud/products/page/', {
+                method: 'POST',
+                headers: {'X-CSRFTOKEN': csrf.value},
+                body: body,
+            })
+            data = await response.json()
+            this.dataset.offset = data.offset
+            this.dataset.per_page = data.per_page
+            this.status.textContent = data.label
+            this.setDisabled('first', data.no_prev)
+            this.setDisabled('prev', data.no_prev)
+            this.setDisabled('next', data.no_next)
+            this.setDisabled('last', data.no_next)
+            this.inflight = False
+
+        def setDisabled(self, action, disabled):
+            this.querySelector(
+                'button[data-action="' + action + '"]').disabled = disabled
