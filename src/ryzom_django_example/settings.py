@@ -30,14 +30,6 @@ SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
-# Dev fallback: run the reactive (channels) stack single-process, without
-# Redis or a Celery worker. Uses the in-memory channel layer and runs the
-# DDP push signals eagerly. Only kicks in under DEBUG when no Redis was found.
-CHANNELS_INMEMORY = False
-if DEBUG and not CHANNELS_ENABLE:
-    CHANNELS_ENABLE = True
-    CHANNELS_INMEMORY = True
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',  # required for Subscription.qs ArrayField
 
     'ryzom_django_example',
     'ryzom_example_crud',
@@ -116,32 +109,24 @@ SERVER_METHODS = []
 ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
 
 if CHANNELS_ENABLE:
-    if CHANNELS_INMEMORY:
-        CHANNEL_LAYERS = {
-            "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
-        }
-        # Run DDP push tasks synchronously in-process (no Celery worker/broker).
-        CELERY_TASK_ALWAYS_EAGER = True
-        CELERY_TASK_EAGER_PROPAGATES = True
-    else:
-        CHANNEL_LAYERS = {
-            "default": {
-                "BACKEND": "channels_redis.core.RedisChannelLayer",
-                "CONFIG": {
-                    "hosts": [REDIS_SERVER],
-                },
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_SERVER],
             },
-        }
+        },
+    }
 
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'PORT': os.getenv('DB_PORT', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'ryzom'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'USER': os.getenv('DB_USER', 'ryzom'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'ryzom'),
     }
 }
 
@@ -183,5 +168,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
-CELERY_BROKER_URL = 'redis://redis:6379'
-CELERY_RESULT_BACKEND = 'redis://redis:6379'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379')

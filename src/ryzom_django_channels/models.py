@@ -7,6 +7,7 @@ import secrets
 import uuid
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import JSONField
 from django.utils import timezone
@@ -89,7 +90,7 @@ class Subscription(models.Model):
     subscriber_id = models.CharField(max_length=255)
     subscriber_module = models.CharField(max_length=255)
     subscriber_class = models.CharField(max_length=255)
-    qs = JSONField(default=list)
+    qs = ArrayField(models.CharField(max_length=255), default=list)
     options = JSONField(blank=True, null=True)
 
     @property

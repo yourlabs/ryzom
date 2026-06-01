@@ -143,31 +143,46 @@ mutate endpoints return `204` and the `fetch` widgets do nothing with the body.
 
 ## Runtime / infra
 
-The reactive stack normally wants Postgres + Redis + a Celery worker + an ASGI
-server. For this demo that's collapsed into a single `runserver`, gated behind
-`DEBUG` in `ryzom_django_example/settings.py`:
+The reactive stack runs on its full production shape: **Postgres + Redis + a
+Celery worker + an ASGI server (daphne)**. Each piece has a job:
 
-| Production | Demo (DEBUG, no infra) |
-|-----------|------------------------|
-| Redis channel layer | `InMemoryChannelLayer` |
-| Celery worker | `CELERY_TASK_ALWAYS_EAGER = True` (push runs in-request) |
-| Daphne / uvicorn | `daphne` prepended to `INSTALLED_APPS` → `runserver` serves ASGI |
-| Postgres (`Subscription.qs` was an `ArrayField`) | `JSONField` — works on sqlite too |
+| Piece | Role |
+|-------|------|
+| Postgres | `Subscription.qs` is an `ArrayField` (Postgres-specific); the DB also stores `Client`/`Subscription`/`Publication` rows. |
+| Redis | both the Celery broker/result backend **and** the channels group layer (`RedisChannelLayer`). |
+| Celery worker | runs the DDP push: `post_save` fires `ddp_insert_change_task.delay(...)`, the worker diffs each subscription and sends the delta over the channel layer. |
+| daphne | the ASGI server — serves HTTP **and** the `ws/ddp/` websocket. `daphne` is also prepended to `INSTALLED_APPS` so `manage.py runserver` serves ASGI too. |
 
-This kicks in automatically: when no Redis is found and `DEBUG` is on,
-`CHANNELS_INMEMORY` flips the channel layer and eager mode.
+Settings auto-enable channels when Redis is reachable on `127.0.0.1:6379` (or
+`redis:6379`): the socket probe in `settings.py` sets `CHANNELS_ENABLE`, which
+installs the channels apps and the `RedisChannelLayer`. The DB defaults to
+Postgres (`ryzom`/`ryzom`/`ryzom` on `127.0.0.1:5432`), overridable via the
+`DB_*` env vars (the same ones CI sets).
 
-> **Because `InMemoryChannelLayer` is process-local**, a `Product.save()` only
-> reaches connected sockets if it runs *inside the running server process*.
-> That's why the demo mutates over HTTP (`fetch` → `ProductSellView`) rather
-> than from a shell — a save in another process can't see this process's
-> in-memory channel layer.
+> **Because the push runs in the Celery worker and the channel layer is Redis
+> (not in-process)**, a `Product.save()` from *any* process — a shell, a
+> management command, another request — reaches every connected socket. The
+> `fetch`-based mutate widgets are a UX choice (no reload), not a constraint.
 
 ### Run it
 
 ```bash
+# 1. infra (example: docker)
+docker run -d --name ryzom-postgres \
+  -e POSTGRES_DB=ryzom -e POSTGRES_USER=ryzom -e POSTGRES_PASSWORD=ryzom \
+  -p 127.0.0.1:5432:5432 postgres:16
+docker run -d --name ryzom-redis -p 127.0.0.1:6379:6379 redis:7
+
+# 2. schema
 python manage.py migrate
-python manage.py runserver         # ASGI via daphne; serves HTTP + ws/ddp/
+
+# 3. the push worker (separate terminal)
+celery -A ryzom_django_channels.celery worker -l info
+
+# 4. the ASGI server (serves HTTP + ws/ddp/)
+daphne -b 127.0.0.1 -p 8000 ryzom_django_example.asgi:application
+#   …or: python manage.py runserver   (daphne-backed ASGI)
+
 # open http://127.0.0.1:8000/crud/products/ in two tabs
 ```
 
