@@ -123,10 +123,12 @@ class Subscription(models.Model):
         queryset = self.publication.publish_function(self.client.user)
 
         opts = opts or self.options
-        self.save()
         queryset = self.subscriber.get_queryset(
             self.client.user, queryset, opts)
 
+        # Single write: persist the new options + materialized id list together.
+        # (There used to be an extra save() here before the options/qs were
+        # computed, which wrote a half-updated row for no reason.)
         self.options = opts
         self.queryset = queryset.values_list('id', flat=True)
         self.save()

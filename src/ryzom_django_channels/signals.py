@@ -1,8 +1,10 @@
 '''
 Defines the django signals handlers.
 '''
+import logging
 import time
 
+from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
@@ -13,17 +15,29 @@ from ryzom_django_channels.ddp import send_change, send_insert, send_remove
 from ryzom_django_channels.models import Subscription
 from ryzom_django_channels.pubsub import Publishable
 
+logger = logging.getLogger(__name__)
+
 
 def try_task(fn, *args, **kwargs):
     retry = 5
     while retry:
         try:
             fn(*args, **kwargs)
-            break
-        except Exception as e:
-            print(e)
+            return
+        except Exception:
             retry -= 1
+            logger.exception(
+                '%s failed, %d attempt(s) left',
+                getattr(fn, '__name__', fn), retry,
+            )
             time.sleep(0.2)
+    # All retries exhausted. The push is lost, so a connected client's DOM now
+    # silently diverges from the database until the page is reloaded. Surface
+    # it loudly instead of swallowing it with a bare print().
+    logger.error(
+        '%s permanently failed after retries; a connected client DOM is '
+        'now stale (reload required)', getattr(fn, '__name__', fn),
+    )
 
 
 @celery_app.task()
@@ -66,56 +80,93 @@ def _ddp_insert_change(sender, **kwargs):
         )
 
 
-def ddp_insert_change(sender_mod, sender_name, created, instance_id):
-    subscriptions = Subscription.objects.filter(
-        publication__model_class=sender_name,
-        publication__model_module=sender_mod
-    )
+def _locked_subscriptions(sender_mod, sender_name):
+    '''Yield each matching Subscription, locked FOR UPDATE inside its own
+    transaction.
 
-    for sub in subscriptions:
+    The whole insert/change/remove decision is a read-modify-write of the
+    subscription's stored id list (``sub.qs``). Without a row lock, two
+    concurrent ``Product.save()`` tasks — or a save racing a filter request —
+    read the same baseline, both recompute, and both write, so the diff is
+    taken against stale state and rows are missed or duplicated. Locking each
+    subscription row serialises those writers per subscription.
+    '''
+    sub_ids = list(
+        Subscription.objects.filter(
+            publication__model_class=sender_name,
+            publication__model_module=sender_mod,
+        ).values_list('id', flat=True)
+    )
+    for sub_id in sub_ids:
+        with transaction.atomic():
+            # Lock only the Subscription row (no select_related): `client` is a
+            # nullable FK, so joining it would make a LEFT OUTER JOIN that
+            # Postgres refuses to lock ("FOR UPDATE cannot be applied to the
+            # nullable side of an outer join"); joining `publication` would
+            # over-lock the row shared by every subscriber. The relations
+            # lazy-load unlocked, which is what we want.
+            try:
+                sub = Subscription.objects.select_for_update().get(pk=sub_id)
+            except Subscription.DoesNotExist:
+                # Raced with a client disconnect / unsubscribe between taking
+                # the id snapshot and acquiring the lock — nothing to push.
+                continue
+            yield sub
+
+
+def ddp_insert_change(sender_mod, sender_name, created, instance_id):
+    '''
+    Route a single save to every subscription on that model.
+
+    For each subscription we ask one cheap, indexed question — "does the row
+    that just changed belong in *this* subscription's filtered set?" — by
+    reusing the subscription's own ``get_queryset`` scoped to the changed pk
+    (``filter(pk=...).exists()``). Subscriptions the change can't affect (the
+    row neither was nor is a member) are skipped without recomputing their
+    queryset. Only an affected subscription pays the ordered requery needed to
+    keep its stored id list and compute the DOM insert/change position.
+
+    Note: there is no LIMIT today, so the affected-branch requery is the full
+    set. Real pagination (ORDER BY + LIMIT windows) needs explicit boundary
+    handling and replaces that step — deliberately out of scope here.
+    '''
+    for sub in _locked_subscriptions(sender_mod, sender_name):
         model = sub.publication.model
         template = model_templates[sub.subscriber.model_template]
-        old_qs = sub.queryset
+        changed_pk = model.id.field.to_python(instance_id)
 
+        was_in = changed_pk in sub.queryset
+        # Cheap reverse test: reuse the publication base + the subscription's
+        # own filter (the single source of truth), scoped to just this row.
+        base = sub.publication.publish_function(sub.client.user)
+        now_in = sub.subscriber.get_queryset(
+            sub.client.user,
+            base.filter(pk=instance_id),
+            sub.options,
+        ).exists()
+
+        if not was_in and not now_in:
+            # Row is outside this subscription's set before and after: nothing
+            # to push. The common case, answered by one indexed EXISTS instead
+            # of a full requery + whole-set diff.
+            continue
+
+        # Affected: refresh the stored ordered id list so the diff and the
+        # insert/change position stay correct.
         qs = sub.get_queryset()
         if not qs.query.can_filter():
             qs.query.clear_limits()
 
-        new_qs = sub.queryset
-
-        diff = {
-            'inserted': set(new_qs).difference(set(old_qs)),
-            'removed': set(old_qs).difference(set(new_qs))
-        }
-        # if sets are the same
-        if not diff['inserted'] and not diff['removed']:
-            # if created and sets are the same,
-            # entry has been filtered and can't be there
-            to_python = model.id.field.to_python
-            if to_python(instance_id) in new_qs:
-                # changed and may have moved
-                # just send new instance and pos
-                send_change(sub, template, qs.get(pk=instance_id))
-                # getting from qs to keep annotations
-
-        # if sets aren't the same, then considering that only one entry
-        # was added or has changed:
-        # - it could have been removed if newly filtered (changed)
-        # - it could have been added if no more filtered (changed)
-        # - it could have been added if created and not filtered
-        # - it cannot have just moved neither changed or the set
-        #   would have been the same
-        # - it could have been added while not created, replacing
-        #   another entry because of filters, so created or not,
-        #   we have to handle both added and removed entries
+        if was_in and now_in:
+            # Still a member; its content (and possibly sort position) changed.
+            send_change(sub, template, qs.get(pk=instance_id))
+        elif now_in:
+            # Newly matches the filter -> it appears in the list.
+            send_insert(sub, template, qs.get(pk=instance_id))
         else:
-            # using loops for now but shouldn't be usefull as we
-            # are handling only one entry, the queryset shouldn't
-            # move by more that one in and/or one out
-            for id in diff['removed']:
-                send_remove(sub, template, model.objects.get(pk=id))
-            for id in diff['inserted']:
-                send_insert(sub, template, qs.get(pk=id))
+            # No longer matches the filter -> it leaves the list. The row still
+            # exists (only filtered out), so push the real, live instance.
+            send_remove(sub, template, model.objects.get(pk=instance_id))
 
 
 @receiver(post_delete)
@@ -141,37 +192,33 @@ def _ddp_delete(sender, **kwargs):
 
 
 def ddp_delete(sender_mod, sender_name, instance_id):
-    subscriptions = Subscription.objects.filter(
-        publication__model_class=sender_name,
-        publication__model_module=sender_mod
-    )
+    '''
+    Route a delete to every subscription that currently lists the row.
 
-    for sub in subscriptions:
+    A delete can only remove the row from a set (and, under a future LIMIT,
+    pull the next row up into the window), so subscriptions that never listed
+    it are skipped after the in-memory membership check — no requery needed.
+    '''
+    for sub in _locked_subscriptions(sender_mod, sender_name):
         model = sub.publication.model
         template = model_templates[sub.subscriber.model_template]
+        changed_pk = model.id.field.to_python(instance_id)
 
         old_qs = sub.queryset
+        if changed_pk not in old_qs:
+            # This subscription never listed the deleted row.
+            continue
 
-        # if instance not in queryset, no need to remove it
-        # or update the queryset
-        # else:
-        to_python = model.id.field.to_python
-        if to_python(instance_id) in old_qs:
-            qs = sub.get_queryset()
-            if not qs.query.can_filter():
-                qs.query.clear_limits()
+        qs = sub.get_queryset()
+        if not qs.query.can_filter():
+            qs.query.clear_limits()
+        new_qs = sub.queryset
 
-            new_qs = sub.queryset
-
-            diff = {
-                'inserted': set(new_qs).difference(set(old_qs)),
-                'removed': set(old_qs).difference(set(new_qs))
-            }
-
-            for id in diff['removed']:
-                # Should only be the deleted instance if it was in qs
-                instance = model(id=instance_id)
-                send_remove(sub, template, instance)
-            for id in diff['inserted']:
-                # May have been replace if limits were set
-                send_insert(sub, template, qs.get(pk=id))
+        for pk in set(old_qs) - set(new_qs):
+            # The deleted row (and, under a LIMIT, any row pushed out of the
+            # window). The row is gone from the DB, so hand send_remove a bare
+            # shell purely to derive the row's DOM id.
+            send_remove(sub, template, model(pk=pk))
+        for pk in set(new_qs) - set(old_qs):
+            # Only under a LIMIT: a row pulled up into the visible window.
+            send_insert(sub, template, qs.get(pk=pk))

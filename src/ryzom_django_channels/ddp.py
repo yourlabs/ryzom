@@ -84,6 +84,11 @@ def send_remove(sub, tmpl, instance):
     and send the computed id to the client.
     Essentially called by post_save and post_delete signal handlers
 
+    ``instance`` should be the real, live model instance whenever it still
+    exists (e.g. a row filtered out of a subscription): only on a genuine
+    delete, where the row is gone from the DB, is a bare ``model(pk=...)``
+    shell passed — and then only the template's DOM id is read off it.
+
     :param Subscriptions sub: The Subscription holding the connection \
             information
     :param Publishable model: The class of the model to remove

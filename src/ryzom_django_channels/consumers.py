@@ -299,65 +299,27 @@ class Consumer(JsonWebsocketConsumer):
             self.remove_component(data['params'])
 
     def recv_subscribe(self, data):
-        from ryzom_django_channels.models import Client, Publication, Subscription
         '''
         subscribe message handler.
-        Creates a new subscription for the current Client.
-        'subscribe' params should contain:
-        - an 'id' key, which refer to the component that asks for
-        a subscription
-        - a 'name' key, corresponding to the name of the publication
-        this subscription is about
-        '''
-        params = data['params']
-        to_send = {'id': data['id']}
-        client = Client.objects.get(channel=self.channel_name)
-        print(f'GOT SUBSCRIBE FOR CLIENT {client}')
-        for key in ['name', 'sub_id']:
-            if key not in params:
-                to_send.update({
-                    'type': 'Error',
-                    'params': {
-                        'name': 'Bad format',
-                        'message': f'Subscription {key} not found'
-                    }
-                })
-                self.send(json.dumps(to_send))
-                return
-        if not client:
-            to_send.update({
-                'type': 'Error',
-                'params': {
-                    'name': 'Client not found',
-                    'message': 'No client was found for this channel name'
-                }
-            })
-        else:
-            pub = Publication.objects.get(name=params['name'])
-            sub = Subscription.objects.filter(
-                publication=pub,
-                parent=params['parent_id'],
-                client=client).first()
-            if not sub:
-                sub = Subscription(
-                        publication=pub,
-                        parent=params['parent_id'],
-                        client=client)
-                sub.save()
-            else:
-                print('SUBSCRIPTION FOUND')
-                sub.exec_query(params['opts'])
-            print(sub.client, sub)
 
-            to_send.update({
-                'type': 'Success',
-                'params': {
-                    'name': params['name'],
-                    'sub_id': f"{sub.id}",
-                    'length': len(sub.queryset)
-                }
-            })
-        self.send(json.dumps(to_send))
+        Not implemented over the websocket: subscriptions are created
+        server-side while the page renders (see
+        ``ryzom_django_channels.components.SubscribeComponentMixin
+        .create_subscription``), not in response to a client message. The
+        previous body here referenced a ``parent`` field and an ``exec_query``
+        method that do not exist on ``Subscription`` and would have raised if
+        ever reached; it is removed to avoid the latent crash and the
+        misleading impression that subscribe-over-socket is wired up.
+        '''
+        self.send(json.dumps({
+            'id': data['id'],
+            'type': 'Error',
+            'params': {
+                'name': 'Not implemented',
+                'message': 'subscriptions are created server-side at render, '
+                           'not over the websocket',
+            }
+        }))
 
     def recv_unsubscribe(self, data):
         '''

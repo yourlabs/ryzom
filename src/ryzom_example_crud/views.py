@@ -101,6 +101,8 @@ class ProductFilterView(View):
     DDP channel the publication signals use.
     """
     def post(self, request):
+        from django.db import transaction
+
         from ryzom_django_channels.components import model_templates
         from ryzom_django_channels.ddp import send_insert, send_remove
         from ryzom_django_channels.models import Client, Subscription
@@ -108,25 +110,39 @@ class ProductFilterView(View):
         client = Client.objects.filter(token=request.POST.get('token', '')).last()
         if client is None:
             return HttpResponse(status=204)
-        sub = Subscription.objects.filter(
-            client=client, publication__name='products',
-        ).last()
-        if sub is None:
-            return HttpResponse(status=204)
 
         opts = {
             'q': request.POST.get('q', ''),
             'in_stock': request.POST.get('in_stock') == '1',
         }
-        old = set(sub.queryset)
-        new_qs = sub.get_queryset(opts)   # updates stored opts + qs, returns qs
-        new = set(sub.queryset)
 
-        tmpl = model_templates[sub.subscriber.model_template]
-        for pk in old - new:
-            send_remove(sub, tmpl, Product(id=pk))
-        for pk in new - old:
-            send_insert(sub, tmpl, new_qs.get(pk=pk))
+        sub_id = (
+            Subscription.objects
+            .filter(client=client, publication__name='products')
+            .values_list('id', flat=True)
+            .last()
+        )
+        if sub_id is None:
+            return HttpResponse(status=204)
+
+        with transaction.atomic():
+            # Lock only the subscription row for the whole read-modify-write so
+            # a concurrent Product.save() push can't interleave with this
+            # filter update and desync the stored id list from the DOM. We lock
+            # by pk (no joins) to avoid FOR UPDATE on the nullable client join.
+            sub = Subscription.objects.select_for_update().get(pk=sub_id)
+
+            old = set(sub.queryset)
+            new_qs = sub.get_queryset(opts)   # updates stored opts + qs
+            new = set(sub.queryset)
+
+            tmpl = model_templates[sub.subscriber.model_template]
+            for pk in old - new:
+                # Filtered out, not deleted: the row still exists, so send the
+                # real instance rather than a hollow Product(id=pk) shell.
+                send_remove(sub, tmpl, Product.objects.get(pk=pk))
+            for pk in new - old:
+                send_insert(sub, tmpl, new_qs.get(pk=pk))
         return HttpResponse(status=204)
 
 
