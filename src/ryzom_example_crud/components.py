@@ -14,6 +14,7 @@ from ryzom_django_channels.components import (
     SubscribeComponentMixin,
     model_template,
 )
+from ryzom_django_channels.facets import BooleanFacet, SearchFacet
 from ryzom_django_mdc.html import *
 
 
@@ -59,20 +60,15 @@ class ProductRows(SubscribeComponentMixin, MDCDataTableTbody):
     paginate_by = 5
     order = ('name', 'id')
 
-    @classmethod
-    def get_queryset(cls, user, qs, opts):
-        # opts is stored on the Subscription and re-applied on every push, so
-        # the live diff is filter-aware: a product edited to match/unmatch this
-        # filter is inserted/removed live, not just on the next page load.
-        # (Ordering + the window slice are applied by the plumbing using
-        # `order`/`paginate_by`; we only express the filter here.)
-        opts = opts or {}
-        q = (opts.get('q') or '').strip()
-        if q:
-            qs = qs.filter(name__icontains=q)
-        if opts.get('in_stock'):
-            qs = qs.filter(stock_qty__gt=0)
-        return qs
+    # The filter, expressed once as facets: applied forward to build the window
+    # (SubscribeComponentMixin.get_queryset) and reused in reverse by the signal
+    # handler to route a change to only the subscriptions it can affect, instead
+    # of re-running every standing query. `q` lives in opts as a search term,
+    # `in_stock` as a bool — exactly what ProductFilter POSTs.
+    facets = [
+        SearchFacet('q', 'name'),
+        BooleanFacet('in_stock', 'stock_qty'),  # "on" => stock_qty > 0
+    ]
 
 
 class ProductTable(MDCDataTableResponsive):

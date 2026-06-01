@@ -1,11 +1,22 @@
 '''
-Defines the django signals handlers.
+Django signal handlers: route a base-row change to the live subscriptions it
+affects and push each one's minimal DDP delta.
+
+The routing is a *reverse query* (PROBLEM.md §3): instead of re-running every
+standing query on every write, we ask "which subscriptions' filters does this
+one row match?" and visit only those. A subscription is a candidate iff the
+changed row matches its filter with its new OR old values (the window is
+irrelevant to candidacy — see MATCHING.md). Candidate selection runs here, in
+the saving process, reusing each subscriber's declared facets in reverse; the
+Celery worker then locks each candidate and computes its window delta.
 '''
+import importlib
 import logging
 import time
 
 from django.db import transaction
-from django.db.models.signals import post_delete, post_save
+from django.db.models import Q
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from ryzom_django_channels import celery_app
@@ -40,78 +51,138 @@ def try_task(fn, *args, **kwargs):
     )
 
 
-@celery_app.task()
-def ddp_insert_change_task(sender_mod, sender_name, created, instance_id):
-    try_task(
-        ddp_insert_change,
-        sender_mod, sender_name, created, instance_id
-    )
+# --- candidate selection: the reverse query --------------------------------
+
+def _snapshot(instance):
+    '''A plain dict of the instance's field values for reverse facet matching,
+    so the match never depends on the live (possibly deleted) instance.
+
+    Values are coerced to the field's Python type: a freshly created instance
+    may still hold raw assigned values (e.g. a form string ``"5"`` for an
+    IntegerField, which Postgres coerces on insert but Python does not), and the
+    facet predicates compare against typed values.
+    '''
+    def typed(field):
+        value = getattr(instance, field.attname)
+        try:
+            return field.to_python(value)
+        except (TypeError, ValueError):
+            return value
+    return {field.attname: typed(field) for field in instance._meta.concrete_fields}
 
 
-@celery_app.task()
-def ddp_delete_task(sender_mod, sender_name, instance_id):
-    try_task(
-        ddp_delete,
-        sender_mod, sender_name, instance_id
+def _candidate_ids(sender_mod, sender_name, old, new):
+    '''Ids of the subscriptions a change to this row can affect.
+
+    Grouped by subscriber class so each class's own facets drive the match. A
+    subscriber that declares no facets has an unknown filter, so every change to
+    the model is a potential affect -> all of its subscriptions are candidates
+    (no worse than the previous "visit all"). A faceted subscriber is matched in
+    reverse against the row's new and old values; their union is the candidate
+    set (covers out->in via `new` and in->out via `old`).
+    '''
+    base = Subscription.objects.filter(
+        publication__model_module=sender_mod,
+        publication__model_class=sender_name,
     )
+    ids = set()
+    seen = base.values_list('subscriber_module', 'subscriber_class').distinct()
+    for mod_name, cls_name in seen:
+        subscriber = getattr(importlib.import_module(mod_name), cls_name)
+        subs = base.filter(subscriber_module=mod_name, subscriber_class=cls_name)
+        facets = getattr(subscriber, 'facets', None)
+        if not facets:
+            ids.update(subs.values_list('id', flat=True))
+            continue
+        for row in (old, new):
+            if row is None:
+                continue
+            annotations, predicate = {}, Q()
+            for facet in facets:
+                ann, q = facet.candidate(row)
+                annotations.update(ann)
+                predicate &= q
+            ids.update(
+                subs.annotate(**annotations)
+                .filter(predicate)
+                .values_list('id', flat=True)
+            )
+    return ids
+
+
+@receiver(pre_save)
+def _ddp_capture_old(sender, instance, **kwargs):
+    '''Snapshot the pre-change row so the post_save handler can also route to
+    subscriptions whose filter the row matched *before* the change (the in->out
+    transition), which the new values alone can't reveal.'''
+    if Publishable in sender.mro():
+        instance._ddp_old = None
+        if instance.pk is not None:
+            old = sender.objects.filter(pk=instance.pk).first()
+            if old is not None:
+                instance._ddp_old = _snapshot(old)
 
 
 @receiver(post_save)
-def _ddp_insert_change(sender, **kwargs):
-    '''
-    Function to send a DDP insert/change/remove messages to the channel layer
-    whenever a Publishable model's save() method is called.
-    This function will update the queryset of all subscriptions
-    associated with the sender model and send insert, remove or change
-    message for each id that was added or removed from the old
-    queryset to the new one.
-    '''
-    if Publishable in sender.mro():
-        instance = kwargs.get('instance')
-        sender_mod = instance.__module__
-        sender_name = instance.__class__.__name__
-        created = kwargs.get('created')
-        instance_id = str(instance.id)
-        ddp_insert_change_task.delay(
-            sender_mod,
-            sender_name,
-            created,
-            instance_id
+def _ddp_insert_change(sender, instance, created, **kwargs):
+    if Publishable not in sender.mro():
+        return
+    old = None if created else getattr(instance, '_ddp_old', None)
+    ids = _candidate_ids(
+        instance.__module__, type(instance).__name__,
+        old, _snapshot(instance),
+    )
+    if ids:
+        ddp_process_task.delay(
+            instance.__module__, type(instance).__name__,
+            str(instance.pk), list(ids),
         )
 
 
-def _locked_subscriptions(sender_mod, sender_name):
-    '''Yield each matching Subscription, locked FOR UPDATE inside its own
-    transaction.
-
-    The whole insert/change/remove decision is a read-modify-write of the
-    subscription's stored id list (``sub.qs``). Without a row lock, two
-    concurrent ``Product.save()`` tasks — or a save racing a filter request —
-    read the same baseline, both recompute, and both write, so the diff is
-    taken against stale state and rows are missed or duplicated. Locking each
-    subscription row serialises those writers per subscription.
-    '''
-    sub_ids = list(
-        Subscription.objects.filter(
-            publication__model_class=sender_name,
-            publication__model_module=sender_mod,
-        ).values_list('id', flat=True)
+@receiver(post_delete)
+def _ddp_delete(sender, instance, **kwargs):
+    if Publishable not in sender.mro():
+        return
+    ids = _candidate_ids(
+        instance.__module__, type(instance).__name__,
+        _snapshot(instance), None,
     )
-    for sub_id in sub_ids:
+    if ids:
+        ddp_process_task.delay(
+            instance.__module__, type(instance).__name__,
+            str(instance.pk), list(ids),
+        )
+
+
+# --- delta computation: run in the worker over the routed candidates --------
+
+@celery_app.task()
+def ddp_process_task(sender_mod, sender_name, instance_id, candidate_ids):
+    try_task(ddp_process, sender_mod, sender_name, instance_id, candidate_ids)
+
+
+def ddp_process(sender_mod, sender_name, instance_id, candidate_ids):
+    '''Push each routed candidate's window delta.
+
+    Candidate selection (the reverse facet match) already happened in the
+    saving process; here we only lock each candidate row and diff its window.
+    '''
+    for sub_id in candidate_ids:
         with transaction.atomic():
             # Lock only the Subscription row (no select_related): `client` is a
-            # nullable FK, so joining it would make a LEFT OUTER JOIN that
-            # Postgres refuses to lock ("FOR UPDATE cannot be applied to the
-            # nullable side of an outer join"); joining `publication` would
-            # over-lock the row shared by every subscriber. The relations
-            # lazy-load unlocked, which is what we want.
-            try:
-                sub = Subscription.objects.select_for_update().get(pk=sub_id)
-            except Subscription.DoesNotExist:
-                # Raced with a client disconnect / unsubscribe between taking
-                # the id snapshot and acquiring the lock — nothing to push.
+            # nullable FK, so joining it would make a LEFT OUTER JOIN Postgres
+            # refuses to lock; `publication` is shared and would over-lock.
+            sub = (
+                Subscription.objects
+                .select_for_update()
+                .filter(pk=sub_id)
+                .first()
+            )
+            if sub is None:
+                # Disconnected / unsubscribed between selection and the lock.
                 continue
-            yield sub
+            changed_pk = sub.publication.model.id.field.to_python(instance_id)
+            _push_window_delta(sub, changed_pk)
 
 
 def _push_window_delta(sub, changed_pk):
@@ -174,72 +245,3 @@ def _push_window_delta(sub, changed_pk):
         row = fetch(changed_pk)
         if row is not None:
             send_change(sub, template, row)
-
-
-def ddp_insert_change(sender_mod, sender_name, created, instance_id):
-    '''
-    Route a single save to every subscription on that model.
-
-    Non-paginated subscribers get the cheap ``filter(pk=...).exists()`` test:
-    if the changed row neither was nor is a member of the filtered set, the set
-    is unchanged and the subscription is skipped without a requery. Paginated
-    subscribers re-window every time (their stored id list is the window, not
-    the set, so "not in window" doesn't imply "didn't ripple the window" — a
-    change above the page shifts it). Reducing that fan-out soundly needs the
-    row's pre-change key; see ``PAGINATION.md`` §6.
-    '''
-    for sub in _locked_subscriptions(sender_mod, sender_name):
-        model = sub.publication.model
-        changed_pk = model.id.field.to_python(instance_id)
-
-        if not getattr(sub.subscriber, 'paginate_by', None):
-            was_in = changed_pk in sub.queryset
-            base = sub.publication.publish_function(sub.client.user)
-            now_in = sub.subscriber.get_queryset(
-                sub.client.user, base.filter(pk=instance_id), sub.options,
-            ).exists()
-            if not was_in and not now_in:
-                continue
-
-        _push_window_delta(sub, changed_pk)
-
-
-@receiver(post_delete)
-def _ddp_delete(sender, **kwargs):
-    '''
-    Function to send a DDP insert/remove messages to the channel layer
-    whenever a Publishable model's delete() method is called.
-    This function will update the queryset of all subscriptions
-    associated with the sender model and send insert and remove
-    message for each id that was added or removed from the old
-    queryset to the new one.
-    '''
-    if Publishable in sender.mro():
-        instance = kwargs.get('instance')
-        sender_mod = instance.__module__
-        sender_name = instance.__class__.__name__
-        instance_id = str(instance.id)
-        ddp_delete_task.delay(
-            sender_mod,
-            sender_name,
-            instance_id
-        )
-
-
-def ddp_delete(sender_mod, sender_name, instance_id):
-    '''
-    Route a delete to every subscription on that model.
-
-    A non-paginated subscription that never listed the row is skipped. A
-    paginated one re-windows regardless: deleting a row *above* the visible
-    page shifts the window even though the deleted row isn't on it.
-    '''
-    for sub in _locked_subscriptions(sender_mod, sender_name):
-        model = sub.publication.model
-        changed_pk = model.id.field.to_python(instance_id)
-
-        if (not getattr(sub.subscriber, 'paginate_by', None)
-                and changed_pk not in sub.queryset):
-            continue
-
-        _push_window_delta(sub, changed_pk)

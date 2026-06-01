@@ -51,6 +51,12 @@ class ReactiveBase:
 
 
 class SubscribeComponentMixin(ReactiveBase):
+    # Declarative filter: a list of facets (see ryzom_django_channels.facets).
+    # The default get_queryset applies them forward; the signal handler reuses
+    # the same facets in reverse to route a change to only the affected
+    # subscriptions. Subscribers may still override get_queryset instead.
+    facets = []
+
     @property
     def model_template(self):
         raise AttributeError(
@@ -93,7 +99,10 @@ class SubscribeComponentMixin(ReactiveBase):
         container.content = content
 
     @classmethod
-    def get_queryset(self, usr, qs, opts):
+    def get_queryset(cls, usr, qs, opts):
+        opts = opts or {}
+        for facet in cls.facets:
+            qs = facet.forward(qs, opts.get(facet.key))
         return qs
 
 
