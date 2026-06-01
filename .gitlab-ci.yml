@@ -38,7 +38,7 @@ test:
 # qa:
 #   stage: test
 #   image: yourlabs/python
-#   script: flake8 src
+#   script: ruff check src
 
 pypi:
   stage: deploy

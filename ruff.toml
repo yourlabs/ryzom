@@ -1,0 +1,22 @@
+# QA linter config (replaces flake8 / flake8-putty).
+# Run with: ruff check          (lint)
+#           ruff check --fix    (apply safe fixes)
+extend-exclude = ["**/migrations/**"]
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "F403",  # `from ryzom.html import *` is ryzom's component API
+    "F405",  # names resolved from those intentional star imports
+    "F401",  # unused-import: ruff's analysis is unreliable under the pervasive
+             # star imports (it would strip names that *are* used), so we don't
+             # enforce/auto-remove it project-wide
+    "F821",  # py2js client code references JS globals (this/window/document/new)
+    "E501",  # long lines tolerated in existing modules
+    "F841",  # unused locals in existing modules
+    "F811",  # redefinitions in existing modules
+    "E402",  # deferred/conditional imports (e.g. settings, examples)
+    "E711",  # legacy `== None` comparisons
+    "E722",  # legacy bare excepts
+    "E731",  # legacy lambda assignments
+]

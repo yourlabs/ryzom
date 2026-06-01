@@ -338,7 +338,7 @@ class JS(object):
         value = self.visit(node.value)
         var = self.visit(target)
         if isinstance(target, ast.Name):
-            if not (var in self._scope):
+            if var not in self._scope:
                 self._scope.append(var)
                 declare = "var "
             else:
@@ -405,7 +405,7 @@ class JS(object):
             orelse_dummy = self.new_dummy()
 
             self.write("var %s = false;" % orelse_dummy)
-            self.write("while (1) {");
+            self.write("while (1) {")
             self.write("    if (!(%s)) {" % self.visit(node.test))
             self.write("        %s = true;" % orelse_dummy)
             self.write("        break;")
@@ -664,7 +664,7 @@ class JS(object):
             pass
 
         if id in self.builtin:
-            id = "py_builtins." + id;
+            id = "py_builtins." + id
 
         #~ if id in self._classes:
             #~ id = '_' + id;

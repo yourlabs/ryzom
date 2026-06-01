@@ -1721,7 +1721,7 @@ class MDCDialog(Div):
             this.addEventListener('MDCDialog:closed', self.handle_closed.bind(this))
             this.addEventListener('MDCDialog:opening', self.handle_opening.bind(this))
             this.addEventListener('MDCDialog:opened', self.handle_opened.bind(this))
-        
+
         def init(self):
             this.MDCDialog = new.mdc.dialog.MDCDialog(this)
 
