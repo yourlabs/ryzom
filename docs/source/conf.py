@@ -15,8 +15,8 @@
 import os
 import sys
 import django
-sys.path.insert(0, '../..')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ryzom_example.settings'
+sys.path.insert(0, '../../src')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ryzom_django_example.settings')
 django.setup()
 
 
