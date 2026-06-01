@@ -34,11 +34,12 @@ test:
         - "-c"
         - "log_min_duration_statement=300"
 
-# when we pass ...
-# qa:
-#   stage: test
-#   image: yourlabs/python
-#   script: ruff check src
+qa:
+  stage: test
+  image: yourlabs/python
+  script:
+  - pip install ruff
+  - ruff check src
 
 pypi:
   stage: deploy
