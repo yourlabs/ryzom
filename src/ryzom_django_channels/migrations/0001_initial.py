@@ -3,7 +3,6 @@
 import secrets
 import uuid
 
-import django.contrib.postgres.fields
 import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings
@@ -47,7 +46,7 @@ class Migration(migrations.Migration):
                 ('subscriber_id', models.CharField(max_length=255)),
                 ('subscriber_module', models.CharField(max_length=255)),
                 ('subscriber_class', models.CharField(max_length=255)),
-                ('queryset', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), default=list, size=None)),
+                ('queryset', models.JSONField(default=list)),
                 ('options', models.JSONField(blank=True, null=True)),
                 ('client', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='ryzom_django_channels.client')),
                 ('publication', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ryzom_django_channels.publication')),

@@ -998,7 +998,7 @@ class App(CRUDDocument):
     """Full app shell: NavDrawer + TopAppBar + Messages + content."""
 
     def __init__(self, *content, request=None, title='', nav_items=(),
-                 su_url=None, **attrs):
+                 su_url=None, extra_head=(), **attrs):
         from django.contrib.messages import get_messages as _get_msgs
         messages = list(_get_msgs(request)) if request else []
 
@@ -1034,7 +1034,7 @@ class App(CRUDDocument):
             TopAppBar(title=title),
             Messages(messages),
             Div(*content, cls='app-main-content'),
-            extra_head=[Style(_APP_GLOBAL_CSS)],
+            extra_head=[Style(_APP_GLOBAL_CSS), *extra_head],
             **attrs,
         )
 

@@ -30,6 +30,14 @@ SECRET_KEY = '4am4pn_87&v0qaq%_-2me06et#@prq(yp6npk8g495!@7s1hoi'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# Dev fallback: run the reactive (channels) stack single-process, without
+# Redis or a Celery worker. Uses the in-memory channel layer and runs the
+# DDP push signals eagerly. Only kicks in under DEBUG when no Redis was found.
+CHANNELS_INMEMORY = False
+if DEBUG and not CHANNELS_ENABLE:
+    CHANNELS_ENABLE = True
+    CHANNELS_INMEMORY = True
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -89,32 +97,41 @@ TEMPLATES = [
 ]
 
 if CHANNELS_ENABLE:
-    # Enable Reactive components models
-    INSTALLED_APPS += [
+    # daphne must precede staticfiles so `runserver` serves over ASGI (channels 4)
+    INSTALLED_APPS = ['daphne'] + INSTALLED_APPS + [
+        # Enable Reactive components models
         'ryzom_django_channels',
         'ryzom_django_channels_example',
         'channels',
         'channels_redis',
-        'celery'
+        'celery',
     ]
 
 ROOT_URLCONF = 'ryzom_django_example.urls'
 WS_HOST = ''
-WS_PORT = 0
+WS_PORT = ''  # empty -> client uses same-origin host/port for the ws:// URL
 WS_URLPATTERNS = ROOT_URLCONF
 SERVER_METHODS = []
 
 ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
 
 if CHANNELS_ENABLE:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [REDIS_SERVER],
+    if CHANNELS_INMEMORY:
+        CHANNEL_LAYERS = {
+            "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+        }
+        # Run DDP push tasks synchronously in-process (no Celery worker/broker).
+        CELERY_TASK_ALWAYS_EAGER = True
+        CELERY_TASK_EAGER_PROPAGATES = True
+    else:
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {
+                    "hosts": [REDIS_SERVER],
+                },
             },
-        },
-    }
+        }
 
 
 DATABASES = {

@@ -10,6 +10,7 @@ urlpatterns = (
         path('', include('ryzom_django_example.views')),
         path('tutorial/', include('ryzom_django_example.tutorial')),
         path('crud/users/', include('ryzom_example_crud.crud')),
+        path('crud/products/', include('ryzom_example_crud.views')),
     ]
 )
 

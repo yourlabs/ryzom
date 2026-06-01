@@ -421,6 +421,14 @@ class Component(metaclass=ComponentMetaclass):
             else:
                 parent_id = self.parent.id
 
+        # Carry ryzom-id as an attribute so DDP-inserted nodes are findable by
+        # getElementByUuid's `[ryzom-id=...]` lookup, exactly like server-rendered
+        # nodes (to_html emits ryzom-id). Without this, inserted rows can only be
+        # found via the JS registry, which breaks if a querySelector-only
+        # getElementByUuid wins (e.g. py2js.js), causing failed removes + dupes.
+        attrs = dict(self.attrs)
+        attrs['ryzom-id'] = self.id
+
         return {
             'id': self.id,
             'tag': self.tag,
@@ -428,7 +436,7 @@ class Component(metaclass=ComponentMetaclass):
             'parent': parent_id,
             'position': self.position,
             'script': self.render_js(),
-            'attrs': self.attrs
+            'attrs': attrs,
         }
 
     @property
