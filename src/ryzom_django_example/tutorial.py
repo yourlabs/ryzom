@@ -839,9 +839,8 @@ from ryzom_django.forms import field_kwargs
 from ryzom_django.forms import widget_attrs as get_widget_attrs
 
 
-@widget_template("django/forms/widgets/text.html")
-@widget_template("django/forms/widgets/email.html")
 class PlainInputWidget(Div):
+    """Plain-HTML widget component — demonstrates the from_boundfield pattern."""
     style = "margin: 8px 0"
 
     @classmethod
@@ -862,15 +861,19 @@ class PlainForm(forms.Form):
     email = forms.EmailField(help_text="Required")
 
 
+_demo_form = PlainForm()
+
 section15 = Div(
     H2("@widget_template — custom widget component"),
     P(
-        "The two fields below use PlainInputWidget, registered via "
-        "@widget_template. The MDCInputWidget that was registered earlier "
-        "for the same template names is now overridden by this one:"
+        "PlainInputWidget shows the from_boundfield pattern: receive a BoundField, "
+        "return a Component. Register it globally with "
+        "@widget_template('django/forms/widgets/text.html') "
+        "and every text field in the app renders with it."
     ),
     Div(
-        PlainForm(),
+        PlainInputWidget.from_boundfield(_demo_form["username"]),
+        PlainInputWidget.from_boundfield(_demo_form["email"]),
         style="border: 1px solid #ccc; padding: 16px; border-radius: 4px",
     ),
     P(
