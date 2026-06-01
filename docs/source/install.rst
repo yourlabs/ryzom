@@ -62,16 +62,15 @@ Known issues
 
 In CRUDLFA+, materialise CSS is imported, which hides standard
 checkboxes. MUICSS doesn't style checkboxes by default, so this rule needs to
-be disabled for the example (until materialise is removed from CRUDLFA+). 
+be disabled for the example (until materialise is removed from CRUDLFA+).
 
-[type="checkbox"]:not(:checked), [type="checkbox"]:checked {
-    position: absolute;
-    opacity: 0;  # TODO: This materialise rule hides MUI checkboxes.
-    pointer-events: none;
-}
+.. code-block:: css
 
-
-Move on to the :doc:`tutorial`.
+    [type="checkbox"]:not(:checked), [type="checkbox"]:checked {
+        position: absolute;
+        opacity: 0;  /* TODO: This materialise rule hides MUI checkboxes. */
+        pointer-events: none;
+    }
 
 .. _git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _pip: https://pip.pypa.io/en/stable/installing/

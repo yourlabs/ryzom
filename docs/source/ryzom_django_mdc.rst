@@ -21,8 +21,7 @@ General usage
 Input widgets
 -------------
 
-``MDCInputWidget`` (templates: ``input``, ``date``, ``time``, ``datetime``,
-``text``, ``email``, ``password``, ``number``, ``url``)  
+``MDCInputWidget`` (templates: ``input``, ``date``, ``time``, ``datetime``, ``text``, ``email``, ``password``, ``number``, ``url``)
     Outlined text field with floating label, helper/error text, and optional
     leading/trailing icons (pass ``licon``/``ticon`` in attrs). Mirrors a
     regular ``<input>`` while adding MDC structure.
@@ -53,8 +52,7 @@ Multiple choice checkboxes
 Composite and multi-widget fields
 ---------------------------------
 
-``MultiWidget`` (templates: ``postgres/widgets/split_array.html``,
-``django/forms/widgets/multiwidget.html``)  
+``MultiWidget`` (templates: ``postgres/widgets/split_array.html``, ``django/forms/widgets/multiwidget.html``)
     Renders each subwidget in order, using its specific template, and prepends
     field errors. Useful for array or multi-value fields.
 
