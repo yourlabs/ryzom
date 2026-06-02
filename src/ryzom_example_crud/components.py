@@ -382,6 +382,16 @@ class ProductPager(Component):
             if this.inflight:
                 return
             this.inflight = True
+            # Keep the viewport where it is across the row swap: removing the old
+            # rows collapses the table height and the browser would scroll to the
+            # top. The new rows arrive a beat later (async over the websocket, or
+            # inline in poll mode), so re-assert the saved position a few times
+            # over a short window rather than once.
+            this.pinY = window.scrollY
+            setTimeout(this.pin.bind(this), 0)
+            setTimeout(this.pin.bind(this), 80)
+            setTimeout(this.pin.bind(this), 180)
+            setTimeout(this.pin.bind(this), 320)
             meta = document.querySelector('meta[name="ryzom-config"]')
             csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
             body = new.FormData()
@@ -407,6 +417,10 @@ class ProductPager(Component):
             this.setDisabled('next', data.no_next)
             this.setDisabled('last', data.no_next)
             this.inflight = False
+
+        def pin(self):
+            # Re-assert the scroll position saved at click time (see apply).
+            window.scrollTo(0, this.pinY)
 
         def setDisabled(self, action, disabled):
             this.querySelector(
