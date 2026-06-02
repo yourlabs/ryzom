@@ -32,6 +32,11 @@ class Client(models.Model):
                 null=True
            )
     created = models.DateTimeField(default=timezone.now)
+    # Last time this client pulled (polling transport). A push client is kept
+    # alive by its websocket and reclaimed on disconnect; a polling client has
+    # no disconnect, so it is reclaimed by a TTL sweep over this field instead
+    # (see POLLING.md). NULL for clients that never polled (pure-push).
+    last_seen = models.DateTimeField(blank=True, null=True)
 
 
 class Registration(models.Model):

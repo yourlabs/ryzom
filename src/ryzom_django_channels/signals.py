@@ -185,20 +185,26 @@ def ddp_process(sender_mod, sender_name, instance_id, candidate_ids):
             _push_window_delta(sub, changed_pk)
 
 
-def _push_window_delta(sub, changed_pk):
-    '''Re-window the subscription and push the minimal DDP delta.
+def iter_window_ops(sub, changed_pk):
+    '''Re-window the subscription and yield its minimal delta as transport-neutral
+    ops, **without sending anything**.
 
     Recomputes the subscription's window (a paginated subscriber stores only the
     visible page; a non-paginated one stores the whole filtered set) and diffs
     the old id list against the new one. A single base-row event changes a
     window by at most: one row leaves + one row enters, plus the changed row's
-    own content/position. Everything is expressed with the existing
-    insert(position) / change(id) / remove(id) ops; ``position`` is the index
-    within the (re)stored window.
+    own content/position.
+
+    Yields ``(kind, instance)`` pairs, ``kind`` in
+    ``'insert' | 'change' | 'remove'``, in apply order (removes before the
+    inserts whose positions assume them). The same diff feeds two emitters: the
+    channel-layer push (``_push_window_delta``) and the client-pull poll
+    response (see ``POLLING.md``). ``position`` for an insert/change is read off
+    the freshly persisted window by the emitter, exactly as before; this
+    generator persists that window (via ``get_queryset``) before yielding any op.
 
     See ``PAGINATION.md`` for the window-ripple reasoning.
     '''
-    template = model_templates[sub.subscriber.model_template]
     model = sub.publication.model
 
     old_window = list(sub.queryset)
@@ -221,27 +227,38 @@ def _push_window_delta(sub, changed_pk):
         row = fetch(changed_pk) if changed_pk in new_set else None
         if row is not None:
             if old_window.index(changed_pk) == new_window.index(changed_pk):
-                send_change(sub, template, row)
+                yield ('change', row)
             else:                            # moved within the window
-                send_remove(sub, template, row)
-                send_insert(sub, template, row)
+                yield ('remove', row)
+                yield ('insert', row)
         return
 
     # Removes first, so the subsequent insert positions land at the right child
     # index of the current DOM. A removed row usually still exists (filtered out
-    # or evicted to the next page) -> push the real instance; only a genuinely
-    # deleted row needs a bare shell (send_remove reads just its DOM id).
+    # or evicted to the next page) -> emit the real instance; only a genuinely
+    # deleted row needs a bare shell (remove reads just its DOM id).
     existing = {obj.pk: obj for obj in model.objects.filter(pk__in=removed)}
     for pk in removed:
-        send_remove(sub, template, existing.get(pk) or model(pk=pk))
+        yield ('remove', existing.get(pk) or model(pk=pk))
 
     for pk in sorted(added, key=new_window.index):
         row = fetch(pk)
         if row is not None:
-            send_insert(sub, template, row)
+            yield ('insert', row)
 
     # Changed row stayed in the window while a boundary rippled: refresh it.
     if changed_pk in new_set and changed_pk not in added:
         row = fetch(changed_pk)
         if row is not None:
-            send_change(sub, template, row)
+            yield ('change', row)
+
+
+_SEND = {'insert': send_insert, 'change': send_change, 'remove': send_remove}
+
+
+def _push_window_delta(sub, changed_pk):
+    '''Push a subscription's window delta over the channel layer (the websocket
+    transport): a thin channel-layer emitter over ``iter_window_ops``.'''
+    template = model_templates[sub.subscriber.model_template]
+    for kind, instance in iter_window_ops(sub, changed_pk):
+        _SEND[kind](sub, template, instance)

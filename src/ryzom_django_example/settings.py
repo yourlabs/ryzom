@@ -106,6 +106,15 @@ WS_PORT = ''  # empty -> client uses same-origin host/port for the ws:// URL
 WS_URLPATTERNS = ROOT_URLCONF
 SERVER_METHODS = []
 
+# Client-pull (polling) transport — the no-server-push fallback (POLLING.md).
+# RYZOM_TRANSPORT forces 'ws' or 'poll'; unset -> 'ws' when channels is on, else
+# 'poll'. Set RYZOM_TRANSPORT=poll to run the live UI with no server-initiated
+# communication even where the websocket infra is available.
+RYZOM_TRANSPORT = os.environ.get('RYZOM_TRANSPORT') or None
+POLL_URL = '/crud/products/poll/'   # where ddp_poll is mounted (demo)
+POLL_INTERVAL = 2000                # client poll cadence, ms
+POLL_TTL = 60                       # seconds before an idle polling client is swept
+
 ASGI_APPLICATION = 'ryzom_django_example.asgi.application'
 
 if CHANNELS_ENABLE:

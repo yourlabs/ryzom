@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.views import View
 
-from ryzom_django_channels.views import ReactiveMixin
+from ryzom_django_channels.views import ReactiveMixin, ddp_poll
 from ryzom_django_mdc.crudlfap import App
 from ryzom_django_mdc.html import *
 
@@ -244,6 +244,7 @@ urlpatterns = [
     path('create/', ProductCreateView.as_view(), name='create'),
     path('filter/', ProductFilterView.as_view(), name='filter'),
     path('page/', ProductPagerView.as_view(), name='page'),
+    path('poll/', ddp_poll, name='poll'),  # client-pull transport (POLLING.md)
     path('<int:pk>/', ProductDetailView.as_view(), name='detail'),
     path('<int:pk>/sell/', ProductSellView.as_view(), name='sell'),
 ]

@@ -265,7 +265,10 @@
       return {
         token: meta.getAttribute('content'),
         ws_host: meta.getAttribute('data-ws-host'),
-        ws_port: meta.getAttribute('data-ws-port')
+        ws_port: meta.getAttribute('data-ws-port'),
+        transport: meta.getAttribute('data-transport'),
+        poll_url: meta.getAttribute('data-poll-url'),
+        poll_interval: parseInt(meta.getAttribute('data-poll-interval'), 10) || 2000
       };
     }
     // Fallback to window globals for backwards compatibility
@@ -327,9 +330,36 @@
     ws.callbacks = [];
   };
 
-  // Auto-connect if config is available
-  if (getRyzomConfig())
-    ws_connect();
+  // Client-pull transport: no websocket, only requests the client initiates.
+  // Used where server-initiated communication is not allowed (see POLLING.md).
+  poll_once = function(config) {
+    var url = config.poll_url + '?token=' + encodeURIComponent(config.token);
+    fetch(url, {headers: {'Accept': 'application/json'}})
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.reload) { document.location.reload(); return; }
+        if (data.messages)
+          data.messages.forEach(function(m) { handleDDP(m); });
+      })
+      .catch(function(e) { console.log(e); });
+  };
+
+  poll_start = function(config) {
+    init();                       // mark ready; run any onwsready callbacks
+    poll_once(config);            // first pull right away, then on interval
+    setInterval(function() { poll_once(config); }, config.poll_interval);
+  };
+
+  // Auto-connect if config is available. In poll mode we never construct a
+  // WebSocket; otherwise open the push socket as before.
+  (function() {
+    var config = getRyzomConfig();
+    if (!config) return;
+    if (config.transport === 'poll')
+      poll_start(config);
+    else
+      ws_connect();
+  })();
 
   ws_send = function(data, cb) {
     var id = ID();
