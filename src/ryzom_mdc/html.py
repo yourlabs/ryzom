@@ -1473,18 +1473,29 @@ class MDCDataTableResponsive(MDCDataTable):
     sass = '''
     @media (max-width: 700px)
         .MDCDataTableResponsive
-            thead
-                display: none
-            tr
-                display: block
-            td
-                display: block
-                text-align: right
-                height: auto
-            td:before
-                content: attr(data-label)
-                float: left
-                font-weight: bold
+            display: block
+        .MDCDataTableResponsive .mdc-data-table__table-container
+            overflow-x: visible
+        .MDCDataTableResponsive table
+            display: block
+            min-width: 0
+            width: 100%
+        .MDCDataTableResponsive tbody
+            display: block
+        .MDCDataTableResponsive thead
+            display: none
+        .MDCDataTableResponsive tr
+            display: block
+        .MDCDataTableResponsive td
+            display: block
+            text-align: right
+            height: auto
+            white-space: normal
+            overflow: hidden
+        .MDCDataTableResponsive td:before
+            content: attr(data-label)
+            float: left
+            font-weight: bold
     '''
 
 
