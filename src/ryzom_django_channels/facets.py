@@ -31,7 +31,14 @@ class Facet:
         # the Subscription.options key holding this facet's per-client value
         self.key = key
 
-    def forward(self, queryset, value):
+    def forward(self, queryset, value, user=None):
+        '''Apply this facet to the data queryset.
+
+        ``value`` is the subscription's stored option for this facet's key;
+        ``user`` is the subscription's client user (``None`` when anonymous).
+        Value-driven facets ignore ``user``; permission facets ignore ``value``
+        and key off ``user`` instead.
+        '''
         raise NotImplementedError
 
     def candidate(self, row):
@@ -53,7 +60,7 @@ class BooleanFacet(Facet):
         self.field = field
         self.gt = gt
 
-    def forward(self, queryset, value):
+    def forward(self, queryset, value, user=None):
         if value:
             return queryset.filter(**{f'{self.field}__gt': self.gt})
         return queryset
@@ -82,7 +89,7 @@ class SearchFacet(Facet):
         super().__init__(key)
         self.field = field
 
-    def forward(self, queryset, value):
+    def forward(self, queryset, value, user=None):
         value = (value or '').strip()
         if value:
             return queryset.filter(**{f'{self.field}__icontains': value})
@@ -95,3 +102,54 @@ class SearchFacet(Facet):
         term = Coalesce(Lower(KeyTextTransform(self.key, 'options')), Value(''))
         haystack = Value((row.get(self.field) or '').lower())
         return {alias: StrIndex(haystack, term)}, Q(**{f'{alias}__gt': 0})
+
+
+class GroupFacet(Facet):
+    '''Per-user object visibility by group membership — the ``filter AND
+    can_see(user, row)`` predicate of PROBLEM.md §6, expressed once.
+
+    The visibility rule (``field`` is a nullable FK to ``auth.Group`` on the
+    row's model):
+
+    - **staff** see every row;
+    - a **logged-in** user sees rows whose group is one of their groups, plus
+      **public** rows (``field`` is NULL);
+    - an **anonymous** subscription (``client.user`` is NULL) sees only public
+      rows.
+
+    Unlike the value-driven facets this keys off the subscription's *user*, not
+    a stored option, so ``forward`` ignores ``value`` and the reverse predicate
+    constrains ``client__user`` rather than ``options``.
+
+    Reverse (one indexed membership test, the "bucket by value" easy case of
+    PROBLEM.md §5): a **public** row is admitted by every subscription; a
+    **private** row only by staff subscriptions or subscriptions whose user
+    belongs to the row's group. The ``<field>_id`` snapshot key is a concrete
+    column, so a regroup fires ``post_save`` carrying both the old and the new
+    group and routing covers the move in both directions.
+    '''
+    # key is unused (this facet has no per-client option); kept for the
+    # uniform Facet(key) constructor.
+    def __init__(self, field='group', key='group'):
+        super().__init__(key)
+        self.field = field
+        self.fk = f'{field}_id'
+
+    def forward(self, queryset, value, user=None):
+        if user is None:
+            return queryset.filter(**{f'{self.field}__isnull': True})
+        if getattr(user, 'is_staff', False):
+            return queryset
+        return queryset.filter(
+            Q(**{f'{self.field}__isnull': True})
+            | Q(**{f'{self.field}__in': user.groups.all()})
+        )
+
+    def candidate(self, row):
+        group_id = row.get(self.fk)
+        if group_id is None:          # public row: every subscription may see it
+            return {}, Q()
+        return {}, (
+            Q(client__user__is_staff=True)
+            | Q(client__user__groups=group_id)
+        )

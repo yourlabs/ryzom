@@ -41,7 +41,8 @@ each a single definition with two directions:
 `ProductRows` declares:
 
 ```python
-facets = [SearchFacet('q', 'name'), BooleanFacet('in_stock', 'stock_qty')]
+facets = [SearchFacet('q', 'name'), BooleanFacet('in_stock', 'stock_qty'),
+          GroupFacet('group')]
 ```
 
 - `BooleanFacet` reverse: an in-range row (`stock_qty > 0`) is admitted by every
@@ -51,6 +52,21 @@ facets = [SearchFacet('q', 'name'), BooleanFacet('in_stock', 'stock_qty')]
   of the row's field — `strpos(lower(row.name), lower(options->>'q')) > 0`
   (empty/missing term matches all). One in-DB sequential scan over the
   subscription table's terms — the cheap, un-indexed end of PROBLEM.md §5.
+- `GroupFacet` is the **permission** facet (PROBLEM.md §6, `filter AND
+  can_see(user, obj)`). Unlike the others it keys off the subscription's *user*,
+  not a stored option: forward scopes the queryset (staff → all; a user → their
+  groups' rows + public; anonymous → only public), reverse emits a `Q` over
+  `client__user` — a public row (`group_id` NULL) admits every subscription, a
+  private row only `Q(client__user__is_staff=True) | Q(client__user__groups=
+  row.group_id)`. This is one indexed membership test (the "bucket by value"
+  easy case of §5) AND-composed with the others by the same `predicate &= q`
+  loop, so the effective predicate is literally `filter AND can_see`.
+  `Product.group` is a single FK (not M2M) so the visibility key is a concrete
+  column landing in `_snapshot`, letting a regroup route via both old and new
+  group. *Deferred:* M2M-per-row visibility (not a concrete field, fires
+  `m2m_changed` not `post_save`) and arbitrary non-SQL `has_perm(user, obj)`
+  rules (reverse can't be a `Q`; would fall back to a Python test over the
+  already-narrowed candidates).
 
 ## Flow
 
@@ -85,9 +101,6 @@ the product matches, instead of all 500.
 - **Candidate selection runs in the saving request** (sync), adding one query
   (+ the `pre_save` SELECT). Fine here; a heavier deployment would move it to
   the worker with a serialized snapshot.
-- **Permissions**: the effective predicate is `filter AND can_see(user, obj)`
-  (PROBLEM.md §6). `user` is already threaded; a `PermissionFacet` would slot in
-  — hooked, not built.
 - **Cross-row derived content** (aggregates/ranks) breaks the candidacy fact
   above; not present in the demo.
 - This is step 3, *not* step 4 (IVM/differential dataflow): we still re-window

@@ -14,7 +14,7 @@ from ryzom_django_channels.components import (
     SubscribeComponentMixin,
     model_template,
 )
-from ryzom_django_channels.facets import BooleanFacet, SearchFacet
+from ryzom_django_channels.facets import BooleanFacet, GroupFacet, SearchFacet
 from ryzom_django_mdc.html import *
 
 
@@ -68,6 +68,7 @@ class ProductRows(SubscribeComponentMixin, MDCDataTableTbody):
     facets = [
         SearchFacet('q', 'name'),
         BooleanFacet('in_stock', 'stock_qty'),  # "on" => stock_qty > 0
+        GroupFacet('group'),  # filter AND can_see(user, row): group visibility
     ]
 
 

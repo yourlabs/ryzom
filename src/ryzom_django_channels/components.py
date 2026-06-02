@@ -102,7 +102,7 @@ class SubscribeComponentMixin(ReactiveBase):
     def get_queryset(cls, usr, qs, opts):
         opts = opts or {}
         for facet in cls.facets:
-            qs = facet.forward(qs, opts.get(facet.key))
+            qs = facet.forward(qs, opts.get(facet.key), usr)
         return qs
 
 

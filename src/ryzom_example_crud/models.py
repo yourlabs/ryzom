@@ -18,6 +18,13 @@ class Product(Publishable, models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock_qty = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
+    # Per-user visibility (see GroupFacet): a row visible to its group's members
+    # (+ staff); NULL means public. A single FK (not M2M) keeps the visibility
+    # key a concrete column so it lands in the reverse-matching snapshot.
+    group = models.ForeignKey(
+        'auth.Group', models.SET_NULL, null=True, blank=True,
+        related_name='products',
+    )
 
     class Meta:
         ordering = ['name']
@@ -27,6 +34,8 @@ class Product(Publishable, models.Model):
 
     @publish
     def products(cls, user):
+        # The visibility predicate lives in GroupFacet (forward), applied by
+        # SubscribeComponentMixin.get_queryset; this stays the unscoped base.
         return cls.objects.all()
 
 
