@@ -20,9 +20,12 @@ class UserRouter(Router):
 
     @classmethod
     def get_nav_items(cls, request):
+        # Shown in the drawer on the auth/User pages (login lands here). Keep
+        # Products listed so the live demo is reachable from the menu too.
         return [
             {'label': 'Home', 'url': '/home/'},
             {'label': 'Users', 'url': reverse_lazy('user:list')},
+            {'label': 'Products (live)', 'url': '/crud/products/'},
         ]
 
 

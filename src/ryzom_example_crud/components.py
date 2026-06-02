@@ -9,6 +9,8 @@ Mutations (create / sell) are issued with fetch() from small custom elements so
 the page never reloads — the table and detail update purely from the server
 push, which is the whole point of the demo.
 """
+from django.contrib.auth.models import Group
+
 from ryzom_django_channels.components import (
     ReactiveComponentMixin,
     SubscribeComponentMixin,
@@ -20,6 +22,21 @@ from ryzom_django_mdc.html import *
 
 # --- one row, the unit the server pushes -----------------------------------
 
+def group_badge(obj):
+    """A small chip naming the row's visibility group (or 'public').
+
+    Makes per-user visibility legible: with the badge you can see *why* a row is
+    or isn't in a given user's list (GroupFacet, see LOGIN.md). Public rows are
+    grey; grouped rows are coloured."""
+    name = obj.group.name if obj.group_id else 'public'
+    colour = '#1565c0' if obj.group_id else '#888'
+    return Span(
+        name,
+        style=(f'background:{colour};color:#fff;border-radius:10px;'
+               'padding:1px 9px;font-size:11px'),
+    )
+
+
 @model_template('product-row')
 class ProductRow(MDCDataTableTr):
     def __init__(self, obj):
@@ -30,6 +47,7 @@ class ProductRow(MDCDataTableTr):
                 A(obj.name, href=f'/crud/products/{obj.id}/'),
                 data_label='Name',
             ),
+            MDCDataTableTd(group_badge(obj), data_label='Group'),
             MDCDataTableTd(f'${obj.price}', data_label='Price'),
             MDCDataTableTd(
                 str(obj.stock_qty),
@@ -77,6 +95,7 @@ class ProductTable(MDCDataTableResponsive):
         super().__init__(
             thead=MDCDataTableThead(tr=MDCDataTableHeaderTr(
                 MDCDataTableTh('Name'),
+                MDCDataTableTh('Group'),
                 MDCDataTableTh('Price'),
                 MDCDataTableTh('Stock'),
                 MDCDataTableTh(''),
@@ -150,6 +169,16 @@ class ProductCreateForm(Component):
                 MDCTextFieldOutlined(
                     Input(type='number', name='stock_qty', value='0'),
                     label='Stock',
+                ),
+                Label(
+                    'Group ',
+                    Select(
+                        Option('public', value=''),
+                        *[Option(g.name, value=str(g.id))
+                          for g in Group.objects.all()],
+                        name='group',
+                    ),
+                    style='display:flex;align-items:center;gap:4px',
                 ),
                 CSRFInput(request) if request is not None else None,
                 MDCButtonRaised('Add product', tag='button', type='submit'),

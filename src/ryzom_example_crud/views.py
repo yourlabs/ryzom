@@ -29,6 +29,7 @@ from ryzom_example_crud.components import (
 from ryzom_example_crud.models import Product
 
 _NAV = [
+    {'label': 'Home', 'url': '/home/'},
     {'label': 'Users', 'url': '/crud/users/'},
     {'label': 'Products (live)', 'url': '/crud/products/'},
 ]
@@ -98,6 +99,26 @@ def _deliver_window_change(sub, opts):
     return subscription_delta(sub)                    # diff old qs vs new window
 
 
+def _identity_banner(request):
+    """Show which user this page (hence this subscription) is scoped to.
+
+    Visibility is bound to the Client created at page load from request.user
+    (see LOGIN.md), so this banner is the ground truth for *why* the list below
+    shows what it shows: staff see all, a user sees their groups + public, an
+    anonymous visitor sees only public rows."""
+    user = getattr(request, 'user', None)
+    if user is not None and user.is_authenticated:
+        groups = ', '.join(g.name for g in user.groups.all()) or 'none'
+        suffix = ' — staff, sees all' if user.is_staff else ''
+        text = f'Logged in as {user.username} — groups: {groups}{suffix}'
+        background = '#e8f0fe'
+    else:
+        text = 'Not logged in — showing public products only.'
+        background = '#fdecea'
+    return Div(text, style=(f'background:{background};padding:6px 12px;'
+                            'border-radius:6px;margin:0 0 1em;font-size:14px'))
+
+
 class ProductListView(ReactiveMixin, View):
     def get(self, request):
         token = self.get_token()  # sets self.client, returns the config <meta>
@@ -105,6 +126,7 @@ class ProductListView(ReactiveMixin, View):
             H1('Products — live', style='margin:0 0 .25em'),
             P('Add or sell below: the table updates over a websocket, no reload. '
               'Open this page in two tabs to see it.'),
+            _identity_banner(request),
             ProductCreateForm(request, style='margin:1em 0'),
             ProductFilter(),
             ProductTable(),
@@ -141,6 +163,8 @@ class ProductCreateView(View):
                 name=name,
                 price=request.POST.get('price') or 0,
                 stock_qty=request.POST.get('stock_qty') or 0,
+                # blank -> public; otherwise the chosen group's visibility
+                group_id=request.POST.get('group') or None,
             )
         return HttpResponse(status=204)
 
