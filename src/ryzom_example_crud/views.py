@@ -65,6 +65,39 @@ def _push_window_replace(sub, old_window, new_rows):
         send_insert(sub, tmpl, rows[pk])
 
 
+def _deliver_window_change(sub, opts):
+    """Apply a filter/pager change to one subscription, per its transport.
+
+    Returns the DDP messages the *originating* client should apply now (empty
+    for a push client, whose delta goes over the channel layer instead).
+
+    A **push** client has a live channel: deliver the row delta now over the
+    channel layer, advancing the stored window (`qs`) with it — the original
+    behaviour; nothing comes back in the HTTP response.
+
+    A **poll** client has no channel (POLLING.md). The request is itself
+    client-initiated, so we may answer it with the delta directly: record the
+    new intent (`options`), then compute the window diff against the old `qs`
+    via the same engine the poll loop uses — advancing `qs`/fingerprints and
+    returning the insert/change/remove messages. The client applies them
+    immediately (no wait for the next poll), and that next poll, now diffing the
+    advanced `qs`, correctly returns nothing.
+
+    Either way ``options`` ends with the clamped ``offset``/``per_page``/``total``
+    the caller needs for its pager chrome response.
+    """
+    if sub.client and sub.client.channel:
+        old_window = list(sub.queryset)
+        new_rows = list(sub.get_queryset(opts))      # advances + persists qs
+        _push_window_replace(sub, old_window, new_rows)
+        return []
+
+    from ryzom_django_channels.polling import subscription_delta
+
+    sub.options = dict(opts)                          # new intent; qs untouched
+    return subscription_delta(sub)                    # diff old qs vs new window
+
+
 class ProductListView(ReactiveMixin, View):
     def get(self, request):
         token = self.get_token()  # sets self.client, returns the config <meta>
@@ -130,12 +163,13 @@ class ProductFilterView(View):
     """
     def post(self, request):
         from django.db import transaction
+        from django.http import JsonResponse
 
         from ryzom_django_channels.models import Client, Subscription
 
         client = Client.objects.filter(token=request.POST.get('token', '')).last()
         if client is None:
-            return HttpResponse(status=204)
+            return JsonResponse({'messages': []})
 
         sub_id = (
             Subscription.objects
@@ -144,7 +178,7 @@ class ProductFilterView(View):
             .last()
         )
         if sub_id is None:
-            return HttpResponse(status=204)
+            return JsonResponse({'messages': []})
 
         with transaction.atomic():
             # Lock only the subscription row for the whole read-modify-write so
@@ -163,10 +197,8 @@ class ProductFilterView(View):
                 offset=0,
             )
 
-            old_window = list(sub.queryset)
-            new_rows = list(sub.get_queryset(opts))  # re-windows + persists
-            _push_window_replace(sub, old_window, new_rows)
-        return HttpResponse(status=204)
+            messages = _deliver_window_change(sub, opts)
+        return JsonResponse({'messages': messages})
 
 
 class ProductPagerView(View):
@@ -220,9 +252,7 @@ class ProductPagerView(View):
                 offset = cur_offset
             opts.update(offset=offset, per_page=per_page)
 
-            old_window = list(sub.queryset)
-            new_rows = list(sub.get_queryset(opts))  # clamps offset, re-windows
-            _push_window_replace(sub, old_window, new_rows)
+            messages = _deliver_window_change(sub, opts)
 
             # Re-read the clamped offset/total the windowing settled on.
             offset = sub.options['offset']
@@ -236,6 +266,7 @@ class ProductPagerView(View):
             'label': f'{start}-{end} / {total}',
             'no_prev': offset <= 0,
             'no_next': offset + per_page >= total,
+            'messages': messages,  # rows the originating poll client applies now
         })
 
 

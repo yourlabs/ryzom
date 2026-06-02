@@ -253,11 +253,17 @@ class ProductFilter(Component):
             body.append('token', meta.content)
             body.append('q', this.q.value)
             body.append('in_stock', in_stock)
-            await fetch('/crud/products/filter/', {
+            response = await fetch('/crud/products/filter/', {
                 method: 'POST',
                 headers: {'X-CSRFTOKEN': csrf.value},
                 body: body,
             })
+            # Poll mode answers with the row delta so the table narrows instantly
+            # (no wait for the next poll). Push mode returns an empty list — its
+            # delta arrives over the websocket. handleDDP is a no-op on [].
+            data = await response.json()
+            msgs = data.messages or []
+            msgs.forEach(window.handleDDP)
             this.inflight = False
             if this.again:
                 this.again = False
@@ -360,6 +366,10 @@ class ProductPager(Component):
                 body: body,
             })
             data = await response.json()
+            # Poll mode ships the new page's rows here so they swap instantly;
+            # push mode returns [] (rows arrive over the websocket).
+            msgs = data.messages or []
+            msgs.forEach(window.handleDDP)
             this.dataset.offset = data.offset
             this.dataset.per_page = data.per_page
             this.status.textContent = data.label

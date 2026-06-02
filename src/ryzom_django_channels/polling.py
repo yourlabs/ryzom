@@ -44,7 +44,7 @@ def _fingerprint(instance):
     return hashlib.md5('|'.join(parts).encode()).hexdigest()
 
 
-def _poll_subscription(sub):
+def subscription_delta(sub):
     '''The pending DDP messages bringing one subscription's client DOM in line.
 
     Mirrors the push diff but is order- and content-aware over an arbitrary
@@ -138,7 +138,7 @@ def poll_client(client):
             )
             if sub is None:
                 continue
-            messages.extend(_poll_subscription(sub))
+            messages.extend(subscription_delta(sub))
     return messages
 
 

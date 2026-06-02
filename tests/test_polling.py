@@ -153,6 +153,57 @@ def test_ddp_poll_endpoint_returns_messages(client):
 
 @skip_reactive
 @pytest.mark.django_db
+def test_pager_next_delivers_instantly(client):
+    """In poll mode the pager POST answers with the row delta itself, so the
+    originating client's page swaps without waiting for the next poll. The qs
+    cursor advances with it, so the following poll has nothing left to deliver.
+    """
+    from ryzom_example_crud.models import Product
+    from ryzom_django_channels.polling import poll_client
+
+    for i in range(8):  # 8 products, paginate_by=5 -> page 1 = 5, page 2 = 3
+        Product.objects.create(name=f'P{i:02d}', stock_qty=3)
+    cl, sub = _make_sub()  # poll client (channel=''), page 1 seeded
+    _baseline(cl)
+
+    resp = client.post('/crud/products/page/',
+                       {'token': cl.token, 'action': 'next', 'per_page': 5})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['offset'] == 5  # pager chrome advanced
+    kinds = _kinds(data['messages'])  # ...and the rows came back in the response
+    assert kinds.count('remove') == 5  # page-1 rows leave
+    assert kinds.count('insert') == 3  # page-2 rows enter
+
+    # qs advanced to page 2, so the next poll has nothing left to deliver.
+    sub.refresh_from_db()
+    page2 = [p.id for p in Product.objects.order_by('name', 'id')[5:8]]
+    assert list(sub.queryset) == page2
+    assert poll_client(cl) == []
+
+
+@skip_reactive
+@pytest.mark.django_db
+def test_filter_delivers_instantly(client):
+    """A filter POST in poll mode returns the narrowing delta in its response."""
+    from ryzom_example_crud.models import Product
+    from ryzom_django_channels.polling import poll_client
+
+    for n in ('Apple', 'Apricot', 'Banana', 'Cherry'):
+        Product.objects.create(name=n, stock_qty=3)
+    cl, _sub = _make_sub()
+    _baseline(cl)
+
+    resp = client.post('/crud/products/filter/',
+                       {'token': cl.token, 'q': 'Ap', 'in_stock': ''})
+    assert resp.status_code == 200
+    kinds = _kinds(resp.json()['messages'])
+    assert kinds.count('remove') == 2  # Banana, Cherry drop out; Apple/Apricot stay
+    assert poll_client(cl) == []        # delivered instantly, nothing left
+
+
+@skip_reactive
+@pytest.mark.django_db
 def test_ddp_poll_unknown_token_asks_reload(client):
     resp = client.get('/crud/products/poll/', {'token': 'nope'})
     assert resp.status_code == 200
