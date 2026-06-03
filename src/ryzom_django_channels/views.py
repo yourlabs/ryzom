@@ -82,10 +82,14 @@ class RegisterManager:
             self._replace(registration, content_class, *args, **kwargs)
 
     def send(self, channel_name, content):
-        Thread(
-            target=self._send,
-            args=[channel_name, content]
-        ).start()
+        # Send synchronously (like ddp._send_to_client for model changes).
+        # The previous Thread+async_to_sync wrapper silently failed when
+        # refresh() was called from a Celery worker (the daemon thread tore
+        # down before/while async_to_sync ran), so reactive refreshes
+        # triggered by background tasks (contest creation, tally completion)
+        # never reached the client. A direct async_to_sync(channel.send) is
+        # fast and works from both request and worker contexts.
+        self._send(channel_name, content)
 
     def _send(self, channel_name, content):
         channel = get_channel_layer()
