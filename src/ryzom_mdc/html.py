@@ -2014,7 +2014,6 @@ class Html(Html):
     scripts = Html.scripts + [
         'https://unpkg.com/material-components-web@14.0.0/dist/material-components-web.js',
         'https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-bundle.js',
-        'https://cdn.polyfill.io/v2/polyfill.min.js',
         '/static/py2js.js',
     ]
     stylesheets = Html.stylesheets + [
