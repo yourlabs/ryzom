@@ -58,3 +58,14 @@ Needs Redis running and a Celery worker, or pushes silently never arrive.
 - Track the PIDs/log files you started so **stop-demo** can clean up.
 - Do **not** start or kill the user's Postgres/Redis services yourself — only the
   runserver and Celery worker that this skill launches.
+- **Restart the Celery worker after editing component code (Mode B).** In ws-push
+  mode the row/detail updates pushed over the websocket are rendered *inside the
+  Celery worker* (`ddp_process_task`), which — unlike `runserver`'s StatReloader
+  — does **not** auto-reload. So after changing anything rendered reactively
+  (`@model_template` rows like `ProductRow`, `ReactiveComponent` detail views, or
+  helpers they call), the freshly loaded page shows the new code but live-pushed
+  rows still come from the stale worker — they revert to the old markup "after
+  use". Kill and relaunch the worker to pick up the change:
+  `pkill -9 -f 'celeryd: celery@'` then start it again as in Mode B. (The web
+  layer — views, list render, POST handlers — hot-reloads, so only the worker
+  needs the manual restart.)

@@ -19,6 +19,48 @@ from ryzom_django_channels.components import (
 from ryzom_django_channels.facets import BooleanFacet, GroupFacet, SearchFacet
 from ryzom_django_mdc.html import *
 
+from ryzom_example_crud.actions import actions_for
+
+
+# --- pluggable action dialogs (confirm / input popups) ----------------------
+
+def ActionDialog(act, dialog_cls):
+    """A hidden Material dialog for one interactive action (confirm + inputs).
+
+    Shared by the bulk toolbar and the per-row kebab menu. Rendered as plain
+    ``mdc-dialog`` markup (no ``<mdc-dialog>`` custom element), so it carries no
+    JS instance and survives the ``load`` event ryzom re-fires after every DDP
+    patch; the client shows/hides it purely by toggling ``mdc-dialog--open``.
+    Cancel closes it; Confirm collects the field inputs and POSTs to /bulk/
+    (the same generic endpoint the toolbar uses). ``dialog_cls`` namespaces the
+    dialog to its owner (``bulk-dialog`` / ``row-dialog``) so each element wires
+    only its own; ``data-action-slug`` lets a trigger find the right one."""
+    fields = [
+        MDCTextFieldOutlined(
+            Input(type=f.type, name=f.name, required=f.required),
+            label=f.label,
+        )
+        for f in act.fields
+    ]
+    body = Div(
+        P(act.confirm) if act.confirm else None,
+        *fields,
+        Div(
+            MDCButton('Cancel', tag='button', type='button', cls='action-cancel'),
+            MDCButtonRaised('Confirm', tag='button', type='button',
+                            cls='action-confirm'),
+            cls='mdc-dialog__actions',
+            style='display:flex;justify-content:flex-end;gap:1em',
+        ),
+        style='min-width:280px',
+    )
+    return Div(
+        MDCDialogContainer(MDCDialogSurface(act.label, body, actions=Span())),
+        MDCDialogScrim(),
+        cls=f'mdc-dialog {dialog_cls}',
+        data_action_slug=act.slug,
+    )
+
 
 # --- one row, the unit the server pushes -----------------------------------
 
@@ -37,12 +79,36 @@ def group_badge(obj):
     )
 
 
+def row_actions_toggle(obj):
+    """The trailing ⋮ kebab button for one row — just the trigger.
+
+    The dropdown itself is a single shared menu owned by ProductRowActions at
+    page level (reparented to <body>), so it's positioned relative to the
+    viewport and never clipped by the data table's overflow; this button only
+    carries the row's pk. Static markup, no per-row JS (rows are replaced on
+    every DDP patch); ProductRowActions wires the click by delegation."""
+    return Button(
+        MDCIcon('more_vert'),
+        cls='mdc-icon-button row-actions__toggle',
+        type='button',
+        aria_label='Actions',
+        data_product_id=str(obj.id),
+    )
+
+
 @model_template('product-row')
 class ProductRow(MDCDataTableTr):
     def __init__(self, obj):
         self.obj = obj
         low = obj.stock_qty <= 5
         super().__init__(
+            MDCDataTableTd(
+                # Plain checkbox; the value carries the pk. Selection state lives
+                # in ProductBulkBar's Set, not here — this <tr> is replaced on
+                # every DDP patch, so its `checked` is re-projected after the swap.
+                Input(type='checkbox', cls='row-select', value=str(obj.id)),
+                data_label='Select',
+            ),
             MDCDataTableTd(
                 A(obj.name, href=f'/crud/products/{obj.id}/'),
                 data_label='Name',
@@ -60,6 +126,11 @@ class ProductRow(MDCDataTableTr):
                 else Span('out', style='opacity:.5'),
                 data_label='',
                 style='text-align:right',
+            ),
+            MDCDataTableTd(
+                row_actions_toggle(obj),
+                data_label='',
+                style='width:48px;text-align:right',
             ),
             id=f'product-{obj.id}',
         )
@@ -94,11 +165,17 @@ class ProductTable(MDCDataTableResponsive):
     def __init__(self, **attrs):
         super().__init__(
             thead=MDCDataTableThead(tr=MDCDataTableHeaderTr(
+                MDCDataTableTh(
+                    # "Select all on this page" — toggles every rendered row;
+                    # ProductBulkBar wires it and keeps its indeterminate state.
+                    Input(type='checkbox', cls='select-all-page'),
+                ),
                 MDCDataTableTh('Name'),
                 MDCDataTableTh('Group'),
                 MDCDataTableTh('Price'),
                 MDCDataTableTh('Stock'),
-                MDCDataTableTh(''),
+                MDCDataTableTh(''),   # Sell column
+                MDCDataTableTh(''),   # trailing ⋮ per-row action menu column
             )),
             tbody=ProductRows(),
             style={'min-width': '100%'},
@@ -425,3 +502,396 @@ class ProductPager(Component):
         def setDisabled(self, action, disabled):
             this.querySelector(
                 'button[data-action="' + action + '"]').disabled = disabled
+
+
+class ProductBulkBar(Component):
+    """Generic selection toolbar for the live table.
+
+    The selection itself is generic; the *actions* are pluggable — each entry in
+    ``actions`` is an ``Action`` from the registry (ryzom_example_crud.actions).
+    Applying one POSTs the selected pks (or ``scope=all`` for "select all
+    matching") to ProductBulkView, which runs the registered handler; the table
+    then updates over the usual DDP push/poll. An *interactive* action (one with
+    a confirm message and/or input fields) first opens its ActionDialog — the
+    POST fires from the dialog's Confirm, carrying the field inputs.
+
+    The hard part is that rows are server-rendered and *replaced* on every DDP
+    patch, so a row checkbox's `checked` is lost on each swap. Selection state
+    therefore lives in ``this.selected`` (a Set of id strings) — the source of
+    truth — and is re-projected onto the rows by a MutationObserver after every
+    swap, with ``this.allMatching`` tracking the "all matching" scope."""
+    tag = 'product-bulk'
+
+    def __init__(self, actions=None, **attrs):
+        actions = actions or []
+        super().__init__(
+            Span('', cls='bulk-count',
+                 style='min-width:8em;display:inline-block'),
+            Label(
+                'Action ',
+                Select(
+                    Option('— choose —', value=''),
+                    *[Option(a.label, value=a.slug) for a in actions],
+                    name='bulk-action',
+                ),
+            ),
+            Button('Apply', tag='button', type='button', data_action='apply',
+                   style='margin-left:6px;cursor:pointer'),
+            Button('Select all matching', tag='button', type='button',
+                   cls='select-all-matching',
+                   style='margin-left:1em;cursor:pointer;display:none'),
+            Span('All matching selected. ', cls='all-matching-note',
+                 style='margin-left:1em;display:none'),
+            Button('Clear', tag='button', type='button', cls='clear-selection',
+                   style='cursor:pointer;display:none'),
+            # One hidden dialog per interactive bulk action (confirm + inputs).
+            *[ActionDialog(a, 'bulk-dialog') for a in actions if a.interactive],
+            style='display:flex;align-items:center;gap:6px;margin:1em 0',
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            # connectedCallback can fire before children are parsed; defer.
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # ryzom.js re-fires 'load' after every DDP patch; guard re-wiring.
+            if this.wired:
+                return
+            this.wired = True
+            this.selected = new.Set()        # id strings; survives row swaps
+            this.allMatching = False         # "select all matching" scope
+            this.tbody = document.querySelector('.mdc-data-table__content')
+            this.selectAll = document.querySelector('.select-all-page')
+            this.actionSelect = this.querySelector('select[name="bulk-action"]')
+            this.countEl = this.querySelector('.bulk-count')
+            this.matchBtn = this.querySelector('.select-all-matching')
+            this.matchNote = this.querySelector('.all-matching-note')
+            this.clearBtn = this.querySelector('.clear-selection')
+            this.querySelector('button[data-action="apply"]').addEventListener(
+                'click', this.apply.bind(this))
+            this.matchBtn.addEventListener(
+                'click', this.selectAllMatching.bind(this))
+            this.clearBtn.addEventListener('click', this.clear.bind(this))
+            if this.tbody:
+                # Delegate row toggles (rows come and go) and re-project checked
+                # state whenever the server swaps the row set.
+                this.tbody.addEventListener('change', this.onRowChange.bind(this))
+                obs = new.MutationObserver(this.render.bind(this))
+                obs.observe(this.tbody, {'childList': True})
+            if this.selectAll:
+                this.selectAll.addEventListener(
+                    'change', this.onSelectAll.bind(this))
+            # Wire each interactive action's dialog (Cancel closes, Confirm runs).
+            for dlg in this.querySelectorAll('.bulk-dialog'):
+                dlg.querySelector('.action-cancel').addEventListener(
+                    'click', this.cancelDialog.bind(this))
+                dlg.querySelector('.action-confirm').addEventListener(
+                    'click', this.confirmDialog.bind(this))
+            this.render()
+
+        def onRowChange(self, event):
+            cb = event.target
+            if not cb.matches('.row-select'):
+                return
+            if this.allMatching:
+                # Exiting "all matching" by un/checking a row: seed the explicit
+                # Set from what is currently checked (the DOM already reflects
+                # this toggle), then fall back to explicit selection.
+                this.allMatching = False
+                this.selected.clear()
+                for row in this.tbody.querySelectorAll('.row-select'):
+                    if row.checked:
+                        this.selected.add(row.value)
+                this.render()
+                return
+            if cb.checked:
+                this.selected.add(cb.value)
+            else:
+                this.selected.delete(cb.value)
+            this.render()
+
+        def onSelectAll(self, event):
+            # Header checkbox selects/deselects every row on the current page.
+            check = this.selectAll.checked
+            this.allMatching = False
+            for cb in this.tbody.querySelectorAll('.row-select'):
+                cb.checked = check
+                if check:
+                    this.selected.add(cb.value)
+                else:
+                    this.selected.delete(cb.value)
+            this.render()
+
+        def selectAllMatching(self, event):
+            this.allMatching = True
+            this.render()
+
+        def clear(self, event):
+            this.allMatching = False
+            this.selected.clear()
+            this.render()
+
+        def render(self):
+            # Re-project selection onto the rows currently in the DOM and refresh
+            # the chrome (count, header tri-state, banner). Setting `checked`
+            # programmatically does not fire 'change', so this never re-enters.
+            if not this.tbody:
+                return
+            rows = this.tbody.querySelectorAll('.row-select')
+            n = 0
+            for cb in rows:
+                if this.allMatching:
+                    cb.checked = True
+                else:
+                    cb.checked = this.selected.has(cb.value)
+                if cb.checked:
+                    n += 1
+            if this.selectAll:
+                this.selectAll.checked = rows.length > 0 and n == rows.length
+                this.selectAll.indeterminate = n > 0 and n < rows.length
+            # Total matching rows, read off the pager indicator ("start-end / N").
+            total = rows.length
+            status = document.querySelector('.pager-status')
+            if status:
+                parts = status.textContent.split('/')
+                if parts.length > 1:
+                    total = parseInt(parts[1])
+            label = ''
+            if this.allMatching:
+                label = 'All ' + total + ' matching selected'
+            elif this.selected.size:
+                label = this.selected.size + ' selected'
+            this.countEl.textContent = label
+            # Offer "select all matching" only when the whole page is selected
+            # and more rows match beyond it.
+            page_full = rows.length > 0 and n == rows.length
+            show_match = 'none'
+            if page_full and not this.allMatching and total > rows.length:
+                show_match = 'inline'
+            this.matchBtn.style.display = show_match
+            note = 'none'
+            if this.allMatching:
+                note = 'inline'
+            this.matchNote.style.display = note
+            this.clearBtn.style.display = note
+
+        async def apply(self, event):
+            action = this.actionSelect.value
+            if not action:
+                return
+            # Need a selection before doing anything (explicit or "all matching").
+            if not this.allMatching and this.selected.size == 0:
+                return
+            # Interactive action? Open its dialog and let Confirm fire the POST.
+            dlg = this.querySelector(
+                '.bulk-dialog[data-action-slug="' + action + '"]')
+            if dlg:
+                dlg.classList.add('mdc-dialog--open')
+                first = dlg.querySelector('input[name]')
+                if first:
+                    first.focus()
+                return
+            await this.submit(action, None)
+
+        async def confirmDialog(self, event):
+            dlg = event.currentTarget.closest('.bulk-dialog')
+            # Block on empty required inputs (rename needs a name).
+            for el in dlg.querySelectorAll('input[name]'):
+                if el.required and not el.value:
+                    el.focus()
+                    return
+            dlg.classList.remove('mdc-dialog--open')
+            await this.submit(dlg.dataset.actionSlug, dlg)
+
+        def cancelDialog(self, event):
+            event.currentTarget.closest('.bulk-dialog').classList.remove(
+                'mdc-dialog--open')
+
+        async def submit(self, action, dlg):
+            meta = document.querySelector('meta[name="ryzom-config"]')
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+            body = new.FormData()
+            body.append('token', meta.content)
+            body.append('action', action)
+            if this.allMatching:
+                body.append('scope', 'all')
+            else:
+                ids = []
+                for v in this.selected:
+                    ids.push(v)
+                body.append('ids', ids.join(','))
+            # Carry the dialog's field inputs (e.g. the new name) as POST params.
+            if dlg:
+                for el in dlg.querySelectorAll(
+                        'input[name], select[name], textarea[name]'):
+                    body.append(el.name, el.value)
+            await fetch('/crud/products/bulk/', {
+                method: 'POST',
+                headers: {'X-CSRFTOKEN': csrf.value},
+                body: body,
+            })
+            # Selection is consumed; the rows update via the DDP push/poll, the
+            # same path the Sell button relies on.
+            this.selected.clear()
+            this.allMatching = False
+            this.actionSelect.value = ''
+            this.render()
+
+
+class ProductRowActions(Component):
+    """Page-level host for the per-row ⋮ kebab menus and their dialogs.
+
+    Renders one hidden ActionDialog per interactive *row* action (rename,
+    delete) and drives every per-row menu by **delegation** on the subscribed
+    tbody — opening/closing menus and running actions — so it survives the row
+    swaps each DDP patch performs without any per-row wiring (the same discipline
+    ProductBulkBar follows for selection). A non-interactive row action (restock)
+    POSTs straight to /bulk/ with the single row's pk; an interactive one stashes
+    the pk on its dialog and opens it, and Confirm POSTs with the field inputs."""
+    tag = 'product-row-actions'
+
+    def __init__(self, **attrs):
+        menu = Ul(
+            *[Li(
+                act.label,
+                cls='row-action',
+                role='menuitem',
+                data_action=act.slug,
+                style='display:block;padding:8px 16px;cursor:pointer;'
+                      'white-space:nowrap;list-style:none',
+              ) for act in actions_for('row')],
+            cls='row-actions__menu',
+            role='menu',
+            style='display:none;position:fixed;z-index:1000;margin:0;padding:4px 0;'
+                  'background:#fff;border-radius:4px;'
+                  'box-shadow:0 2px 8px rgba(0,0,0,.25);min-width:160px',
+        )
+        super().__init__(
+            menu,
+            *[ActionDialog(a, 'row-dialog')
+              for a in actions_for('row') if a.interactive],
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            # connectedCallback can fire before the tbody is parsed; defer.
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # ryzom.js re-fires 'load' after every DDP patch; guard re-wiring.
+            if this.wired:
+                return
+            this.wired = True
+            # The shared menu lives at page level; move it onto <body> so its
+            # position:fixed is measured from the viewport (not a transformed /
+            # overflow-clipping ancestor like the data table) and right-aligns
+            # under whichever row's ⋮ opened it. activeId holds that row's pk.
+            this.menu = this.querySelector('.row-actions__menu')
+            this.activeId = None
+            document.body.appendChild(this.menu)
+            this.menu.addEventListener('click', this.onMenuClick.bind(this))
+            this.tbody = document.querySelector('.mdc-data-table__content')
+            if this.tbody:
+                # Delegate: rows come and go, the listener on the tbody stays.
+                this.tbody.addEventListener('click', this.onToggleClick.bind(this))
+            # A click anywhere else dismisses the open menu.
+            document.addEventListener('click', this.onDocClick.bind(this))
+            for dlg in this.querySelectorAll('.row-dialog'):
+                dlg.querySelector('.action-cancel').addEventListener(
+                    'click', this.cancelDialog.bind(this))
+                dlg.querySelector('.action-confirm').addEventListener(
+                    'click', this.confirmDialog.bind(this))
+
+        def onToggleClick(self, event):
+            toggle = event.target.closest('.row-actions__toggle')
+            if not toggle:
+                return
+            event.preventDefault()
+            event.stopPropagation()  # don't let onDocClick immediately close it
+            # Same button re-clicked => toggle closed; a different row => move it.
+            sameOpen = (this.menu.style.display == 'block'
+                        and this.activeId == toggle.dataset.productId)
+            this.closeMenu()
+            if not sameOpen:
+                this.openMenu(toggle)
+
+        def openMenu(self, toggle):
+            this.activeId = toggle.dataset.productId
+            rect = toggle.getBoundingClientRect()
+            this.menu.style.top = rect.bottom + 'px'
+            this.menu.style.left = 'auto'
+            this.menu.style.right = (window.innerWidth - rect.right) + 'px'
+            this.menu.style.display = 'block'
+
+        def closeMenu(self):
+            this.menu.style.display = 'none'
+
+        def onMenuClick(self, event):
+            item = event.target.closest('.row-action')
+            if not item:
+                return
+            event.preventDefault()
+            this.closeMenu()
+            this.runRowAction(item.dataset.action, this.activeId)
+
+        def onDocClick(self, event):
+            this.closeMenu()
+
+        def onDocClick(self, event):
+            if not event.target.closest('.row-actions'):
+                this.closeMenus()
+
+        def runRowAction(self, slug, pid):
+            dlg = this.querySelector(
+                '.row-dialog[data-action-slug="' + slug + '"]')
+            if dlg:
+                # Stash the row's pk and clear any leftover input from last time.
+                dlg.dataset.ids = pid
+                for el in dlg.querySelectorAll('input[name], textarea[name]'):
+                    el.value = ''
+                dlg.classList.add('mdc-dialog--open')
+                first = dlg.querySelector('input[name]')
+                if first:
+                    first.focus()
+            else:
+                this.submit(slug, pid, None)
+
+        async def confirmDialog(self, event):
+            dlg = event.currentTarget.closest('.row-dialog')
+            for el in dlg.querySelectorAll('input[name]'):
+                if el.required and not el.value:
+                    el.focus()
+                    return
+            dlg.classList.remove('mdc-dialog--open')
+            await this.submit(dlg.dataset.actionSlug, dlg.dataset.ids, dlg)
+
+        def cancelDialog(self, event):
+            event.currentTarget.closest('.row-dialog').classList.remove(
+                'mdc-dialog--open')
+
+        async def submit(self, slug, ids, dlg):
+            meta = document.querySelector('meta[name="ryzom-config"]')
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+            body = new.FormData()
+            body.append('token', meta.content)
+            body.append('action', slug)
+            body.append('ids', ids)
+            if dlg:
+                for el in dlg.querySelectorAll(
+                        'input[name], select[name], textarea[name]'):
+                    body.append(el.name, el.value)
+            # The visible update arrives over the DDP push/poll, like SellButton.
+            await fetch('/crud/products/bulk/', {
+                method: 'POST',
+                headers: {'X-CSRFTOKEN': csrf.value},
+                body: body,
+            })

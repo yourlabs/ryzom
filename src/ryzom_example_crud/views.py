@@ -18,11 +18,14 @@ from ryzom_django_channels.views import ReactiveMixin, ddp_poll
 from ryzom_django_mdc.crudlfap import App
 from ryzom_django_mdc.html import *
 
+from ryzom_example_crud.actions import ACTIONS, actions_for
 from ryzom_example_crud.components import (
+    ProductBulkBar,
     ProductCreateForm,
     ProductDetail,
     ProductFilter,
     ProductPager,
+    ProductRowActions,
     ProductRows,
     ProductTable,
 )
@@ -129,7 +132,9 @@ class ProductListView(ReactiveMixin, View):
             _identity_banner(request),
             ProductCreateForm(request, style='margin:1em 0'),
             ProductFilter(),
+            ProductBulkBar(actions=actions_for('bulk')),
             ProductTable(),
+            ProductRowActions(),  # per-row ⋮ menu dialogs + delegated wiring
             ProductPager(offset=0, per_page=ProductRows.paginate_by,
                          total=Product.objects.count()),
             request=request,
@@ -294,11 +299,74 @@ class ProductPagerView(View):
         })
 
 
+class ProductBulkView(View):
+    """Run a registered action over the selected rows.
+
+    Generic endpoint for both surfaces: the bulk toolbar (ProductBulkBar) and
+    the per-row ⋮ menu (ProductRowActions) POST here; the action is whatever the
+    client picked from the registry (ryzom_example_crud.actions). Two scopes:
+
+    - explicit ``ids`` — intersected with the subscription's *visible* queryset
+      so a client can never act on rows it can't see (a per-row action sends the
+      single row's pk here);
+    - ``scope=all`` — every row matching the subscription's current filter, via
+      ``Subscription.row_queryset`` (the unsliced, filtered, visibility-scoped
+      queryset), so "select all matching" honours the live filter + GroupFacet
+      visibility with no extra query logic.
+
+    A row-only action (one without ``'bulk'`` in its scopes, e.g. rename) is
+    refused unless it targets exactly one row, so it can't be mass-applied.
+
+    Each handler mutates per object, firing the Publishable signals; the visible
+    update is the resulting DDP push/poll, not this response (like SellButton).
+    """
+    def post(self, request):
+        from django.http import JsonResponse
+
+        from ryzom_django_channels.models import Client, Subscription
+
+        action = request.POST.get('action', '')
+        act = ACTIONS.get(action)
+        if act is None:
+            return JsonResponse({'count': 0})
+
+        client = Client.objects.filter(token=request.POST.get('token', '')).last()
+        if client is None:
+            return JsonResponse({'count': 0})
+        sub = (
+            Subscription.objects
+            .filter(client=client, publication__name='products')
+            .last()
+        )
+        if sub is None:
+            return JsonResponse({'count': 0})
+
+        ids = [i for i in request.POST.get('ids', '').split(',') if i]
+        scope_all = request.POST.get('scope') == 'all'
+
+        # A row-only action (e.g. rename) must never be mass-applied: refuse
+        # "select all matching" and anything but a single row.
+        if 'bulk' not in act.scopes and (scope_all or len(ids) != 1):
+            return JsonResponse({'count': 0})
+
+        # The full filtered, visibility-scoped queryset this client can see.
+        visible = sub.row_queryset()
+        if scope_all:
+            queryset = visible
+        else:
+            queryset = visible.filter(pk__in=ids)
+
+        count = queryset.count()
+        act.fn(queryset, request)  # per-object save()/delete() -> DDP push/poll
+        return JsonResponse({'count': count})
+
+
 urlpatterns = [
     path('', ProductListView.as_view(), name='list'),
     path('create/', ProductCreateView.as_view(), name='create'),
     path('filter/', ProductFilterView.as_view(), name='filter'),
     path('page/', ProductPagerView.as_view(), name='page'),
+    path('bulk/', ProductBulkView.as_view(), name='bulk'),
     path('poll/', ddp_poll, name='poll'),  # client-pull transport (POLLING.md)
     path('<int:pk>/', ProductDetailView.as_view(), name='detail'),
     path('<int:pk>/sell/', ProductSellView.as_view(), name='sell'),
