@@ -759,13 +759,16 @@ class ProductBulkBar(Component):
             # Offer "select all matching" only when the whole page is selected
             # and more rows match beyond it.
             page_full = rows.length > 0 and n == rows.length
+            # Reveal with '' (not 'inline') so each element falls back to its own
+            # stylesheet display — the MDCButtons keep their inline-flex layout and
+            # render like the Apply button instead of a squashed inline box.
             show_match = 'none'
             if page_full and not this.allMatching and total > rows.length:
-                show_match = 'inline'
+                show_match = ''
             this.matchBtn.style.display = show_match
             note = 'none'
             if this.allMatching:
-                note = 'inline'
+                note = ''
             this.matchNote.style.display = note
             this.clearBtn.style.display = note
 
