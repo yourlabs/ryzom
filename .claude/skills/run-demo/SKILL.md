@@ -6,18 +6,66 @@ description: Launch the live Ryzom Product demo (the reactive /crud/products/ pa
 # Run the demo
 
 The demo is the reactive Product list at `http://127.0.0.1:8000/crud/products/`.
-Two transports — pick one. Always run from the repo root, always
-`python manage.py …` (settings module is wired by `manage.py`).
+Two transports — pick one. Always run from the repo root.
 
-## Prerequisite for BOTH modes: Postgres + schema + data
+**Path:** the settings module `ryzom_django_example` lives under `src/`. If the
+packages aren't installed editable, `manage.py` can't import it
+(`ModuleNotFoundError: No module named 'ryzom_django_example'`). Prefix every
+`manage.py` / `celery` command with `PYTHONPATH=src` (the examples below do). A
+quick probe: `PYTHONPATH=src python -c "import ryzom_django_example"`.
 
-Postgres is required (ArrayField). Defaults: db/user/password all `ryzom`.
+## Prerequisite for BOTH modes: Postgres (Redis too for Mode B)
 
-1. Check Postgres is reachable: `python manage.py migrate --plan` (errors if not).
-   If the DB is missing, the user must create it (suggest they run, with `!`):
-   `! sudo -u postgres createdb -O ryzom ryzom` (and a `ryzom` role if needed).
-2. Apply migrations: `python manage.py migrate`
-3. Seed identities + products (idempotent): `python manage.py seed_demo`
+Postgres is required (ArrayField); Mode B also needs Redis. Settings defaults:
+db/user/password all `ryzom` on `127.0.0.1:5432`, Redis on `127.0.0.1:6379`.
+
+### 1. Probe what's already up
+
+CLI clients (`psql`, `pg_isready`, `redis-cli`) are often **not installed** — probe
+the TCP ports instead:
+
+```
+python - <<'PY'
+import socket
+def up(h,p):
+    s=socket.socket(); s.settimeout(1)
+    try: return s.connect_ex((h,p))==0
+    finally: s.close()
+print('postgres', up('127.0.0.1',5432))
+print('redis',    up('127.0.0.1',6379))
+PY
+```
+
+### 2. If a service is down, launch it as a Docker container
+
+Don't touch the user's host-managed services. But if a port is closed, **start (or
+create) a Docker container** that matches the settings defaults. Reuse the
+canonical names `ryzom-pg` / `ryzom-redis` so a stopped container (and its data) is
+restarted rather than duplicated — `docker start` first, fall back to `docker run`:
+
+```
+# Postgres (required)
+docker start ryzom-pg 2>/dev/null || docker run -d --name ryzom-pg \
+  -e POSTGRES_USER=ryzom -e POSTGRES_PASSWORD=ryzom -e POSTGRES_DB=ryzom \
+  -p 5432:5432 postgres:16
+
+# Redis (Mode B only)
+docker start ryzom-redis 2>/dev/null || docker run -d --name ryzom-redis \
+  -p 6379:6379 redis:7
+```
+
+First check Docker is usable (`docker version`); if it isn't, ask the user to start
+their DB/Redis themselves (suggest a `! …` command — don't assume how they manage
+it). Confirm Postgres accepts connections before migrating (the image *does* ship
+`pg_isready`): `docker exec ryzom-pg pg_isready -U ryzom` → "accepting
+connections" (retry a couple of times; the container takes a second or two).
+
+### 3. Schema + data
+
+1. Apply migrations: `PYTHONPATH=src python manage.py migrate`
+   (`migrate --plan` errors out if Postgres still isn't reachable.)
+2. Seed identities + products (idempotent):
+   `PYTHONPATH=src python manage.py seed_demo`
    → users alice/bob/carol/boss, password `demo`. (See the **seed-demo** skill.)
 
 ## Mode A — polling (simplest; no Redis, no Celery worker)
@@ -25,39 +73,48 @@ Postgres is required (ArrayField). Defaults: db/user/password all `ryzom`.
 Best default when you just need to see it working.
 
 ```
-RYZOM_TRANSPORT=poll python manage.py runserver
+RYZOM_TRANSPORT=poll PYTHONPATH=src python manage.py runserver
 ```
 
-Run it with `run_in_background: true` so it keeps serving across turns; tee logs
-to a file (e.g. `/tmp/ryzom-runserver.log`) and grep that to confirm it booted.
-The client pulls deltas every `POLL_INTERVAL` ms — no server push, so no worker.
+Run it with `run_in_background: true` so it keeps serving across turns; redirect
+logs to a file (e.g. `/tmp/ryzom-runserver.log`) and grep that to confirm it
+booted. The client pulls deltas every `POLL_INTERVAL` ms — no server push, so no
+worker. (Mode A still needs the `ryzom_django_channels` models, which only load
+when `CHANNELS_ENABLE` is on — Redis being up flips that automatically; without
+Redis, force it with `CHANNELS_ENABLE=1`.)
 
 ## Mode B — websocket push (full stack; the real reactive path)
 
-Needs Redis running and a Celery worker, or pushes silently never arrive.
+Needs Redis running (see step 2) and a Celery worker, or pushes silently never
+arrive.
 
-1. Redis: settings auto-detect it on `127.0.0.1:6379`. Confirm with
-   `redis-cli ping` (expect `PONG`). If absent, ask the user to start their Redis
-   service (don't assume how it's managed).
-2. Celery worker (background): `celery -A ryzom_django_channels worker -l info`
-   → run with `run_in_background: true`, logs to `/tmp/ryzom-celery.log`.
-3. Server (background): `python manage.py runserver`
+1. Celery worker (background): `PYTHONPATH=src celery -A ryzom_django_channels worker -l info`
+   → run with `run_in_background: true`, logs to `/tmp/ryzom-celery.log`. Confirm it
+   logged `celery@<host> ready.` with no traceback.
+2. Server (background): `PYTHONPATH=src python manage.py runserver`
    (Redis being up flips `CHANNELS_ENABLE` on, so this serves over ASGI/daphne.)
-   To force push even if detection is odd: `RYZOM_TRANSPORT=ws python manage.py runserver`.
+   To force push even if detection is odd: prepend `RYZOM_TRANSPORT=ws`.
 
 ## Verify
 
-- `curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/crud/products/`
+- Wait for boot without a foreground `sleep` (it's blocked in this harness) — let
+  `curl` retry instead:
+  `curl -sS --retry 10 --retry-connrefused --retry-delay 1 -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8000/crud/products/`
   → `200`.
+- Transport sanity: the page meta carries `transport="ws"` (Mode B) or
+  `transport="poll"` (Mode A) — `curl … | grep -o 'transport="[a-z]*"'`.
 - To see reactivity: open the page in two tabs, add/sell a product in one, watch
   the other update with no reload. Log in at `/login/` as a seeded user to see
   per-user (group) visibility.
 
 ## Notes
 
-- Track the PIDs/log files you started so **stop-demo** can clean up.
-- Do **not** start or kill the user's Postgres/Redis services yourself — only the
-  runserver and Celery worker that this skill launches.
+- Track the PIDs/log files you started so **stop-demo** can clean up. Any
+  `ryzom-pg` / `ryzom-redis` containers this skill **started** can be paused with
+  `docker stop …`; do **not** `docker rm` them or delete their volumes — that
+  destroys the user's demo data.
+- Do **not** start or kill the user's host-managed Postgres/Redis services — the
+  container path above is the only infra this skill brings up itself.
 - **Restart the Celery worker after editing component code (Mode B).** In ws-push
   mode the row/detail updates pushed over the websocket are rendered *inside the
   Celery worker* (`ddp_process_task`), which — unlike `runserver`'s StatReloader
