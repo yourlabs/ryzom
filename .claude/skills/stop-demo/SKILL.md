@@ -18,13 +18,24 @@ List background tasks and stop the runserver/celery ones.
 
 ```
 pkill -f "manage.py runserver"
-pkill -f "celery -A ryzom_django_channels"
+pkill -9 -f 'ryzom_django_channels [w]orker'
 ```
 
-Then confirm they're gone:
+**Important — match the real celery process title.** Once started, the worker
+renames itself via setproctitle to `celeryd: celery@<host> … (-A
+ryzom_django_channels worker -l info)`, so a pattern like
+`celery -A ryzom_django_channels` matches **nothing** and silently leaks the
+worker (this is how multiple stale workers pile up — and why pushed rows then
+render with a random mix of old/new markup). The pattern above matches the args
+that survive the rename; the `[w]` bracket trick keeps the `pkill` command from
+matching its own command line.
+
+Then confirm **none** remain (there may have been several):
 
 ```
-pgrep -af "manage.py runserver|celery -A ryzom_django_channels" || echo "demo stopped"
+pgrep -af "manage.py runserver" || echo "runserver stopped"
+ps -eo pid,cmd | grep -i 'ryzom_django_channels' | grep -iv 'grep\|/bin/bash -c' \
+  || echo "all workers stopped"
 ```
 
 If port 8000 is still held, find the holder before force-killing:

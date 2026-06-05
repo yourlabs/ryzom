@@ -122,7 +122,12 @@ arrive.
   (`@model_template` rows like `ProductRow`, `ReactiveComponent` detail views, or
   helpers they call), the freshly loaded page shows the new code but live-pushed
   rows still come from the stale worker — they revert to the old markup "after
-  use". Kill and relaunch the worker to pick up the change:
-  `pkill -9 -f 'celeryd: celery@'` then start it again as in Mode B. (The web
-  layer — views, list render, POST handlers — hot-reloads, so only the worker
-  needs the manual restart.)
+  use", and if several stale workers are alive they alternate old/new markup at
+  random. Kill **all** workers and relaunch one to pick up the change:
+  `pkill -9 -f 'ryzom_django_channels [w]orker'` then start it again as in Mode B.
+  Match the renamed process title (`celeryd: celery@… (-A ryzom_django_channels
+  worker)`), not `celery -A …` (which matches nothing and leaks the worker); the
+  `[w]` bracket keeps `pkill` from matching its own command line. Verify exactly
+  one remains: `ps -eo pid,cmd | grep '[r]yzom_django_channels'`. (The web layer
+  — views, list render, POST handlers — hot-reloads, so only the worker needs the
+  manual restart.)
