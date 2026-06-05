@@ -48,8 +48,9 @@ INSTALLED_APPS = [
     # Add py2js static file
     'py2js',
 
-    # Transform select HTML tags into autocompletes webcomponents
-    'autocomplete_light',
+    # Transform select HTML tags into autocompletes webcomponents.
+    # The autocomplete-light web component (css/js) is vendored into this app's
+    # static dir, so no separate 'autocomplete_light' package/app is needed.
     'ryzom_django_autocomplete',
 
     # Enable form rendering with MDC components
