@@ -12,6 +12,8 @@ Code comments throughout `src/` refer to these by bare filename (e.g.
 - [SYNTHESIS.md](SYNTHESIS.md) — what Ryzom is, the package map, and overall status.
 - [CRUDLFAP_COMPONENTS.md](CRUDLFAP_COMPONENTS.md) — component build list for the
   CRUDLFAP-on-Ryzom rewrite.
+- [MATERIAL_COMPLIANCE.md](MATERIAL_COMPLIANCE.md) — how far the `ryzom_example_crud`
+  Product demo is from Material Design norms, and the steps to close the gap.
 
 ## Reactive live-list (the `ryzom_example_crud` demo + `ryzom_django_channels`)
 
