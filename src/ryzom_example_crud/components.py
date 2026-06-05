@@ -102,6 +102,7 @@ def row_actions_toggle(obj):
         cls='mdc-icon-button row-actions__toggle',
         type='button',
         aria_label='Actions',
+        aria_haspopup='menu',
         data_product_id=str(obj.id),
     )
 
@@ -675,6 +676,11 @@ class ProductBulkBar(Component):
                     'click', this.cancelDialog.bind(this))
                 dlg.querySelector('.action-confirm').addEventListener(
                     'click', this.confirmDialog.bind(this))
+                # Scrim click dismisses, like a real MD dialog.
+                dlg.querySelector('.mdc-dialog__scrim').addEventListener(
+                    'click', this.cancelDialog.bind(this))
+            # Escape closes whichever dialog is open.
+            document.addEventListener('keydown', this.onDialogKey.bind(this))
             this.render()
 
         def onRowChange(self, event):
@@ -795,6 +801,12 @@ class ProductBulkBar(Component):
             event.currentTarget.closest('.bulk-dialog').classList.remove(
                 'mdc-dialog--open')
 
+        def onDialogKey(self, event):
+            if event.key != 'Escape':
+                return
+            for dlg in this.querySelectorAll('.bulk-dialog.mdc-dialog--open'):
+                dlg.classList.remove('mdc-dialog--open')
+
         async def submit(self, action, dlg):
             meta = document.querySelector('meta[name="ryzom-config"]')
             csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
@@ -849,12 +861,24 @@ class ProductRowActions(Component):
     the pk on its dialog and opens it, and Confirm POSTs with the field inputs."""
     tag = 'product-row-actions'
 
+    # MD menu polish: subtle hover/focus state (ripple-ish) + typography. The
+    # elevation/rounding live inline on the menu (JS also toggles its display).
+    sass = '''
+.row-actions__menu .row-action
+    font-size: 14px
+    transition: background .15s
+.row-actions__menu .row-action:hover, .row-actions__menu .row-action:focus
+    background: rgba(0, 0, 0, .06)
+    outline: none
+'''
+
     def __init__(self, **attrs):
         menu = Ul(
             *[Li(
                 act.label,
                 cls='row-action',
                 role='menuitem',
+                tabindex='-1',
                 data_action=act.slug,
                 style='display:block;padding:8px 16px;cursor:pointer;'
                       'white-space:nowrap;list-style:none',
@@ -862,8 +886,10 @@ class ProductRowActions(Component):
             cls='row-actions__menu',
             role='menu',
             style='display:none;position:fixed;z-index:1000;margin:0;padding:4px 0;'
-                  'background:#fff;border-radius:4px;'
-                  'box-shadow:0 2px 8px rgba(0,0,0,.25);min-width:160px',
+                  'background:#fff;border-radius:4px;min-width:160px;'
+                  # MD elevation-8 (the standard menu shadow).
+                  'box-shadow:0 3px 5px -1px rgba(0,0,0,.2),'
+                  '0 6px 10px 0 rgba(0,0,0,.14),0 1px 18px 0 rgba(0,0,0,.12)',
         )
         super().__init__(
             menu,
@@ -893,6 +919,7 @@ class ProductRowActions(Component):
             this.activeId = None
             document.body.appendChild(this.menu)
             this.menu.addEventListener('click', this.onMenuClick.bind(this))
+            this.menu.addEventListener('keydown', this.onMenuKey.bind(this))
             this.tbody = document.querySelector('.mdc-data-table__content')
             if this.tbody:
                 # Delegate: rows come and go, the listener on the tbody stays.
@@ -904,6 +931,11 @@ class ProductRowActions(Component):
                     'click', this.cancelDialog.bind(this))
                 dlg.querySelector('.action-confirm').addEventListener(
                     'click', this.confirmDialog.bind(this))
+                # Scrim click dismisses, like a real MD dialog.
+                dlg.querySelector('.mdc-dialog__scrim').addEventListener(
+                    'click', this.cancelDialog.bind(this))
+            # Escape closes whichever row dialog is open.
+            document.addEventListener('keydown', this.onDialogKey.bind(this))
 
         def onToggleClick(self, event):
             toggle = event.target.closest('.row-actions__toggle')
@@ -920,11 +952,16 @@ class ProductRowActions(Component):
 
         def openMenu(self, toggle):
             this.activeId = toggle.dataset.productId
+            this.activeToggle = toggle
             rect = toggle.getBoundingClientRect()
             this.menu.style.top = rect.bottom + 'px'
             this.menu.style.left = 'auto'
             this.menu.style.right = (window.innerWidth - rect.right) + 'px'
             this.menu.style.display = 'block'
+            # Move focus into the menu so it's keyboard-navigable (MD behaviour).
+            first = this.menu.querySelector('.row-action')
+            if first:
+                first.focus()
 
         def closeMenu(self):
             this.menu.style.display = 'none'
@@ -937,12 +974,54 @@ class ProductRowActions(Component):
             this.closeMenu()
             this.runRowAction(item.dataset.action, this.activeId)
 
-        def onDocClick(self, event):
-            this.closeMenu()
+        def onMenuKey(self, event):
+            # Arrow/Home/End move focus, Enter/Space activate, Escape closes and
+            # returns focus to the ⋮ toggle (standard MD menu keyboard model).
+            items = this.menu.querySelectorAll('.row-action')
+            if not items.length:
+                return
+            idx = -1
+            i = 0
+            while i < items.length:
+                if items[i] == document.activeElement:
+                    idx = i
+                i = i + 1
+            key = event.key
+            if key == 'Escape':
+                event.preventDefault()
+                this.closeMenu()
+                if this.activeToggle:
+                    this.activeToggle.focus()
+            elif key == 'ArrowDown':
+                event.preventDefault()
+                nxt = idx + 1
+                if nxt >= items.length:
+                    nxt = 0
+                items[nxt].focus()
+            elif key == 'ArrowUp':
+                event.preventDefault()
+                prv = idx - 1
+                if prv < 0:
+                    prv = items.length - 1
+                items[prv].focus()
+            elif key == 'Home':
+                event.preventDefault()
+                items[0].focus()
+            elif key == 'End':
+                event.preventDefault()
+                items[items.length - 1].focus()
+            elif key == 'Enter' or key == ' ':
+                event.preventDefault()
+                if idx >= 0:
+                    this.closeMenu()
+                    this.runRowAction(items[idx].dataset.action, this.activeId)
 
         def onDocClick(self, event):
-            if not event.target.closest('.row-actions'):
-                this.closeMenus()
+            # The menu lives on <body>, so an outside click is never inside the
+            # menu; close on any click that isn't on the menu itself (menu-item
+            # clicks are handled + closed by onMenuClick before this fires).
+            if not event.target.closest('.row-actions__menu'):
+                this.closeMenu()
 
         def runRowAction(self, slug, pid):
             dlg = this.querySelector(
@@ -971,6 +1050,12 @@ class ProductRowActions(Component):
         def cancelDialog(self, event):
             event.currentTarget.closest('.row-dialog').classList.remove(
                 'mdc-dialog--open')
+
+        def onDialogKey(self, event):
+            if event.key != 'Escape':
+                return
+            for dlg in this.querySelectorAll('.row-dialog.mdc-dialog--open'):
+                dlg.classList.remove('mdc-dialog--open')
 
         async def submit(self, slug, ids, dlg):
             meta = document.querySelector('meta[name="ryzom-config"]')
