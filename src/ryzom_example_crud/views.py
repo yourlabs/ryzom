@@ -28,6 +28,7 @@ from ryzom_example_crud.components import (
     ProductRowActions,
     ProductRows,
     ProductTable,
+    ProductToast,
 )
 from ryzom_example_crud.models import Product
 
@@ -137,6 +138,7 @@ class ProductListView(ReactiveMixin, View):
             ProductRowActions(),  # per-row ⋮ menu dialogs + delegated wiring
             ProductPager(offset=0, per_page=ProductRows.paginate_by,
                          total=Product.objects.count()),
+            ProductToast(),  # window.ryzomToast(msg) host for action feedback
             request=request,
             title='Products (live)',
             nav_items=_NAV,

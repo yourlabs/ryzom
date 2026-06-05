@@ -221,6 +221,53 @@ class ProductDetail(ReactiveComponentMixin, Div):
 
 # --- fetch-based mutate widgets (no page reload) ----------------------------
 
+class ProductToast(Component):
+    """Page-level MDC snackbar host.
+
+    The mutate widgets (sell / create / bulk / row actions) fetch and rely on the
+    DDP push for the visible table update, which leaves the action itself without
+    any acknowledgement. This host exposes ``window.ryzomToast(msg)`` so each
+    handler can pop a one-line confirmation. A single reused MDC snackbar instance
+    (not the stock ``MDCSnackBar``, which auto-opens on load) is driven on demand.
+    """
+    tag = 'product-toast'
+
+    def __init__(self, **attrs):
+        super().__init__(
+            Div(
+                Div(
+                    Div('', cls='mdc-snackbar__label', role='status',
+                        aria_live='polite'),
+                    cls='mdc-snackbar__surface',
+                ),
+                cls='mdc-snackbar',
+            ),
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # ryzom.js re-fires 'load' after every DDP patch; build the instance
+            # once and keep window.ryzomToast pointing at it.
+            if this.wired:
+                return
+            this.wired = True
+            this.bar = new.mdc.snackbar.MDCSnackbar(
+                this.querySelector('.mdc-snackbar'))
+            this.label = this.querySelector('.mdc-snackbar__label')
+            window.ryzomToast = this.show.bind(this)
+
+        def show(self, msg):
+            this.label.textContent = msg
+            this.bar.open()
+
+
 class SellButton(Component):
     tag = 'sell-button'
 
@@ -243,6 +290,8 @@ class SellButton(Component):
                 method: 'POST',
                 headers: {'X-CSRFTOKEN': csrf.value},
             })
+            if window.ryzomToast:
+                window.ryzomToast('Sold 1')
 
 
 class ProductCreateForm(Component):
@@ -303,6 +352,8 @@ class ProductCreateForm(Component):
                 body: new.FormData(form),
             })
             form.reset()
+            if window.ryzomToast:
+                window.ryzomToast('Product added')
 
 
 class ProductFilter(Component):
@@ -560,10 +611,10 @@ class ProductBulkBar(Component):
             Span('', cls='bulk-count',
                  style='min-width:8em;display:inline-block'),
             MDCSelectOutlined(
-                name='bulk-action', label='Action', value=[''],
-                optgroups=_opts([('', '— choose —'),
+                name='bulk-action', label='Action', value=['__choose__'],
+                optgroups=_opts([('__choose__', '— choose —'),
                                  *[(a.slug, a.label) for a in actions]],
-                                selected=''),
+                                selected='__choose__'),
             ),
             MDCButton('Apply', tag='button', type='button', data_action='apply'),
             MDCButton('Select all matching', tag='button', type='button',
@@ -711,7 +762,7 @@ class ProductBulkBar(Component):
 
         async def apply(self, event):
             action = this.actionSelect.value
-            if not action:
+            if not action or action == '__choose__':
                 return
             # Need a selection before doing anything (explicit or "all matching").
             if not this.allMatching and this.selected.size == 0:
@@ -759,18 +810,27 @@ class ProductBulkBar(Component):
                 for el in dlg.querySelectorAll(
                         'input[name], select[name], textarea[name]'):
                     body.append(el.name, el.value)
-            await fetch('/crud/products/bulk/', {
+            response = await fetch('/crud/products/bulk/', {
                 method: 'POST',
                 headers: {'X-CSRFTOKEN': csrf.value},
                 body: body,
             })
+            data = await response.json()
+            if window.ryzomToast:
+                window.ryzomToast(data.count + ' updated')
             # Selection is consumed; the rows update via the DDP push/poll, the
             # same path the Sell button relies on.
             this.selected.clear()
             this.allMatching = False
-            # note: resets the hidden input value; the visible MDC label may
-            # stay stale (we don't reach into the MDC instance to reset it).
-            this.actionSelect.value = ''
+            # Reset the select to "— choose —": drive the MDC instance so the
+            # visible anchor text resets too (its change handler re-syncs the
+            # hidden input). mdc.autoInit attaches the instance to the custom
+            # element under its data-mdc-auto-init name.
+            sel = this.querySelector('mdc-select-outlined')
+            if sel and sel.MDCSelect:
+                sel.MDCSelect.selectedIndex = 0
+            else:
+                this.actionSelect.value = '__choose__'
             this.render()
 
 
@@ -926,3 +986,5 @@ class ProductRowActions(Component):
                 headers: {'X-CSRFTOKEN': csrf.value},
                 body: body,
             })
+            if window.ryzomToast:
+                window.ryzomToast('Done')
