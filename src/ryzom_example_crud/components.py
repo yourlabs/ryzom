@@ -83,8 +83,9 @@ def group_badge(obj):
               else 'var(--mdc-theme-text-secondary-on-background, #888)')
     return MDCChip(
         name,
-        style=(f'background:{colour};color:#fff;'
-               'min-height:24px;height:24px;font-size:11px'),
+        style=(f'background:{colour};color:#fff;border-radius:12px;'
+               'padding:0 10px;height:22px;font-size:11px;'
+               'display:inline-flex;align-items:center'),
     )
 
 
@@ -263,11 +264,11 @@ class ProductCreateForm(Component):
                     label='Stock',
                 ),
                 MDCSelectOutlined(
-                    name='group', label='Group', value=[''],
-                    optgroups=_opts([('', 'public'),
+                    name='group', label='Group', value=['public'],
+                    optgroups=_opts([('public', 'public'),
                                      *[(g.id, g.name)
                                        for g in Group.objects.all()]],
-                                    selected=''),
+                                    selected='public'),
                 ),
                 CSRFInput(request) if request is not None else None,
                 MDCButtonRaised('Add product', tag='button', type='submit'),
@@ -398,6 +399,16 @@ class ProductPager(Component):
     server-side, so the client only renders strings/booleans."""
     tag = 'product-pager'
 
+    # MDC's select-menu options carry both the new `mdc-list-item` and the
+    # deprecated classes; the GA rule wins and drops the flex centering, so the
+    # option label sits at the top of its line. Restore vertical centering for
+    # every MDC select menu on the page (global rule, declared here).
+    sass = '''
+.mdc-select__menu .mdc-deprecated-list-item
+    display: flex
+    align-items: center
+'''
+
     def __init__(self, offset=0, per_page=5, total=0, **attrs):
         start = offset + 1 if total else 0
         end = min(offset + per_page, total)
@@ -446,6 +457,14 @@ class ProductPager(Component):
             this.status = this.querySelector('.pager-status')
             this.perPage = this.querySelector('input[name="per_page"]')
             this.inflight = False
+            # Scroll anchoring (see apply): re-assert the saved position whenever
+            # the rows change within a short window after a nav, so the page
+            # doesn't jump to the top when the table collapses + refills.
+            this.pinUntil = 0
+            this.tbody = document.querySelector('.mdc-data-table__content')
+            if this.tbody:
+                obs = new.MutationObserver(this.repin.bind(this))
+                obs.observe(this.tbody, {'childList': True})
             this.querySelector('button[data-action="first"]').addEventListener(
                 'click', this.nav.bind(this))
             this.querySelector('button[data-action="prev"]').addEventListener(
@@ -472,15 +491,13 @@ class ProductPager(Component):
                 return
             this.inflight = True
             # Keep the viewport where it is across the row swap: removing the old
-            # rows collapses the table height and the browser would scroll to the
+            # rows collapses the table height and the browser would jump to the
             # top. The new rows arrive a beat later (async over the websocket, or
-            # inline in poll mode), so re-assert the saved position a few times
-            # over a short window rather than once.
+            # inline in poll mode), so open a short window during which the tbody
+            # MutationObserver (see init) re-asserts the saved position on every
+            # row change — robust to either transport's timing.
             this.pinY = window.scrollY
-            setTimeout(this.pin.bind(this), 0)
-            setTimeout(this.pin.bind(this), 80)
-            setTimeout(this.pin.bind(this), 180)
-            setTimeout(this.pin.bind(this), 320)
+            this.pinUntil = Date.now() + 1200
             meta = document.querySelector('meta[name="ryzom-config"]')
             csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
             body = new.FormData()
@@ -507,9 +524,12 @@ class ProductPager(Component):
             this.setDisabled('last', data.no_next)
             this.inflight = False
 
-        def pin(self):
-            # Re-assert the scroll position saved at click time (see apply).
-            window.scrollTo(0, this.pinY)
+        def repin(self):
+            # Re-assert the scroll position saved at nav time (see apply), but
+            # only while the post-nav window is open, so we never fight the user's
+            # own scrolling at rest.
+            if Date.now() < this.pinUntil:
+                window.scrollTo(0, this.pinY)
 
         def setDisabled(self, action, disabled):
             this.querySelector(

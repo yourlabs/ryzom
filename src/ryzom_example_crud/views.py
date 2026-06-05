@@ -164,12 +164,13 @@ class ProductCreateView(View):
     def post(self, request):
         name = (request.POST.get('name') or '').strip()
         if name:
+            group = (request.POST.get('group') or '').strip()
             Product.objects.create(
                 name=name,
                 price=request.POST.get('price') or 0,
                 stock_qty=request.POST.get('stock_qty') or 0,
-                # blank -> public; otherwise the chosen group's visibility
-                group_id=request.POST.get('group') or None,
+                # 'public' (or blank) -> no group; a numeric id -> that group
+                group_id=int(group) if group.isdigit() else None,
             )
         return HttpResponse(status=204)
 
