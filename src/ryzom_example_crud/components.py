@@ -175,6 +175,21 @@ class ProductRows(SubscribeComponentMixin, MDCDataTableTbody):
     ]
 
 
+def sortable_th(label, field):
+    """A clickable, sortable column header.
+
+    Carries the model field in ``data-sort-field`` and a ``.sort-arrow`` slot;
+    ProductSort delegates the click and sets the ▲/▼ indicator. ``addcls`` keeps
+    the MDC header-cell class (``cls`` would replace it)."""
+    return MDCDataTableTh(
+        label,
+        Span(cls='sort-arrow'),
+        addcls='sortable',
+        data_sort_field=field,
+        style='cursor:pointer;user-select:none',
+    )
+
+
 class ProductTable(MDCDataTableResponsive):
     def __init__(self, **attrs):
         super().__init__(
@@ -184,10 +199,10 @@ class ProductTable(MDCDataTableResponsive):
                     # ProductBulkBar wires it and keeps its indeterminate state.
                     MDCCheckboxInput(addcls='select-all-page'),
                 ),
-                MDCDataTableTh('Name'),
-                MDCDataTableTh('Group'),
-                MDCDataTableTh('Price'),
-                MDCDataTableTh('Stock'),
+                sortable_th('Name', 'name'),
+                sortable_th('Group', 'group_id'),
+                sortable_th('Price', 'price'),
+                sortable_th('Stock', 'stock_qty'),
                 MDCDataTableTh(''),   # Sell column
                 MDCDataTableTh(''),   # trailing ⋮ per-row action menu column
             )),
@@ -195,6 +210,96 @@ class ProductTable(MDCDataTableResponsive):
             style={'min-width': '100%'},
             **attrs,
         )
+
+
+class ProductSort(Component):
+    """Click-to-sort driver for the table headers.
+
+    Renders nothing itself; it delegates clicks on the static ``.sortable`` thead
+    cells (which live outside the swapped tbody, so wiring survives DDP patches —
+    the same trick ProductBulkBar uses for the select-all header). Clicking a new
+    column sorts ascending; re-clicking the active column toggles direction. It
+    POSTs the column + direction to ProductSortView and applies the returned row
+    delta (poll mode) — push mode returns [] and the rows arrive over the socket,
+    exactly like the filter."""
+    tag = 'product-sort'
+
+    def __init__(self, **attrs):
+        super().__init__(**attrs)
+
+    class HTMLElement:
+        def connectedCallback(self):
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # Bind exactly one document-level listener even if this element is
+            # re-created by a DDP patch — the active column + direction live in
+            # the DOM (each header's data-sort-dir + arrow), so a fresh element
+            # must NOT re-bind or reset anything (that was the toggle bug).
+            if window.ryzomSortWired:
+                return
+            window.ryzomSortWired = True
+            document.addEventListener('click', this.onClick.bind(this))
+            # Reflect the subscription's default order (ProductRows.order = name).
+            head = document.querySelector('.sortable[data-sort-field="name"]')
+            if head:
+                this.mark(head, 'asc')
+
+        def mark(self, th, direction):
+            # Clear every header, then show the active column's arrow and record
+            # its direction on the header element (the source of truth).
+            for h in document.querySelectorAll('.sortable'):
+                h.dataset.sortDir = ''
+                old = h.querySelector('.sort-arrow')
+                if old:
+                    old.textContent = ''
+            th.dataset.sortDir = direction
+            arrow = th.querySelector('.sort-arrow')
+            if arrow:
+                if direction == 'asc':
+                    arrow.textContent = ' ▲'
+                else:
+                    arrow.textContent = ' ▼'
+
+        async def onClick(self, event):
+            th = event.target.closest('.sortable')
+            if not th:
+                return
+            # Re-clicking the active (ascending) column flips to descending;
+            # any other state starts ascending.
+            if th.dataset.sortDir == 'asc':
+                direction = 'desc'
+            else:
+                direction = 'asc'
+            this.mark(th, direction)
+            await this.apply(th.dataset.sortField, direction)
+
+        async def apply(self, field, direction):
+            # One request in flight (server read-modify-writes the order). Use a
+            # window flag so it holds even across element re-creation.
+            if window.ryzomSortInflight:
+                return
+            window.ryzomSortInflight = True
+            if window.ryzomPin:
+                window.ryzomPin()           # keep the viewport from jumping
+            meta = document.querySelector('meta[name="ryzom-config"]')
+            csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
+            body = new.FormData()
+            body.append('token', meta.content)
+            body.append('col', field)
+            body.append('dir', direction)
+            response = await fetch('/crud/products/sort/', {
+                method: 'POST',
+                headers: {'X-CSRFTOKEN': csrf.value},
+                body: body,
+            })
+            data = await response.json()
+            msgs = data.messages or []
+            msgs.forEach(window.handleDDP)
+            window.ryzomSortInflight = False
 
 
 # --- auto-updating detail view (registered, refreshed on every change) ------
@@ -418,6 +523,8 @@ class ProductFilter(Component):
                 this.again = True
                 return
             this.inflight = True
+            if window.ryzomPin:
+                window.ryzomPin()           # don't jump to the top on re-filter
             meta = document.querySelector('meta[name="ryzom-config"]')
             csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
             in_stock = ''
@@ -517,9 +624,15 @@ class ProductPager(Component):
             # doesn't jump to the top when the table collapses + refills.
             this.pinUntil = 0
             this.tbody = document.querySelector('.mdc-data-table__content')
+            # The wrapping div (block-level on desktop and mobile) is where we
+            # hold the height during a swap so the table can't collapse to zero.
+            this.tableBox = document.querySelector('.mdc-data-table__table-container')
             if this.tbody:
                 obs = new.MutationObserver(this.repin.bind(this))
                 obs.observe(this.tbody, {'childList': True})
+            # Share the pin with the filter/sort drivers: any of them can open a
+            # pin window so a row swap doesn't jump the page to the top.
+            window.ryzomPin = this.pinScroll.bind(this)
             this.querySelector('button[data-action="first"]').addEventListener(
                 'click', this.nav.bind(this))
             this.querySelector('button[data-action="prev"]').addEventListener(
@@ -545,14 +658,10 @@ class ProductPager(Component):
             if this.inflight:
                 return
             this.inflight = True
-            # Keep the viewport where it is across the row swap: removing the old
-            # rows collapses the table height and the browser would jump to the
-            # top. The new rows arrive a beat later (async over the websocket, or
-            # inline in poll mode), so open a short window during which the tbody
-            # MutationObserver (see init) re-asserts the saved position on every
-            # row change — robust to either transport's timing.
-            this.pinY = window.scrollY
-            this.pinUntil = Date.now() + 1200
+            # Keep the viewport where it is across the row swap (see pinScroll):
+            # removing the old rows collapses the table height and the browser
+            # would jump to the top.
+            this.pinScroll()
             meta = document.querySelector('meta[name="ryzom-config"]')
             csrf = document.querySelector('[name="csrfmiddlewaretoken"]')
             body = new.FormData()
@@ -579,8 +688,26 @@ class ProductPager(Component):
             this.setDisabled('last', data.no_next)
             this.inflight = False
 
+        def pinScroll(self):
+            # Open a short window during which the tbody MutationObserver
+            # re-asserts the current scroll position; exposed as window.ryzomPin
+            # so the filter/sort drivers can pin across their row swaps too.
+            this.pinY = window.scrollY
+            this.pinUntil = Date.now() + 1200
+            # Freeze the table's current height for the swap so removing the old
+            # rows can't collapse it to zero before the new ones arrive (the
+            # up-then-down jitter). Released once the window closes; if the page
+            # genuinely has fewer rows it settles smoothly, once.
+            if this.tableBox:
+                this.tableBox.style.minHeight = this.tableBox.offsetHeight + 'px'
+                setTimeout(this.releaseBox.bind(this), 1200)
+
+        def releaseBox(self):
+            if this.tableBox:
+                this.tableBox.style.minHeight = ''
+
         def repin(self):
-            # Re-assert the scroll position saved at nav time (see apply), but
+            # Re-assert the scroll position saved at nav time (see pinScroll), but
             # only while the post-nav window is open, so we never fight the user's
             # own scrolling at rest.
             if Date.now() < this.pinUntil:

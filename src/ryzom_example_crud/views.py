@@ -27,6 +27,7 @@ from ryzom_example_crud.components import (
     ProductPager,
     ProductRowActions,
     ProductRows,
+    ProductSort,
     ProductTable,
     ProductToast,
 )
@@ -49,11 +50,17 @@ def _ryzom_js():
 def _push_window_replace(sub, old_window, new_rows):
     """Push the row delta between two windows over the websocket.
 
-    Shared by the filter and pager views: both do a read-modify-write of the
-    subscription's window and then need to bring the DOM in line. Removes go
+    Shared by the filter, pager and sort views: each does a read-modify-write of
+    the subscription's window and then needs to bring the DOM in line. Removes go
     first, then inserts in ascending window position so each insert(position)
     lands at the right child index. Removed rows usually still exist (they
     moved to another page / were filtered out), so we send the live instance.
+
+    Mirrors the poll path's reorder-awareness (``polling.subscription_delta``): a
+    pure *reorder* of the surviving rows (same set, new order — e.g. a sort
+    direction flip when the whole result fits one page) can't be expressed with
+    position ops, so replace the whole window. Without this a re-sort that doesn't
+    change membership would push nothing and the DOM would stay in the old order.
     """
     from ryzom_django_channels.components import model_templates
     from ryzom_django_channels.ddp import send_insert, send_remove
@@ -62,6 +69,17 @@ def _push_window_replace(sub, old_window, new_rows):
     new_window = [obj.id for obj in new_rows]
     rows = {obj.pk: obj for obj in new_rows}
     old_set, new_set = set(old_window), set(new_window)
+
+    stayed_old_order = [pk for pk in old_window if pk in new_set]
+    stayed_new_order = [pk for pk in new_window if pk in old_set]
+    if stayed_old_order != stayed_new_order:
+        # Surviving rows reordered -> full window replace (always correct).
+        for pk in old_window:
+            obj = Product.objects.filter(pk=pk).first() or Product(pk=pk)
+            send_remove(sub, tmpl, obj)
+        for pk in new_window:
+            send_insert(sub, tmpl, rows[pk])
+        return
 
     for pk in old_set - new_set:
         obj = Product.objects.filter(pk=pk).first() or Product(pk=pk)
@@ -145,6 +163,7 @@ class ProductListView(ReactiveMixin, View):
                 ProductFilter(),
                 ProductBulkBar(actions=actions_for('bulk')),
                 ProductTable(),
+                ProductSort(),  # click-to-sort driver for the table headers
                 ProductRowActions(),  # per-row ⋮ menu dialogs + delegated wiring
                 ProductPager(offset=0, per_page=ProductRows.paginate_by,
                              total=Product.objects.count()),
@@ -241,6 +260,52 @@ class ProductFilterView(View):
                 offset=0,
             )
 
+            messages = _deliver_window_change(sub, opts)
+        return JsonResponse({'messages': messages})
+
+
+class ProductSortView(View):
+    """Reorder a client's live table by a column, without a reload.
+
+    Sets the products Subscription's ``order`` option (the chosen column + an id
+    tiebreak for a total order) and resets to the first page, then delivers the
+    window delta over the same path the filter uses — pushed over the channel
+    layer, or returned inline for a poll client.
+    """
+    # Allowlist of *direct* model columns (so Subscription._order_key's getattr
+    # stays valid). Group sorts by group_id (groups same-group rows together).
+    SORT_FIELDS = {'name', 'group_id', 'price', 'stock_qty'}
+
+    def post(self, request):
+        from django.db import transaction
+        from django.http import JsonResponse
+
+        from ryzom_django_channels.models import Client, Subscription
+
+        col = request.POST.get('col', '')
+        if col not in self.SORT_FIELDS:
+            return JsonResponse({'messages': []})
+        if request.POST.get('dir') == 'desc':
+            col = '-' + col
+
+        client = Client.objects.filter(token=request.POST.get('token', '')).last()
+        if client is None:
+            return JsonResponse({'messages': []})
+        sub_id = (
+            Subscription.objects
+            .filter(client=client, publication__name='products')
+            .values_list('id', flat=True)
+            .last()
+        )
+        if sub_id is None:
+            return JsonResponse({'messages': []})
+
+        with transaction.atomic():
+            sub = Subscription.objects.select_for_update().get(pk=sub_id)
+            # Column + id tiebreak keeps a total order (windowing needs it);
+            # changing the sort changes the order, so land on page 1.
+            opts = dict(sub.options or {})
+            opts.update(order=[col, 'id'], offset=0)
             messages = _deliver_window_change(sub, opts)
         return JsonResponse({'messages': messages})
 
@@ -380,6 +445,7 @@ urlpatterns = [
     path('', ProductListView.as_view(), name='list'),
     path('create/', ProductCreateView.as_view(), name='create'),
     path('filter/', ProductFilterView.as_view(), name='filter'),
+    path('sort/', ProductSortView.as_view(), name='sort'),
     path('page/', ProductPagerView.as_view(), name='page'),
     path('bulk/', ProductBulkView.as_view(), name='bulk'),
     path('poll/', ddp_poll, name='poll'),  # client-pull transport (POLLING.md)

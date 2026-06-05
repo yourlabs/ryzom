@@ -5,6 +5,7 @@ They're not intended to be used by end-user.
 import importlib
 import secrets
 import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -124,7 +125,9 @@ class Subscription(models.Model):
         opts = opts if opts is not None else (self.options or {})
         base = self.publication.publish_function(self.client.user)
         qs = self.subscriber.get_queryset(self.client.user, base, opts)
-        order = getattr(self.subscriber, 'order', None)
+        # Per-subscription order (set live by the sort endpoint) wins over the
+        # subscriber's declared default.
+        order = opts.get('order') or getattr(self.subscriber, 'order', None)
         if order:
             qs = qs.order_by(*order)
         return qs
@@ -150,7 +153,7 @@ class Subscription(models.Model):
             self.save()
             return queryset
 
-        order = getattr(self.subscriber, 'order', ('id',))
+        order = opts.get('order') or getattr(self.subscriber, 'order', ('id',))
         per_page = max(1, int(opts.get('per_page') or paginate_by))
         total = queryset.count()
 
@@ -176,7 +179,15 @@ class Subscription(models.Model):
         '''The row's sort-key tuple as a JSON-storable list, e.g. [name, id].
 
         Compared as a list against another row's key for the boundary skip, so
-        the order fields must be JSON-serialisable and mutually comparable
-        (str/int/bool). ``('name', 'id')`` satisfies this.
+        the order fields must be JSON-serialisable and mutually comparable.
+        Decimal (e.g. a price column) isn't JSON-serialisable, so coerce it to
+        float — order-preserving for the values these keys hold.
         '''
-        return [getattr(obj, field) for field in order]
+        key = []
+        for field in order:
+            # Strip a leading '-' (descending) so getattr sees the real field.
+            value = getattr(obj, field[1:] if field.startswith('-') else field)
+            if isinstance(value, Decimal):
+                value = float(value)
+            key.append(value)
+        return key
