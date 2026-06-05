@@ -116,29 +116,41 @@ def _identity_banner(request):
         suffix = ' — staff, sees all' if user.is_staff else ''
         text = f'Logged in as {user.username} — groups: {groups}{suffix}'
         background = 'var(--mdc-theme-surface-variant, #e8f0fe)'
+        icon = 'account_circle'
     else:
         text = 'Not logged in — showing public products only.'
         background = 'var(--mdc-theme-error-container, #fdecea)'
-    return Div(text, style=(f'background:{background};padding:6px 12px;'
-                            'border-radius:6px;margin:0 0 1em;font-size:14px'))
+        icon = 'info'
+    return Div(
+        MDCIcon(icon, style='font-size:18px'),
+        Span(text),
+        style=(f'background:{background};padding:10px 14px;border-radius:8px;'
+               'margin:0 0 1em;font-size:14px;display:flex;align-items:center;'
+               'gap:8px'),
+    )
 
 
 class ProductListView(ReactiveMixin, View):
     def get(self, request):
         token = self.get_token()  # sets self.client, returns the config <meta>
         doc = App(
-            H1('Products — live', style='margin:0 0 .25em'),
-            P('Add or sell below: the table updates over a websocket, no reload. '
-              'Open this page in two tabs to see it.'),
-            _identity_banner(request),
-            ProductCreateForm(request, style='margin:1em 0'),
-            ProductFilter(),
-            ProductBulkBar(actions=actions_for('bulk')),
-            ProductTable(),
-            ProductRowActions(),  # per-row ⋮ menu dialogs + delegated wiring
-            ProductPager(offset=0, per_page=ProductRows.paginate_by,
-                         total=Product.objects.count()),
-            ProductToast(),  # window.ryzomToast(msg) host for action feedback
+            Div(
+                H1('Products — live', cls='mdc-typography--headline5',
+                   style='margin:0 0 .25em'),
+                P('Add or sell below: the table updates over a websocket, no '
+                  'reload. Open this page in two tabs to see it.',
+                  cls='mdc-typography--body2'),
+                _identity_banner(request),
+                ProductCreateForm(request, style='margin:1em 0'),
+                ProductFilter(),
+                ProductBulkBar(actions=actions_for('bulk')),
+                ProductTable(),
+                ProductRowActions(),  # per-row ⋮ menu dialogs + delegated wiring
+                ProductPager(offset=0, per_page=ProductRows.paginate_by,
+                             total=Product.objects.count()),
+                ProductToast(),  # window.ryzomToast(msg) host for action feedback
+                style='max-width:1100px;margin:0 auto',
+            ),
             request=request,
             title='Products (live)',
             nav_items=_NAV,

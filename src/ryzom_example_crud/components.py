@@ -127,8 +127,10 @@ class ProductRow(MDCDataTableTr):
             MDCDataTableTd(f'${obj.price}', data_label='Price'),
             MDCDataTableTd(
                 str(obj.stock_qty),
-                Span(' low', style=('color:var(--mdc-theme-error, #b00020);'
-                                    'font-size:11px;font-weight:600'))
+                Span('low', style=(
+                    'margin-left:6px;background:var(--mdc-theme-error, #b00020);'
+                    'color:#fff;border-radius:10px;padding:1px 8px;'
+                    'font-size:10px;font-weight:600'))
                 if low else None,
                 data_label='Stock',
             ),
@@ -202,7 +204,8 @@ class ProductDetail(ReactiveComponentMixin, Div):
         low = product.stock_qty <= 5
         super().__init__(
             MDCCard(
-                H2(product.name, style='margin:0 0 .5em'),
+                H2(product.name, cls='mdc-typography--headline6',
+                   style='margin:0 0 .5em'),
                 Div('Price: ', Strong(f'${product.price}')),
                 Div(
                     'In stock: ',
