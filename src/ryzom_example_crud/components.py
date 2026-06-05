@@ -22,6 +22,14 @@ from ryzom_django_mdc.html import *
 from ryzom_example_crud.actions import actions_for
 
 
+def _opts(pairs, selected):
+    """Build MDCSelectOutlined optgroups from (value, label) pairs."""
+    choices = [dict(index=str(i), value=str(v), label=str(text),
+                    selected=(str(v) == str(selected)))
+               for i, (v, text) in enumerate(pairs)]
+    return [(None, choices, 0)]
+
+
 # --- pluggable action dialogs (confirm / input popups) ----------------------
 
 def ActionDialog(act, dialog_cls):
@@ -254,15 +262,12 @@ class ProductCreateForm(Component):
                     Input(type='number', name='stock_qty', value='0'),
                     label='Stock',
                 ),
-                Label(
-                    'Group ',
-                    Select(
-                        Option('public', value=''),
-                        *[Option(g.name, value=str(g.id))
-                          for g in Group.objects.all()],
-                        name='group',
-                    ),
-                    style='display:flex;align-items:center;gap:4px',
+                MDCSelectOutlined(
+                    name='group', label='Group', value=[''],
+                    optgroups=_opts([('', 'public'),
+                                     *[(g.id, g.name)
+                                       for g in Group.objects.all()]],
+                                    selected=''),
                 ),
                 CSRFInput(request) if request is not None else None,
                 MDCButtonRaised('Add product', tag='button', type='submit'),
@@ -411,12 +416,11 @@ class ProductPager(Component):
             btn('‹ prev', 'prev', no_prev),
             btn('next ›', 'next', no_next),
             btn('last »', 'last', no_next),
-            Label(
-                ' Rows: ',
-                Select(
-                    *[Option(str(i), value=str(i), selected=(i == per_page))
-                      for i in (3, 5, 10, 25)],
-                    name='per_page',
+            Div(
+                MDCSelectOutlined(
+                    name='per_page', label='Rows', value=[str(per_page)],
+                    optgroups=_opts([(3, '3'), (5, '5'), (10, '10'), (25, '25')],
+                                    selected=per_page),
                 ),
                 style='margin-left:1em',
             ),
@@ -440,7 +444,7 @@ class ProductPager(Component):
                 return
             this.wired = True
             this.status = this.querySelector('.pager-status')
-            this.select = this.querySelector('select[name="per_page"]')
+            this.perPage = this.querySelector('input[name="per_page"]')
             this.inflight = False
             this.querySelector('button[data-action="first"]').addEventListener(
                 'click', this.nav.bind(this))
@@ -450,14 +454,16 @@ class ProductPager(Component):
                 'click', this.nav.bind(this))
             this.querySelector('button[data-action="last"]').addEventListener(
                 'click', this.nav.bind(this))
-            this.select.addEventListener('change', this.changePer.bind(this))
+            this.querySelector('mdc-select-outlined').addEventListener(
+                'MDCSelect:change', this.changePer.bind(this))
 
         async def nav(self, event):
-            await this.apply(event.currentTarget.dataset.action, this.select.value)
+            await this.apply(event.currentTarget.dataset.action,
+                             this.perPage.value)
 
         async def changePer(self, event):
             # Changing the page size resets to the first page (server-side).
-            await this.apply('per_page', this.select.value)
+            await this.apply('per_page', event.detail.value)
 
         async def apply(self, action, per_page):
             # One request in flight: the server does a read-modify-write of the
@@ -533,13 +539,11 @@ class ProductBulkBar(Component):
         super().__init__(
             Span('', cls='bulk-count',
                  style='min-width:8em;display:inline-block'),
-            Label(
-                'Action ',
-                Select(
-                    Option('— choose —', value=''),
-                    *[Option(a.label, value=a.slug) for a in actions],
-                    name='bulk-action',
-                ),
+            MDCSelectOutlined(
+                name='bulk-action', label='Action', value=[''],
+                optgroups=_opts([('', '— choose —'),
+                                 *[(a.slug, a.label) for a in actions]],
+                                selected=''),
             ),
             MDCButton('Apply', tag='button', type='button', data_action='apply'),
             MDCButton('Select all matching', tag='button', type='button',
@@ -572,7 +576,7 @@ class ProductBulkBar(Component):
             this.allMatching = False         # "select all matching" scope
             this.tbody = document.querySelector('.mdc-data-table__content')
             this.selectAll = document.querySelector('.select-all-page')
-            this.actionSelect = this.querySelector('select[name="bulk-action"]')
+            this.actionSelect = this.querySelector('input[name="bulk-action"]')
             this.countEl = this.querySelector('.bulk-count')
             this.matchBtn = this.querySelector('.select-all-matching')
             this.matchNote = this.querySelector('.all-matching-note')
@@ -744,6 +748,8 @@ class ProductBulkBar(Component):
             # same path the Sell button relies on.
             this.selected.clear()
             this.allMatching = False
+            # note: resets the hidden input value; the visible MDC label may
+            # stay stale (we don't reach into the MDC instance to reset it).
             this.actionSelect.value = ''
             this.render()
 
