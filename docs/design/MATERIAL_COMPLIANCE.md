@@ -13,12 +13,26 @@ mechanical — swap hand-rolled markup + inline styles for widgets we already ow
 except for two spots that deviate *on purpose* (the row menu and the dialogs) to
 survive DDP patching.
 
-## Verdict
+## Status — COMPLETE (2026-06)
 
-**~50–60% compliant.** A "tale of two CRUDs": the page **shell is genuinely
-Material**, the interactive **content inside it is mostly raw HTML with inline
-styles**. The User CRUD (generic `Router`) is far more MD-aligned than this
-demo, which predates / sidesteps the widget library.
+The original verdict was **~50–60% compliant** ("a tale of two CRUDs": Material
+shell, raw-HTML content). All tiers below have since been implemented:
+
+- **Tier A (H1–H7) + L1** — buttons → `MDCButton`, checkboxes → `MDCCheckboxInput`,
+  detail → `MDCCard`, group badge → `MDCChip`, inline hex → `--mdc-theme-*` tokens.
+- **Tier B** — the three selects → `MDCSelectOutlined` (hidden-input value +
+  `MDCSelect:change` wiring; placeholder + visual-reset cosmetics handled).
+- **M1** — `ProductToast` snackbar host (`window.ryzomToast`) on sell/create/bulk/row.
+- **L2/L3** — MD typography + centred content column; themed identity banner (icon)
+  and low-stock error chip.
+- **M2** — row ⋮ menu kept hand-rolled (DDP-swap survival) but given MD elevation,
+  hover/focus, and full keyboard nav.
+- **M3** — class-toggled dialogs gained scrim-click + Escape dismissal.
+
+Deliberate non-changes: the row menu and dialogs stay hand-rolled (no MDC JS
+instance) so they survive the re-fired `load` after each DDP patch; the toolbars
+use flex rows rather than a 12-col `MDCLayoutGrid`. The sections below are kept as
+the original analysis/record.
 
 ## Already compliant ✅
 
