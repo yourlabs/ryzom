@@ -71,11 +71,12 @@ def group_badge(obj):
     or isn't in a given user's list (GroupFacet, see LOGIN.md). Public rows are
     grey; grouped rows are coloured."""
     name = obj.group.name if obj.group_id else 'public'
-    colour = '#1565c0' if obj.group_id else '#888'
-    return Span(
+    colour = ('var(--mdc-theme-primary, #1565c0)' if obj.group_id
+              else 'var(--mdc-theme-text-secondary-on-background, #888)')
+    return MDCChip(
         name,
-        style=(f'background:{colour};color:#fff;border-radius:10px;'
-               'padding:1px 9px;font-size:11px'),
+        style=(f'background:{colour};color:#fff;'
+               'min-height:24px;height:24px;font-size:11px'),
     )
 
 
@@ -106,7 +107,7 @@ class ProductRow(MDCDataTableTr):
                 # Plain checkbox; the value carries the pk. Selection state lives
                 # in ProductBulkBar's Set, not here — this <tr> is replaced on
                 # every DDP patch, so its `checked` is re-projected after the swap.
-                Input(type='checkbox', cls='row-select', value=str(obj.id)),
+                MDCCheckboxInput(addcls='row-select', value=str(obj.id)),
                 data_label='Select',
             ),
             MDCDataTableTd(
@@ -117,7 +118,8 @@ class ProductRow(MDCDataTableTr):
             MDCDataTableTd(f'${obj.price}', data_label='Price'),
             MDCDataTableTd(
                 str(obj.stock_qty),
-                Span(' low', style='color:#c00;font-size:11px;font-weight:600')
+                Span(' low', style=('color:var(--mdc-theme-error, #b00020);'
+                                    'font-size:11px;font-weight:600'))
                 if low else None,
                 data_label='Stock',
             ),
@@ -168,7 +170,7 @@ class ProductTable(MDCDataTableResponsive):
                 MDCDataTableTh(
                     # "Select all on this page" — toggles every rendered row;
                     # ProductBulkBar wires it and keeps its indeterminate state.
-                    Input(type='checkbox', cls='select-all-page'),
+                    MDCCheckboxInput(addcls='select-all-page'),
                 ),
                 MDCDataTableTh('Name'),
                 MDCDataTableTh('Group'),
@@ -190,16 +192,21 @@ class ProductDetail(ReactiveComponentMixin, Div):
         self.register = f'product-detail-{product.pk}'
         low = product.stock_qty <= 5
         super().__init__(
-            H2(product.name, style='margin:0 0 .5em'),
-            Div('Price: ', Strong(f'${product.price}')),
-            Div(
-                'In stock: ',
-                Strong(str(product.stock_qty),
-                       style='color:#c00' if low else 'color:inherit'),
+            MDCCard(
+                H2(product.name, style='margin:0 0 .5em'),
+                Div('Price: ', Strong(f'${product.price}')),
+                Div(
+                    'In stock: ',
+                    Strong(str(product.stock_qty),
+                           style='color:var(--mdc-theme-error, #b00020)'
+                           if low else 'color:inherit'),
+                ),
+                Div('updates live ✓',
+                    style=('color:var(--mdc-theme-text-secondary-on-background,'
+                           ' #888);font-size:12px;margin-top:1em')),
+                style='padding:1.25em',
             ),
-            Div('updates live ✓', style='color:#888;font-size:12px;margin-top:1em'),
-            style=('padding:1.25em;border:1px solid #ddd;border-radius:8px;'
-                   'max-width:360px'),
+            style='max-width:360px',
         )
 
 
@@ -304,7 +311,7 @@ class ProductFilter(Component):
                 label='Search name',
             ),
             Label(
-                Input(type='checkbox', name='in_stock'),
+                MDCCheckboxInput(name='in_stock'),
                 ' in stock only',
                 style='display:flex;align-items:center;gap:4px',
             ),
@@ -394,9 +401,8 @@ class ProductPager(Component):
 
         def btn(label, action, disabled):
             kw = dict(disabled=True) if disabled else {}
-            return Button(label, tag='button', type='button',
-                          data_action=action,
-                          style='margin:0 2px;cursor:pointer', **kw)
+            return MDCButton(label, tag='button', type='button',
+                             data_action=action, **kw)
 
         super().__init__(
             Span(f'{start}-{end} / {total}', cls='pager-status',
@@ -535,15 +541,14 @@ class ProductBulkBar(Component):
                     name='bulk-action',
                 ),
             ),
-            Button('Apply', tag='button', type='button', data_action='apply',
-                   style='margin-left:6px;cursor:pointer'),
-            Button('Select all matching', tag='button', type='button',
-                   cls='select-all-matching',
-                   style='margin-left:1em;cursor:pointer;display:none'),
+            MDCButton('Apply', tag='button', type='button', data_action='apply'),
+            MDCButton('Select all matching', tag='button', type='button',
+                      cls='select-all-matching',
+                      style='display:none'),
             Span('All matching selected. ', cls='all-matching-note',
                  style='margin-left:1em;display:none'),
-            Button('Clear', tag='button', type='button', cls='clear-selection',
-                   style='cursor:pointer;display:none'),
+            MDCButton('Clear', tag='button', type='button',
+                      cls='clear-selection', style='display:none'),
             # One hidden dialog per interactive bulk action (confirm + inputs).
             *[ActionDialog(a, 'bulk-dialog') for a in actions if a.interactive],
             style='display:flex;align-items:center;gap:6px;margin:1em 0',

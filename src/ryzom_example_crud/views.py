@@ -114,10 +114,10 @@ def _identity_banner(request):
         groups = ', '.join(g.name for g in user.groups.all()) or 'none'
         suffix = ' — staff, sees all' if user.is_staff else ''
         text = f'Logged in as {user.username} — groups: {groups}{suffix}'
-        background = '#e8f0fe'
+        background = 'var(--mdc-theme-surface-variant, #e8f0fe)'
     else:
         text = 'Not logged in — showing public products only.'
-        background = '#fdecea'
+        background = 'var(--mdc-theme-error-container, #fdecea)'
     return Div(text, style=(f'background:{background};padding:6px 12px;'
                             'border-radius:6px;margin:0 0 1em;font-size:14px'))
 
