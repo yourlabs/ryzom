@@ -576,7 +576,10 @@ def test_send_insert_poll(client_poll):
     mock_sub = MagicMock()
     mock_sub.client = client_poll
     mock_sub.subscriber_id = 'parent-1'
-    mock_sub.queryset = [42]
+    # qs holds the (string) pks in display order; the real signal flow fills it
+    # via get_queryset() before send_*. MagicMock bypasses the queryset setter,
+    # so set qs directly (see _position_map in ddp.py).
+    mock_sub.qs = ['42']
 
     mock_instance = MagicMock()
     mock_instance.pk = 42
@@ -600,7 +603,7 @@ def test_send_change_poll(client_poll):
     mock_sub = MagicMock()
     mock_sub.client = client_poll
     mock_sub.subscriber_id = 'parent-1'
-    mock_sub.queryset = [42]
+    mock_sub.qs = ['42']
 
     mock_instance = MagicMock()
     mock_instance.pk = 42
@@ -721,7 +724,7 @@ def test_end_to_end_insert_then_poll(client_poll):
     mock_sub = MagicMock()
     mock_sub.client = client_poll
     mock_sub.subscriber_id = 'parent-e2e'
-    mock_sub.queryset = [1]
+    mock_sub.qs = ['1']
 
     mock_instance = MagicMock()
     mock_instance.pk = 1
@@ -755,7 +758,7 @@ def test_end_to_end_change_then_poll(client_poll):
     mock_sub = MagicMock()
     mock_sub.client = client_poll
     mock_sub.subscriber_id = 'parent-e2e'
-    mock_sub.queryset = [2]
+    mock_sub.qs = ['2']
 
     mock_instance = MagicMock()
     mock_instance.pk = 2

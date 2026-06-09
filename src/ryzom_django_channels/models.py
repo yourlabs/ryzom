@@ -6,6 +6,7 @@ import contextlib
 import importlib
 import secrets
 import uuid
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -43,6 +44,35 @@ class Client(models.Model):
                 null=True
            )
     created = models.DateTimeField(default=timezone.now)
+    # Set when a ws client disconnects; cleared on reconnect. The grace-period
+    # reaper keys off this so a transient disconnect keeps the client (and its
+    # Subscriptions/Registrations) alive for a same-token reconnect.
+    detached_at = models.DateTimeField(null=True, blank=True)
+    # Set when a push was skipped because the client was detached; consumed on
+    # reconnect to decide between a seamless resume ('Connected') and a single
+    # reload ('Reload') to rebuild a DOM that drifted while detached.
+    needs_resync = models.BooleanField(default=False)
+
+    @classmethod
+    def reap_stale(cls):
+        '''
+        Delete clients that are genuinely gone:
+
+        - ws clients detached longer than RYZOM_CLIENT_GRACE_SECONDS (their
+          Subscriptions/Registrations cascade-delete with them), and
+        - never-attached zombies left by page loads that opened no socket.
+
+        Runs opportunistically from the consumer's disconnect(); also exposed
+        as the `reap_ryzom_clients` management command so quiet systems (few ws
+        disconnects) can schedule it via cron/celery-beat.
+        '''
+        grace = timezone.now() - timedelta(
+            seconds=getattr(settings, 'RYZOM_CLIENT_GRACE_SECONDS', 900))
+        cls.objects.filter(transport='ws', detached_at__lt=grace).delete()
+        cls.objects.filter(
+            transport='ws', channel='', detached_at__isnull=True,
+            created__lt=timezone.now() - timedelta(minutes=2),
+        ).delete()
 
 
 class Registration(models.Model):

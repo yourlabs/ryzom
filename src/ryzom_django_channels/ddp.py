@@ -16,6 +16,26 @@ def _client_is_available(client):
     return client.channel != ''
 
 
+def _mark_needs_resync(client):
+    '''
+    Flag a detached ws client so its next reconnect triggers a single reload.
+
+    Called wherever a push is dropped because the channel is empty: while
+    detached the server's view of the client (Subscription.qs / registrations)
+    keeps advancing but nothing reaches the DOM, so it drifts. Setting
+    needs_resync lets connect() send 'Reload' once on reconnect to rebuild it.
+
+    A no-op for poll clients (their messages wait in the Redis queue) and once
+    the flag is already set. Uses a conditional UPDATE so it is safe to call on
+    a stale in-memory client (the signal path reloads sub.client per task).
+    '''
+    if client is None or client.transport == 'poll':
+        return
+    from ryzom_django_channels.models import Client
+    Client.objects.filter(
+        pk=client.pk, needs_resync=False).update(needs_resync=True)
+
+
 def _translate_ddp(handle_ddp_params):
     '''
     Translate handle.ddp params into the DDP format the JS client expects.
@@ -98,6 +118,7 @@ def send_insert(sub, tmpl, instance):
     :param int id: The id of the model to insert
     '''
     if not _client_is_available(sub.client):
+        _mark_needs_resync(sub.client)
         return
 
     tmpl_instance = tmpl(instance)
@@ -131,6 +152,7 @@ def send_change(sub, tmpl, instance):
     :param int id: The id of the model to change
     '''
     if not _client_is_available(sub.client):
+        _mark_needs_resync(sub.client)
         return
 
     tmpl_instance = tmpl(instance)
@@ -165,6 +187,7 @@ def send_remove(sub, tmpl, instance):
     :param int id: The id of the model to remove
     '''
     if not _client_is_available(sub.client):
+        _mark_needs_resync(sub.client)
         return
 
     tmpl_instance = tmpl(instance)

@@ -280,6 +280,20 @@
   var activeTransport = null;
   // Track if we already fell back to prevent WS onclose from retrying
   var fellBackToPoll = false;
+  // WS opened successfully at least once this session. Once true we KNOW the
+  // network allows WebSockets, so any later failure is a transient outage:
+  // we keep retrying WS forever and never degrade to polling. Polling is thus
+  // reserved for clients whose network actually blocks WebSockets.
+  var wsEverConnected = false;
+  // Consecutive failed connection attempts before the first success. We retry
+  // a few times before concluding WS is blocked, so a transient first-attempt
+  // hiccup doesn't strand the client on polling.
+  var wsInitialFailures = 0;
+  var WS_MAX_INITIAL_FAILURES = 3;
+  // Per-attempt open timeout (ms) and delay between (re)connect attempts.
+  var WS_CONNECT_TIMEOUT = 8000;
+  var WS_RETRY_DELAY = 1000;
+  var pingInterval = null;
   // Polling state
   var pollTimer = null;
   var pollInterval = 500;
@@ -315,7 +329,7 @@
     }
   };
 
-  ws_connect = function(reconnecting) {
+  ws_connect = function() {
     var config = getRyzomConfig();
     if (!config) return;
 
@@ -331,31 +345,59 @@
     activeTransport = 'ws';
 
     var wsConnected = false;
+    var settled = false; // handle this attempt's open/failure exactly once
 
-    // 5s connection timeout: fall back to poll if WS doesn't connect
+    // A connection that fails to OPEN within the timeout is a failed attempt
+    // (slow or silently-blocked handshake). An already-open socket that later
+    // drops is handled by onclose, not here.
     var connectTimeout = setTimeout(function() {
-      if (!wsConnected) {
-        ws.onclose = function() {}; // prevent retry
-        ws.onerror = function() {};
-        ws.close();
-        notify_transport_switch(config);
-        poll_connect();
-      }
-    }, 5000);
+      if (!wsConnected) onAttemptFail();
+    }, WS_CONNECT_TIMEOUT);
 
-    if (reconnecting) {
-      ws.onopen = function() {
-        wsConnected = true;
-        clearTimeout(connectTimeout);
-        window.location.reload(true);
-      };
-    } else {
-      ws.onopen = function(e) {
-        wsConnected = true;
-        clearTimeout(connectTimeout);
-        setInterval(ws_ping, 5000);
+    // Decide what to do after a connection attempt fails to open.
+    function onAttemptFail() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(connectTimeout);
+      try {
+        ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+        ws.close();
+      } catch (e) {}
+
+      if (wsEverConnected || config.transport === 'ws') {
+        // WS has worked before (or is forced): the network allows it, so this
+        // is a transient outage. Keep retrying WS; never degrade to polling.
+        setTimeout(ws_connect, WS_RETRY_DELAY);
+        return;
       }
+
+      // Never connected yet: retry a few times before giving up on WS.
+      wsInitialFailures += 1;
+      if (wsInitialFailures < WS_MAX_INITIAL_FAILURES) {
+        setTimeout(ws_connect, WS_RETRY_DELAY);
+        return;
+      }
+
+      // WS could not be established after several attempts -> the network
+      // blocks WebSockets. This is the ONLY path to polling.
+      notify_transport_switch(config);
+      poll_connect();
     }
+
+    ws.onopen = function(e) {
+      // Ignore a late open that races a timeout/error already handled by
+      // onAttemptFail(): otherwise a failed attempt would be mistaken for a
+      // success and a truly-blocked client would never fall back to poll.
+      if (settled) return;
+      wsConnected = true;
+      wsEverConnected = true;
+      wsInitialFailures = 0;
+      settled = true;
+      clearTimeout(connectTimeout);
+      // Reset any ping loop from a prior connection before starting a new one.
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = setInterval(ws_ping, 5000);
+    };
 
     ws.onmessage = function(e) {
       var data = JSON.parse(e.data);
@@ -376,20 +418,21 @@
     };
 
     ws.onerror = function(e) {
-      if (!wsConnected && config.transport !== 'ws') {
-        // WS failed before connecting and we're in auto mode: fall back
-        clearTimeout(connectTimeout);
-        ws.onclose = function() {}; // prevent retry
-        notify_transport_switch(config);
-        poll_connect();
-      }
+      // Only a pre-open error is a failed attempt; a post-open error is
+      // followed by onclose, which drives reconnection.
+      if (!wsConnected) onAttemptFail();
     };
 
     ws.onclose = function(e) {
       if (fellBackToPoll) return;
-      setTimeout(function() {
-        ws_connect();
-      }, 1000);
+      if (wsConnected) {
+        // An established connection dropped (blip / server restart): reconnect
+        // over WS. The server replies 'Connected' (seamless) or 'Reload'.
+        setTimeout(ws_connect, WS_RETRY_DELAY);
+      } else {
+        // Closed before opening (e.g. handshake refused): a failed attempt.
+        onAttemptFail();
+      }
     };
 
     ws.callbacks = [];

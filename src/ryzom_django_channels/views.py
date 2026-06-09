@@ -73,6 +73,10 @@ class RegisterManager:
             if channel_name:
                 self.send(channel_name, content)
             else:
+                # Client detached: best-effort wait for a quick reconnect, but
+                # also flag a resync so a longer gap reloads on reconnect.
+                from ryzom_django_channels.ddp import _mark_needs_resync
+                _mark_needs_resync(registration.client)
                 self.defer(registration.client, content)
 
     def refresh(self, *args, **kwargs):
