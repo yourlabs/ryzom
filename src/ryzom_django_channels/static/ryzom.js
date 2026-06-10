@@ -113,13 +113,33 @@
     return elem;
   };
 
-  handleDDP = function(data) {
+  applyDDP = function(data) {
     switch (data.type) {
       case 'insert': constructDOM(data.params); break;
       case 'remove': removeDOM(data.params); break;
       case 'change': changeDOM(data.params); break;
       default: break;
     };
+  };
+
+  // A reactive update must never mutate the page while the user has a modal
+  // dialog open: the server render is the *closed* dialog, so applying it would
+  // close the modal and wipe whatever the user is typing inside it (e.g. a key
+  // holder entering their key passphrase). Every DDP handler also re-fires a
+  // synthetic 'load', which would re-init the open dialog. So while any dialog
+  // is open we queue updates and flush them once it closes.
+  ddpQueue = [];
+  flushDDP = function() {
+    if (document.querySelector('.mdc-dialog--open')) return;
+    var q = ddpQueue; ddpQueue = [];
+    q.forEach(function(d) { applyDDP(d); });
+  };
+  handleDDP = function(data) {
+    if (document.querySelector('.mdc-dialog--open')) {
+      ddpQueue.push(data);
+      return;
+    }
+    applyDDP(data);
   };
 
   constructDOM = function(data) {
@@ -272,6 +292,9 @@
         cb();
       });
     }
+    // When a modal dialog closes, apply any reactive updates we deferred while
+    // it was open (MDCDialog:closed bubbles to document).
+    document.addEventListener('MDCDialog:closed', function() { flushDDP(); });
     initialized = true;
   };
 
