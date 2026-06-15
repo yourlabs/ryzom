@@ -133,19 +133,11 @@ def _identity_banner(request):
         groups = ', '.join(g.name for g in user.groups.all()) or 'none'
         suffix = ' — staff, sees all' if user.is_staff else ''
         text = f'Logged in as {user.username} — groups: {groups}{suffix}'
-        background = 'var(--mdc-theme-surface-variant, #e8f0fe)'
         icon = 'account_circle'
     else:
         text = 'Not logged in — showing public products only.'
-        background = 'var(--mdc-theme-error-container, #fdecea)'
         icon = 'info'
-    return Div(
-        MDCIcon(icon, style='font-size:18px'),
-        Span(text),
-        style=(f'background:{background};padding:10px 14px;border-radius:8px;'
-               'margin:0 0 1em;font-size:14px;display:flex;align-items:center;'
-               'gap:8px'),
-    )
+    return MDCBanner(text, icon=icon, style='margin:0 0 1em')
 
 
 class ProductListView(ReactiveMixin, View):
@@ -183,7 +175,7 @@ class ProductDetailView(ReactiveMixin, View):
         product = get_object_or_404(Product, pk=pk)
         token = self.get_token()
         doc = App(
-            A('← all products', href='/crud/products/'),
+            MDCTextButton('← all products', tag='a', href='/crud/products/'),
             ProductDetail(product),
             request=request,
             title=str(product),

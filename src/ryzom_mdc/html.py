@@ -368,7 +368,33 @@ class MDCListItem(Li):
 
 
 class MDCSnackBar(Div):
-    def __init__(self, msg, status='success', delay=0):
+    """Material snackbar, in two modes.
+
+    *One-shot* (the default): rendered with ``msg`` and a trailing action
+    button, it builds its MDC instance and opens itself ``delay`` ms after the
+    page ``load`` — the original behaviour.
+
+    *Imperative* (``auto_open=False``): rendered empty, it builds the instance
+    once and stays closed; call ``element.show(msg)`` to set the label text and
+    open it on demand (e.g. as a reused toast host driven from other widgets).
+    Pass ``action=None`` to drop the trailing button for a plain label-only
+    toast. The single instance is reused, and ``init`` is guarded so the ``load``
+    event ryzom re-fires after every DDP patch can't rebuild it.
+    """
+    def __init__(self, msg='', status='success', delay=0, auto_open=True,
+                 action='OK', **attrs):
+        actions = None
+        if action:
+            actions = Div(
+                Button(
+                    Div(cls='mdc-button__ripple'),
+                    Span(action, cls='mdc-button__label'),
+                    type='button',
+                    cls='mdc-button mdc-snackbar__action'
+                ),
+                cls='mdc-snackbar__actions',
+                **{'aria-atomic': 'true'}
+            )
         super().__init__(
             Div(
                 Div(
@@ -376,22 +402,14 @@ class MDCSnackBar(Div):
                     cls='mdc-snackbar__label',
                     **{'aria-atomic': 'false'}
                 ),
-                Div(
-                    Button(
-                        Div(cls='mdc-button__ripple'),
-                        Span('OK', cls='mdc-button__label'),
-                        type='button',
-                        cls='mdc-button mdc-snackbar__action'
-                    ),
-                    cls='mdc-snackbar__actions',
-                    **{'aria-atomic': 'true'}
-                ),
+                actions,
                 cls='mdc-snackbar__surface',
                 role='status',
                 **{'aria-relevant': 'addition'}
             ),
             cls='mdc-snackbar',
-            **{'data-delay': delay}
+            **{'data-delay': delay, 'data-auto-open': '1' if auto_open else ''},
+            **attrs,
         )
 
     class HTMLElement:
@@ -399,11 +417,75 @@ class MDCSnackBar(Div):
             window.addEventListener('load', this.init.bind(this))
 
         def init(self):
-            delay = parseInt(this.dataset.delay, 10) or 0
-            setTimeout(this.open.bind(this), delay)
+            # ryzom re-fires 'load' after every DDP patch; build the instance
+            # once and keep reusing it (one-shot auto-open or imperative show).
+            if this.bar:
+                return
+            this.bar = new.mdc.snackbar.MDCSnackbar(this)
+            this.label = this.querySelector('.mdc-snackbar__label')
+            if this.dataset.autoOpen:
+                delay = parseInt(this.dataset.delay, 10) or 0
+                setTimeout(this.open.bind(this), delay)
+
+        def show(self, msg):
+            # Set the label and open on demand (imperative mode).
+            if not this.bar:
+                this.init()
+            this.label.textContent = msg
+            this.bar.open()
 
         def open(self):
-            new.mdc.snackbar.MDCSnackbar(this).open()
+            if not this.bar:
+                this.init()
+            this.bar.open()
+
+
+class MDCBanner(Div):
+    """Material banner — a prominent, in-flow contextual message with an
+    optional leading icon and optional action buttons.
+
+    MDC keeps the banner collapsed (height 0) until its JS opens it, so this
+    component builds an ``mdc.banner.MDCBanner`` and opens itself on load,
+    staying visible as a persistent banner. The build is guarded so the ``load``
+    event ryzom re-fires after every DDP patch can't rebuild it. Pass
+    ``actions=[...]`` (``MDCButton``s carrying ``mdc-banner__primary-action`` /
+    ``mdc-banner__secondary-action``) for an interactive banner, or omit them
+    for a plain message — action buttons are optional.
+    """
+    def __init__(self, *content, icon=None, actions=None, **attrs):
+        graphic = None
+        if icon is not None:
+            if not isinstance(icon, Component):
+                icon = MDCIcon(icon, addcls='mdc-banner__icon')
+            graphic = Div(icon, cls='mdc-banner__graphic', role='img')
+        super().__init__(
+            Div(
+                Div(
+                    graphic,
+                    Div(*content, cls='mdc-banner__text'),
+                    cls='mdc-banner__graphic-text-wrapper',
+                ),
+                Div(*actions, cls='mdc-banner__actions') if actions else None,
+                cls='mdc-banner__content',
+                role='alertdialog',
+                **{'aria-live': 'assertive'},
+            ),
+            cls='mdc-banner',
+            role='banner',
+            **attrs,
+        )
+
+    class HTMLElement:
+        def connectedCallback(self):
+            window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            # MDC keeps the banner collapsed until open(); build once and open
+            # so it stays visible (ryzom re-fires 'load' after each DDP patch).
+            if this.banner:
+                return
+            this.banner = new.mdc.banner.MDCBanner(this)
+            this.banner.open()
 
 
 class MDCErrorListItem(Li):
@@ -1135,8 +1217,22 @@ class MDCSelectPerPage(MDCSelect):
                 document.location.href = url.pathname + search
 
 
-class MDCIconButton(A):
-    attrs = dict(cls='material-icons mdc-top-app-bar__navigation-icon mdc-icon-button')
+class MDCIconButton(Button):
+    """A standalone Material icon button (``mdc-icon-button``).
+
+    Pass an icon name (rendered as an ``MDCIcon`` child) or a ready component;
+    add classes via ``addcls`` and pass attributes (``aria_label``, ``data_*``,
+    ``type``) through. Defaults to a ``<button type="button">``; pass ``tag='a'``
+    + ``href`` for a link-style icon button.
+    """
+    attrs = {'class': 'mdc-icon-button'}
+
+    def __init__(self, icon=None, **attrs):
+        if attrs.get('tag', 'button') == 'button':
+            attrs.setdefault('type', 'button')
+        if icon is not None and not isinstance(icon, Component):
+            icon = MDCIcon(icon)
+        super().__init__(icon, **attrs)
 
 
 class MdcTopAppBar(Component):

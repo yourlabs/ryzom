@@ -97,10 +97,9 @@ def row_actions_toggle(obj):
     viewport and never clipped by the data table's overflow; this button only
     carries the row's pk. Static markup, no per-row JS (rows are replaced on
     every DDP patch); ProductRowActions wires the click by delegation."""
-    return Button(
-        MDCIcon('more_vert'),
-        cls='mdc-icon-button row-actions__toggle',
-        type='button',
+    return MDCIconButton(
+        'more_vert',
+        addcls='row-actions__toggle',
         aria_label='Actions',
         aria_haspopup='menu',
         data_product_id=str(obj.id),
@@ -121,23 +120,26 @@ class ProductRow(MDCDataTableTr):
                 data_label='Select',
             ),
             MDCDataTableTd(
-                A(obj.name, href=f'/crud/products/{obj.id}/'),
+                MDCLink(obj.name, href=f'/crud/products/{obj.id}/'),
                 data_label='Name',
             ),
             MDCDataTableTd(group_badge(obj), data_label='Group'),
             MDCDataTableTd(f'${obj.price}', data_label='Price'),
             MDCDataTableTd(
                 str(obj.stock_qty),
-                Span('low', style=(
+                MDCChip('low', style=(
                     'margin-left:6px;background:var(--mdc-theme-error, #b00020);'
-                    'color:#fff;border-radius:10px;padding:1px 8px;'
-                    'font-size:10px;font-weight:600'))
+                    'color:#fff;border-radius:10px;padding:0 8px;height:20px;'
+                    'font-size:10px;font-weight:600;display:inline-flex;'
+                    'align-items:center'))
                 if low else None,
                 data_label='Stock',
             ),
             MDCDataTableTd(
                 SellButton(product_id=obj.id) if obj.stock_qty > 0
-                else Span('out', style='opacity:.5'),
+                else MDCChip('out', style=(
+                    'opacity:.5;border-radius:10px;padding:0 8px;height:20px;'
+                    'font-size:11px;display:inline-flex;align-items:center')),
                 data_label='',
                 style='text-align:right',
             ),
@@ -335,22 +337,18 @@ class ProductToast(Component):
 
     The mutate widgets (sell / create / bulk / row actions) fetch and rely on the
     DDP push for the visible table update, which leaves the action itself without
-    any acknowledgement. This host exposes ``window.ryzomToast(msg)`` so each
-    handler can pop a one-line confirmation. A single reused MDC snackbar instance
-    (not the stock ``MDCSnackBar``, which auto-opens on load) is driven on demand.
+    any acknowledgement. This host embeds a shared ``MDCSnackBar`` in imperative
+    mode (``auto_open=False`` so it never pops on load, ``action=None`` for a
+    plain label) and points ``window.ryzomToast(msg)`` at its ``show()`` so each
+    handler can pop a one-line confirmation. The snackbar builds and reuses a
+    single instance itself, surviving the ``load`` ryzom re-fires after each DDP
+    patch.
     """
     tag = 'product-toast'
 
     def __init__(self, **attrs):
         super().__init__(
-            Div(
-                Div(
-                    Div('', cls='mdc-snackbar__label', role='status',
-                        aria_live='polite'),
-                    cls='mdc-snackbar__surface',
-                ),
-                cls='mdc-snackbar',
-            ),
+            MDCSnackBar(auto_open=False, action=None),
             **attrs,
         )
 
@@ -362,19 +360,13 @@ class ProductToast(Component):
                 window.addEventListener('load', this.init.bind(this))
 
         def init(self):
-            # ryzom.js re-fires 'load' after every DDP patch; build the instance
-            # once and keep window.ryzomToast pointing at it.
+            # ryzom.js re-fires 'load' after every DDP patch; wire once. Point
+            # the global toast handle at the embedded snackbar's show().
             if this.wired:
                 return
             this.wired = True
-            this.bar = new.mdc.snackbar.MDCSnackbar(
-                this.querySelector('.mdc-snackbar'))
-            this.label = this.querySelector('.mdc-snackbar__label')
-            window.ryzomToast = this.show.bind(this)
-
-        def show(self, msg):
-            this.label.textContent = msg
-            this.bar.open()
+            this.bar = this.querySelector('.mdc-snackbar')
+            window.ryzomToast = this.bar.show.bind(this.bar)
 
 
 class SellButton(Component):
@@ -476,10 +468,9 @@ class ProductFilter(Component):
                 Input(type='search', name='q'),
                 label='Search name',
             ),
-            Label(
+            MDCCheckboxField(
                 MDCCheckboxInput(name='in_stock'),
-                ' in stock only',
-                style='display:flex;align-items:center;gap:4px',
+                name='in_stock', label='in stock only',
             ),
             style='display:flex;gap:1.5em;align-items:center;margin:1em 0',
             **attrs,
@@ -991,11 +982,18 @@ class ProductRowActions(Component):
     the pk on its dialog and opens it, and Confirm POSTs with the field inputs."""
     tag = 'product-row-actions'
 
-    # MD menu polish: subtle hover/focus state (ripple-ish) + typography. The
-    # elevation/rounding live inline on the menu (JS also toggles its display).
+    # Items are MDCListItem (real MD list-item markup); the menu surface keeps
+    # bespoke fixed positioning + elevation because it's reparented to <body> and
+    # shown/hidden by toggling `display` (see init). That display-toggle is
+    # incompatible with mdc-menu-surface's open-class visibility model, and the
+    # custom keyboard handling (onMenuKey) would fight MDCList's auto-init, so
+    # neither the surface CSS nor MDCList auto-init is used here. This sass only
+    # adds the hover/focus state + per-item cursor/nowrap.
     sass = '''
 .row-actions__menu .row-action
     font-size: 14px
+    cursor: pointer
+    white-space: nowrap
     transition: background .15s
 .row-actions__menu .row-action:hover, .row-actions__menu .row-action:focus
     background: rgba(0, 0, 0, .06)
@@ -1004,14 +1002,13 @@ class ProductRowActions(Component):
 
     def __init__(self, **attrs):
         menu = Ul(
-            *[Li(
+            *[MDCListItem(
                 act.label,
-                cls='row-action',
+                addcls='row-action',
                 role='menuitem',
                 tabindex='-1',
                 data_action=act.slug,
-                style='display:block;padding:8px 16px;cursor:pointer;'
-                      'white-space:nowrap;list-style:none',
+                ripple=False,
               ) for act in actions_for('row')],
             cls='row-actions__menu',
             role='menu',
