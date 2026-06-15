@@ -178,5 +178,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379')
+# Default to the redis the detection loop above actually found (e.g. the
+# `redis` service host under CI); fall back to localhost when none was probed.
+_redis_host, _redis_port = REDIS_SERVER or ('127.0.0.1', 6379)
+_redis_url = f'redis://{_redis_host}:{_redis_port}'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', _redis_url)
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', _redis_url)
