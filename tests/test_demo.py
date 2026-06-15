@@ -126,11 +126,12 @@ def test_list_page_renders_selection_ui():
     resp = ProductListView.as_view()(req)
     html = resp.content.decode()
 
-    assert 'class="row-select"' in html           # per-row checkbox
+    assert 'row-select' in html                   # per-row checkbox (MDC native-control class)
     assert 'select-all-page' in html              # header select-all
     assert '<product-bulk' in html                # toolbar element
-    for a in actions_for('bulk'):                 # one option per bulk action
-        assert f'>{a.label}</option>' in html
+    for a in actions_for('bulk'):                 # one MDC select option per bulk action
+        assert f'data-value="{a.slug}"' in html   # the option element
+        assert f'>{a.label}<' in html             # carrying its label
 
     # Per-row ⋮ kebab menu + its host element.
     assert 'row-actions__toggle' in html
