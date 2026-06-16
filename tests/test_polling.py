@@ -632,6 +632,9 @@ def test_send_remove_poll(client_poll):
     mock_tmpl_instance = MagicMock()
     mock_tmpl_instance.id = 'comp-1'
     mock_tmpl = MagicMock(return_value=mock_tmpl_instance)
+    # No dom_id classmethod on this template: exercise the instantiation
+    # fallback (a bare MagicMock auto-creates a truthy dom_id attribute).
+    mock_tmpl.dom_id = None
 
     send_remove(mock_sub, mock_tmpl, mock_instance)
 
@@ -641,6 +644,25 @@ def test_send_remove_poll(client_poll):
     assert messages[0]['params']['type'] == 'remove'
     assert messages[0]['params']['params']['id'] == 'comp-1'
     assert messages[0]['params']['params']['parent'] == 'parent-1'
+
+
+@db_reactive
+def test_send_remove_poll_dom_id(client_poll):
+    '''send_remove should prefer the template's dom_id classmethod, never
+    instantiating the template (which may crash on a deleted row).'''
+    mock_sub = MagicMock()
+    mock_sub.client = client_poll
+    mock_sub.subscriber_id = 'parent-1'
+
+    mock_tmpl = MagicMock()
+    mock_tmpl.dom_id = lambda instance: 'row-42'
+    mock_tmpl.side_effect = AssertionError('template must not be rendered')
+
+    send_remove(mock_sub, mock_tmpl, MagicMock())
+
+    messages = messagequeue.drain_messages(client_poll.token)
+    assert len(messages) == 1
+    assert messages[0]['params']['params']['id'] == 'row-42'
 
 
 @db_reactive
@@ -684,17 +706,42 @@ def test_register_manager_send_poll(client_poll):
 
 
 @db_reactive
-def test_register_manager_wait_poll(client_poll):
-    '''RegisterManager.wait should push immediately for poll clients.'''
-    mock_content = MagicMock()
-    mock_content.to_obj.return_value = {'id': 'w-1', 'tag': 'div'}
+def test_register_replace_detached_ws_drops_push_no_thread():
+    '''A refresh to a detached ws client must not push anything (the reload
+    on reconnect delivers fresh state) and must not spawn a thread — it only
+    flags resync. Regression: defer()/wait() were removed.'''
+    from ryzom_django_channels.views import RegisterManager
+    from ryzom_django_channels.models import Client, Registration
+    import threading
 
-    manager = RegisterManager(Registration.objects.none())
-    manager.wait(client_poll, mock_content)
+    client = Client.objects.create(
+        token='detached-ws', channel='', transport='ws', needs_resync=False)
+    reg = Registration.objects.create(
+        name='r', client=client, subscriber_id='s', subscriber_parent='p',
+        subscriber_module='ryzom_django_channels_example.models',
+        subscriber_class='Room')
 
-    messages = messagequeue.drain_messages(client_poll.token)
-    assert len(messages) == 1
-    assert messages[0]['params']['type'] == 'change'
+    manager = RegisterManager(Registration.objects.filter(pk=reg.pk))
+    assert not hasattr(manager, 'defer') and not hasattr(manager, 'wait')
+
+    before = threading.active_count()
+    # _replace renders the content_class; use a trivial stub so we don't need
+    # a real component — the point is that nothing is sent and no thread runs.
+    sent = []
+    manager._send = lambda ch, content: sent.append(content)
+    manager._send_poll = lambda c, content: sent.append(content)
+
+    class _Stub:
+        def __init__(self, *a, **k):
+            self.id = None
+            self.parent = None
+
+    manager._replace(reg, _Stub)
+
+    assert sent == []
+    assert threading.active_count() == before
+    client.refresh_from_db()
+    assert client.needs_resync is True
 
 
 # ---------------------------------------------------------------------------
@@ -787,6 +834,7 @@ def test_end_to_end_remove_then_poll(client_poll):
     mock_tmpl_instance = MagicMock()
     mock_tmpl_instance.id = 'e2e-rm'
     mock_tmpl = MagicMock(return_value=mock_tmpl_instance)
+    mock_tmpl.dom_id = None
 
     send_remove(mock_sub, mock_tmpl, mock_instance)
 

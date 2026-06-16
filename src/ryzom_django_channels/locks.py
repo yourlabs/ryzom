@@ -20,29 +20,14 @@ Coalescing rules per instance within a lock window:
 import contextlib
 import json
 
-from django.conf import settings
-
 from ryzom_django_channels import celery_app
+from ryzom_django_channels.redis_conn import get_redis as _get_redis
 
 
 _LOCK_KEY = 'ryzom:sub:{sid}:lock'
 _QUEUE_KEY = 'ryzom:sub:{sid}:queue'
 _BY_MODEL_KEY = 'ryzom:locked_subs_by_model:{mod}.{cls}'
 _QUEUE_TTL = 3600  # 1h safety net if a worker dies holding a lock
-
-
-def _get_redis():
-    config = settings.CHANNEL_LAYERS['default']['CONFIG']
-    host_config = config['hosts'][0]
-
-    import redis
-    if isinstance(host_config, str):
-        return redis.Redis.from_url(host_config)
-    elif isinstance(host_config, (list, tuple)):
-        return redis.Redis(host=host_config[0], port=host_config[1])
-    elif isinstance(host_config, dict):
-        return redis.Redis(**host_config)
-    return redis.Redis()
 
 
 def _decode(members):
@@ -155,28 +140,45 @@ def ddp_flush_task(sub_id):
     if not touched:
         return
 
-    try:
-        sub = Subscription.objects.get(pk=sub_id)
-    except Subscription.DoesNotExist:
-        return
+    from django.db import transaction
 
-    model = sub.publication.model
-    template = model_templates[sub.subscriber.model_template]
-    to_python = model.id.field.to_python
+    # Same per-subscription row lock as the live signal path (signals.py):
+    # serializes against concurrent DDP tasks so the qs delta is computed
+    # from a consistent snapshot.
+    with transaction.atomic():
+        sub = (
+            Subscription.objects
+            # of=('self',): see signals.for_each_subscription — nullable FK
+            # joins can't be FOR UPDATE locked, and the subscription row is
+            # the only one we need to serialize on.
+            .select_for_update(of=('self',))
+            .select_related('publication', 'client', 'client__user')
+            .filter(pk=sub_id)
+            .first()
+        )
+        if sub is None or sub.client is None:
+            return
 
-    old_qs_strings = set(sub.qs)
-    qs = sub.get_queryset()
-    if not qs.query.can_filter():
-        qs.query.clear_limits()
-    new_qs_strings = set(sub.qs)
+        model = sub.publication.model
+        template = model_templates[sub.subscriber.model_template]
+        to_python = model.id.field.to_python
 
-    for iid, last_op in touched.items():
-        in_old = iid in old_qs_strings
-        in_new = iid in new_qs_strings
+        old_qs_strings = set(sub.qs)
+        qs = sub.get_queryset()
+        if not qs.query.can_filter():
+            qs.query.clear_limits()
+        new_qs_strings = set(sub.qs)
 
-        if in_old and not in_new:
-            send_remove(sub, template, model(id=to_python(iid)))
-        elif not in_old and in_new:
-            send_insert(sub, template, qs.get(pk=to_python(iid)))
-        elif in_old and in_new and last_op == 'save':
-            send_change(sub, template, qs.get(pk=to_python(iid)))
+        for iid, last_op in touched.items():
+            in_old = iid in old_qs_strings
+            in_new = iid in new_qs_strings
+
+            if in_old and not in_new:
+                obj = model.objects.filter(pk=to_python(iid)).first()
+                if obj is None:
+                    obj = model(id=to_python(iid))
+                send_remove(sub, template, obj)
+            elif not in_old and in_new:
+                send_insert(sub, template, qs.get(pk=to_python(iid)))
+            elif in_old and in_new and last_op == 'save':
+                send_change(sub, template, qs.get(pk=to_python(iid)))

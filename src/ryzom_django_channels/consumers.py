@@ -5,13 +5,10 @@ Handles websockets messages from client and channels layer
 import json
 
 from asgiref.sync import async_to_sync
-from channels.auth import get_user, login
+from channels.auth import get_user
 from channels.generic.websocket import JsonWebsocketConsumer
-from django.conf import settings
 from django.utils import timezone
 
-
-AUTH_BACKEND = settings.AUTHENTICATION_BACKENDS[0]
 
 class Consumer(JsonWebsocketConsumer):
     '''
@@ -26,15 +23,20 @@ class Consumer(JsonWebsocketConsumer):
         the ryzom.models.Client identified by the connection token, saving the
         channel name for future access from the channel layer.
         Sends back a 'Connected' or 'Reload' message (see reattach()).
+
+        SECURITY: the client token must never authenticate the Django
+        session. It travels in the ws URL's query string, which lands in
+        server/proxy logs — a previous version called login() here, letting
+        anyone who read a token there authenticate their *own* session
+        cookie as the client's user. The reactive machinery never needs it:
+        subscriptions are bound to client.user in the DB, and reattach()
+        only adopts the session's user onto the client (the safe direction).
         '''
         client = None
         user = async_to_sync(get_user)(self.scope)
         token = self.scope['query_string'].decode()
         if token:
             client = Client.objects.filter(token=token).last()
-            if client and client.user:
-                async_to_sync(login)(self.scope, client.user, backend=AUTH_BACKEND)
-                self.scope['session'].save()
 
         self.accept()
         self.send(json.dumps({'type': self.reattach(client, user)}))
@@ -122,7 +124,7 @@ class Consumer(JsonWebsocketConsumer):
         - a 'params' key, which is used as a parameter, specific to
         each message type.
         '''
-        if not Client.objects.filter(channel=self.channel_name).count():
+        if not Client.objects.filter(channel=self.channel_name).exists():
             self.send(json.dumps({'type': 'Reload'}))
             return
 

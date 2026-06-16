@@ -7,26 +7,11 @@ a 10-minute TTL.
 '''
 import json
 
-from django.conf import settings
+from ryzom_django_channels.redis_conn import get_redis as _get_redis
 
 
 QUEUE_PREFIX = 'ryzom:poll:'
 QUEUE_TTL = 600  # 10 minutes
-
-
-def _get_redis():
-    '''Get a Redis connection from CHANNEL_LAYERS config.'''
-    config = settings.CHANNEL_LAYERS['default']['CONFIG']
-    host_config = config['hosts'][0]
-
-    import redis
-    if isinstance(host_config, str):
-        return redis.Redis.from_url(host_config)
-    elif isinstance(host_config, (list, tuple)):
-        return redis.Redis(host=host_config[0], port=host_config[1])
-    elif isinstance(host_config, dict):
-        return redis.Redis(**host_config)
-    return redis.Redis()
 
 
 def _queue_key(client_token):

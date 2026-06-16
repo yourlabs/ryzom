@@ -14,6 +14,7 @@ class Publishable:
 
     @classmethod
     def create_publication(cls, name):
+        from django.db import IntegrityError
         from ryzom_django_channels.models import Publication
 
         model_params = dict(
@@ -29,7 +30,12 @@ class Publishable:
             if changed:
                 pub.save()
         else:
-            Publication.objects.create(name=name, **model_params)
+            try:
+                Publication.objects.create(name=name, **model_params)
+            except IntegrityError:
+                # Several processes (gunicorn workers, celery workers) run
+                # AppConfig.ready() concurrently at boot; first one wins.
+                pass
 
 
 def publish(func):

@@ -10,6 +10,7 @@ All views authenticate via X-Ryzom-Token header.
 import json
 
 from django.http import JsonResponse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -113,6 +114,18 @@ class PollReceiveView(View):
                  'message': 'Invalid or missing token'}},
                 status=401,
             )
+
+        # Keep the liveness timestamp fresh so the reaper spares this
+        # client — but throttle the write to one UPDATE per minute, not one
+        # per poll (polls come every 0.5–5s). Piggy-back a reap pass on the
+        # same once-a-minute cadence: poll transports never hit the ws
+        # disconnect hook, so without this a poll-only deployment would
+        # only ever reap via the management command.
+        now = timezone.now()
+        if (client.last_seen is None
+                or (now - client.last_seen).total_seconds() > 60):
+            Client.objects.filter(pk=client.pk).update(last_seen=now)
+            Client.reap_stale()
 
         messages = drain_messages(client.token)
         return JsonResponse({'messages': messages})

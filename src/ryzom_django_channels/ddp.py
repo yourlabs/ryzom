@@ -190,12 +190,20 @@ def send_remove(sub, tmpl, instance):
         _mark_needs_resync(sub.client)
         return
 
-    tmpl_instance = tmpl(instance)
+    # A remove only needs the component's DOM id. Templates should expose a
+    # `dom_id(instance)` classmethod deriving it from the pk so we never have
+    # to render the full template from a row that no longer exists in the DB
+    # (a pk-only stub crashes any template touching related fields).
+    dom_id = getattr(tmpl, 'dom_id', None)
+    if dom_id is not None:
+        component_id = dom_id(instance)
+    else:
+        component_id = tmpl(instance).id
     data = {
         'type': 'handle.ddp',
         'params': {
             'type': 'removed',
-            'id': tmpl_instance.id,
+            'id': component_id,
             'parent': sub.subscriber_id
         }
     }

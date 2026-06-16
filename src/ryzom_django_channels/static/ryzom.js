@@ -148,8 +148,17 @@
     }
 
     data.forEach(function(component) {
+      // Dedupe: if a node with this ryzom-id is already in the document
+      // (an insert raced a previous insert/reconnect replay), patch it in
+      // place instead of inserting a duplicate sibling.
+      var existing = getElementByUuid(component.id);
+      if (existing && document.contains(existing)) {
+        changeDOM(component);
+        return;
+      }
       var elem = createDOMelement(component);
       var parent = getElementByUuid(component.parent)
+      if (!parent) return;
       var prev = parent.children[component.position]
       parent.insertBefore(elem, prev);
     });
@@ -160,8 +169,12 @@
   removeDOM = function(params) {
     var parentNode = getElementByUuid(params.parent);
     var node = getElementByUuid(params.id);
+    // Already gone (double remove, or removed with a containing subtree):
+    // nothing to do — don't throw and break the rest of the message batch.
+    if (!node || !node.parentNode) return;
+    parentNode = node.parentNode;
     // animate on delete
-    if (node.dataset.ryzomAod) {
+    if (node.dataset && node.dataset.ryzomAod) {
       node.style.animation = node.dataset.ryzomAod;
       node.addEventListener('animationend', function() {
 	parentNode.removeChild(node);
@@ -267,6 +280,8 @@
     // Fall back to full replacement if node missing or tag changed
     if (!prev_node || prev_node.nodeType !== 1 ||
         prev_node.tagName.toLowerCase() !== params.tag) {
+      if (prev_node && prev_node.parentNode) parent = prev_node.parentNode;
+      if (!parent) return;
       var cur_node = createDOMelement(params);
       if (prev_node) {
         parent.insertBefore(cur_node, prev_node);
@@ -286,15 +301,24 @@
     dispatchEvent(new Event('load'));
   };
 
+  var dialogListenerInstalled = false;
   init = function() {
     if (window.onwsready_cb) {
-      window.onwsready_cb.forEach(function(cb) {
+      // One-shot: drain the queue so callbacks (queued sends, mostly) don't
+      // re-fire on every reconnect's 'Connected' message.
+      var cbs = window.onwsready_cb;
+      window.onwsready_cb = [];
+      cbs.forEach(function(cb) {
         cb();
       });
     }
     // When a modal dialog closes, apply any reactive updates we deferred while
-    // it was open (MDCDialog:closed bubbles to document).
-    document.addEventListener('MDCDialog:closed', function() { flushDDP(); });
+    // it was open (MDCDialog:closed bubbles to document). Install once —
+    // init() runs again on every reconnect.
+    if (!dialogListenerInstalled) {
+      dialogListenerInstalled = true;
+      document.addEventListener('MDCDialog:closed', function() { flushDDP(); });
+    }
     initialized = true;
   };
 
@@ -435,8 +459,12 @@
           else if (data.type == 'Success')
             result = data;
 
-          ws.callbacks[data.id](result, error);
-          delete ws.callbacks[data.id]
+          // The callback may be gone (registered on a previous socket that
+          // dropped before the reply arrived) — don't throw.
+          if (ws.callbacks && typeof ws.callbacks[data.id] === 'function') {
+            ws.callbacks[data.id](result, error);
+            delete ws.callbacks[data.id]
+          }
       };
     };
 
@@ -573,11 +601,17 @@
     if (activeTransport === 'poll') {
       poll_send(data, cb);
     } else {
-      ws.callbacks[id] = cb;
-      if (initialized)
+      if (initialized && ws && ws.readyState === WebSocket.OPEN) {
+        ws.callbacks[id] = cb;
         ws.send(JSON.stringify(data));
-      else {
+      } else {
+        // Socket not (yet) open — first connect or a reconnect in flight.
+        // Sending now would throw InvalidStateError (the ping interval keeps
+        // firing while closed). Drop pings (the next interval tick retries);
+        // queue anything else for the next 'Connected'.
+        if (data.type === 'ping') return;
         onwsready(function() {
+          ws.callbacks[id] = cb;
           ws.send(JSON.stringify(data));
         });
       }

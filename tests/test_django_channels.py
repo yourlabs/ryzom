@@ -541,7 +541,7 @@ def test_connect_no_token_sends_reload(monkeypatch):
 
 
 @db_reactive
-def test_register_replace_on_detached_marks_resync(monkeypatch):
+def test_register_replace_on_detached_marks_resync():
     from ryzom_django_channels.views import RegisterManager
     client = Client.objects.create(
         token='regtok', channel='', transport='ws', needs_resync=False)
@@ -551,8 +551,8 @@ def test_register_replace_on_detached_marks_resync(monkeypatch):
         subscriber_class='RegisterComp')
 
     mgr = RegisterManager(Registration.objects.filter(pk=reg.pk))
-    # Skip the best-effort defer thread; we only assert the resync flag here.
-    monkeypatch.setattr(RegisterManager, 'defer', lambda self, c, content: None)
+    # A refresh targeting a detached ws client just flags resync and drops
+    # the push (the reload on reconnect delivers fresh state).
     mgr._replace(reg, RegisterComp)
 
     client.refresh_from_db()
@@ -580,8 +580,35 @@ def test_reap_stale_classmethod():
     assert not Client.objects.filter(pk=stale.pk).exists()
     assert Client.objects.filter(pk=fresh.pk).exists()
     assert not Client.objects.filter(pk=zombie.pk).exists()
-    # Poll clients are never ws-detached and must be left alone by the reaper.
+    # Poll clients ignore ws detachment; they live by last_seen/created
+    # (this one was just created, so it survives — see the dedicated test).
     assert Client.objects.filter(pk=poll.pk).exists()
+
+
+@db_reactive
+def test_reap_stale_poll_clients():
+    '''Poll clients have no disconnect event: the reaper keys off last_seen
+    (touched by PollReceiveView), falling back to created for clients that
+    never polled at all.'''
+    now = timezone.now()
+    stale_polled = Client.objects.create(
+        token='rp-stale', transport='poll',
+        last_seen=now - timedelta(seconds=1000))
+    fresh_polled = Client.objects.create(
+        token='rp-fresh', transport='poll',
+        last_seen=now - timedelta(seconds=100))
+    never_polled_old = Client.objects.create(
+        token='rp-never-old', transport='poll',
+        created=now - timedelta(seconds=1000))
+    never_polled_new = Client.objects.create(
+        token='rp-never-new', transport='poll')
+
+    Client.reap_stale()
+
+    assert not Client.objects.filter(pk=stale_polled.pk).exists()
+    assert Client.objects.filter(pk=fresh_polled.pk).exists()
+    assert not Client.objects.filter(pk=never_polled_old.pk).exists()
+    assert Client.objects.filter(pk=never_polled_new.pk).exists()
 
 
 @db_reactive
@@ -599,3 +626,142 @@ def test_reap_ryzom_clients_command():
 
     assert not Client.objects.filter(pk=stale.pk).exists()
     assert Client.objects.filter(pk=fresh.pk).exists()
+
+
+# ---------------------------------------------------------------------------
+# DDP signal-path regressions: windowed (paginated) subscriptions and the
+# zero-subscriber fast path. These drive ddp_insert_change/ddp_delete
+# synchronously (the Celery broker isn't reachable in tests) over a poll
+# client so the emitted DDP messages can be asserted from the Redis queue.
+# ---------------------------------------------------------------------------
+
+if settings.CHANNELS_ENABLE:
+    from ryzom_django_channels.components import model_template
+
+    @model_template('test-msg-row')
+    class MsgRow(html.Div):
+        def __init__(self, msg, **kwargs):
+            super().__init__(msg.message, id=f'test-msg-{msg.pk}', **kwargs)
+
+        @classmethod
+        def dom_id(cls, instance):
+            return f'test-msg-{instance.pk}'
+
+    class WindowedComp(SubscribeComponentMixin, html.Div):
+        model_template = 'test-msg-row'
+        publication = 'messages'
+
+        @classmethod
+        def get_queryset(cls, user, qs, opts):
+            # window: rows 2..3 (offset pagination)
+            return qs.order_by('id')[2:4]
+
+
+def _windowed_setup(view):
+    '''One poll client subscribed to a [2:4] window over 5 messages.'''
+    from ryzom_django_channels.models import Publication, Subscription
+    from ryzom_django_channels_example.models import Message, Room
+    from ryzom_django_channels import messagequeue
+
+    meta = view.get_token()
+    client = Client.objects.get(token=meta.attrs['content'])
+    client.transport = 'poll'
+    client.save()
+
+    room = Room.objects.create(name='windowed')
+    msgs = [
+        Message.objects.create(message=f'm{i}', room=room) for i in range(5)
+    ]
+
+    publication = Publication.objects.create(
+        name='messages',
+        model_module='ryzom_django_channels_example.models',
+        model_class='Message',
+    )
+    sub = Subscription.objects.create(
+        client=client,
+        publication=publication,
+        subscriber_id='windowed-parent',
+        subscriber_module=WindowedComp.__module__,
+        subscriber_class='WindowedComp',
+    )
+    sub.get_queryset()
+    sub.refresh_from_db()
+    assert sub.qs == [str(msgs[2].pk), str(msgs[3].pk)]
+
+    messagequeue.clear_queue(client.token)
+    return client, sub, msgs
+
+
+@db_reactive
+def test_ddp_delete_recomputes_windowed_subscription(view):
+    '''Deleting a row *outside* the window must still recompute the window:
+    rows shift and the client needs remove(shifted-out) + insert(shifted-in)
+    with the *shifted* row ids — not the deleted one.'''
+    from ryzom_django_channels import messagequeue, signals
+    from unittest import mock
+
+    client, sub, msgs = _windowed_setup(view)
+
+    with mock.patch.object(signals.ddp_delete_task, 'delay'):
+        deleted_pk = msgs[0].pk
+        msgs[0].delete()
+
+    signals.ddp_delete(
+        'ryzom_django_channels_example.models', 'Message', str(deleted_pk))
+
+    sub.refresh_from_db()
+    assert sub.qs == [str(msgs[3].pk), str(msgs[4].pk)]
+
+    messages = messagequeue.drain_messages(client.token)
+    kinds = {m['params']['type'] for m in messages}
+    assert kinds == {'remove', 'insert'}
+    by_kind = {m['params']['type']: m['params']['params'] for m in messages}
+    # the row that shifted out of the window — NOT the deleted row
+    assert by_kind['remove']['id'] == f'test-msg-{msgs[2].pk}'
+    assert by_kind['remove']['parent'] == 'windowed-parent'
+    # the row that shifted into the window
+    assert by_kind['insert']['id'] == f'test-msg-{msgs[4].pk}'
+
+
+@db_reactive
+def test_ddp_insert_change_windowed_save_sends_change(view):
+    '''A plain save of an in-window row sends a change for that row.'''
+    from ryzom_django_channels import messagequeue, signals
+    from unittest import mock
+
+    client, sub, msgs = _windowed_setup(view)
+
+    with mock.patch.object(signals.ddp_insert_change_task, 'delay'):
+        msgs[2].message = 'edited'
+        msgs[2].save()
+
+    signals.ddp_insert_change(
+        'ryzom_django_channels_example.models', 'Message', False,
+        str(msgs[2].pk))
+
+    messages = messagequeue.drain_messages(client.token)
+    assert len(messages) == 1
+    assert messages[0]['params']['type'] == 'change'
+    assert messages[0]['params']['params']['id'] == f'test-msg-{msgs[2].pk}'
+
+
+@db_reactive
+def test_signals_skip_dispatch_without_subscription():
+    '''Saving/deleting a Publishable with no subscriber must not touch Redis
+    nor dispatch a Celery task (audit-log-style write-heavy models).'''
+    from ryzom_django_channels import signals, locks
+    from ryzom_django_channels_example.models import Message, Room
+    from unittest import mock
+
+    room = Room.objects.create(name='quiet')
+
+    with mock.patch.object(signals.ddp_insert_change_task, 'delay') as d_save, \
+            mock.patch.object(signals.ddp_delete_task, 'delay') as d_del, \
+            mock.patch.object(locks, 'locked_subs_for_model') as d_locks:
+        msg = Message.objects.create(message='nobody listens', room=room)
+        msg.delete()
+
+    assert not d_save.called
+    assert not d_del.called
+    assert not d_locks.called

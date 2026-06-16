@@ -49,14 +49,19 @@ class ReactiveBase:
         self.view = self.get_view(**context)
 
         if self.view is None:
-            parent = self.parent or self
-            while parent and parent.parent:
-                if hasattr(parent, 'view'):
+            # Walk up to the first ancestor carrying an actual view. The
+            # previous version stopped at the first ancestor *having* a
+            # `view` attribute — but ReactiveBase defines `view = None` as a
+            # class attribute, so an intermediate reactive ancestor with no
+            # view yet would mask a higher ancestor that has one.
+            parent = self.parent
+            while parent is not None:
+                view = getattr(parent, 'view', None)
+                if view is not None:
+                    self.view = view
                     break
-                parent = parent.parent
-            try:
-                self.view = parent.view
-            except AttributeError:
+                parent = getattr(parent, 'parent', None)
+            if self.view is None:
                 raise AttributeError('The current view cannot be found')
 
         if not hasattr(self.view, 'client'):
@@ -130,27 +135,19 @@ class ReactiveComponentMixin(ReactiveBase):
         if isinstance(self, CList):
             raise Exception('Cannot register from CList')
 
-        existent = Registration.objects.filter(
+        # Atomic upsert on the (name, client) unique key — the previous
+        # filter-then-create pattern could raise IntegrityError under
+        # concurrent renders of the same client.
+        Registration.objects.update_or_create(
             name=self.get_register(),
-            client=self.view.client
-        ).first()
-
-        if existent:
-            existent.subscriber_id = self.id
-            existent.subscriber_parent = self.parent.id
-            existent.subscriber_class = self.__class__.__name__
-            existent.subscriber_module = self.__module__
-            existent.save()
-
-        else:
-            Registration.objects.create(
-                name=self.get_register(),
-                client=self.view.client,
+            client=self.view.client,
+            defaults=dict(
                 subscriber_id=self.id,
                 subscriber_parent=self.parent.id,
                 subscriber_class=self.__class__.__name__,
                 subscriber_module=self.__module__,
-            )
+            ),
+        )
 
     def get_register(self):
         if self.register is None:

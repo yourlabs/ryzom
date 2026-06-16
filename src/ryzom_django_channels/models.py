@@ -52,6 +52,10 @@ class Client(models.Model):
     # reconnect to decide between a seamless resume ('Connected') and a single
     # reload ('Reload') to rebuild a DOM that drifted while detached.
     needs_resync = models.BooleanField(default=False)
+    # Last time a poll client drained its queue (updated at most once a
+    # minute by PollReceiveView). Poll clients have no disconnect event, so
+    # this is what the reaper keys off — without it they leak forever.
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     @classmethod
     def reap_stale(cls):
@@ -59,12 +63,16 @@ class Client(models.Model):
         Delete clients that are genuinely gone:
 
         - ws clients detached longer than RYZOM_CLIENT_GRACE_SECONDS (their
-          Subscriptions/Registrations cascade-delete with them), and
-        - never-attached zombies left by page loads that opened no socket.
+          Subscriptions/Registrations cascade-delete with them),
+        - never-attached zombies left by page loads that opened no socket, and
+        - poll clients that stopped polling for longer than the grace period
+          (closed tab — there is no disconnect event on the polling
+          transport, only the absence of further polls).
 
         Runs opportunistically from the consumer's disconnect(); also exposed
         as the `reap_ryzom_clients` management command so quiet systems (few ws
-        disconnects) can schedule it via cron/celery-beat.
+        disconnects) and poll-heavy deployments can schedule it via
+        cron/celery-beat.
         '''
         grace = timezone.now() - timedelta(
             seconds=getattr(settings, 'RYZOM_CLIENT_GRACE_SECONDS', 900))
@@ -72,6 +80,10 @@ class Client(models.Model):
         cls.objects.filter(
             transport='ws', channel='', detached_at__isnull=True,
             created__lt=timezone.now() - timedelta(minutes=2),
+        ).delete()
+        cls.objects.filter(transport='poll').filter(
+            models.Q(last_seen__lt=grace)
+            | models.Q(last_seen__isnull=True, created__lt=grace)
         ).delete()
 
 
@@ -207,12 +219,14 @@ class Subscription(models.Model):
         queryset = self.publication.publish_function(self.client.user)
 
         opts = opts or self.options
-        self.save()
         queryset = self.subscriber.get_queryset(
             self.client.user, queryset, opts)
 
         self.options = opts
         self.queryset = queryset.values_list('id', flat=True)
-        self.save()
+        # Only persist what changed: a full-row save() here would clobber
+        # concurrent writers and issue a pointless wide UPDATE on every
+        # reactive tick.
+        self.save(update_fields=['options', 'qs'])
 
         return queryset
