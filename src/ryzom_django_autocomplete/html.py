@@ -7,8 +7,8 @@ from ryzom_django_mdc.forms import (context_attrs, field_kwargs, widget_attrs,
 from ryzom.contrib.django import Static
 
 
-Html.stylesheets = Html.stylesheets + [Static('autocomplete_light/autocomplete-light.css')]
-Html.scripts = Html.scripts + [Static('autocomplete_light/autocomplete-light.js')]
+Html.stylesheets = Html.stylesheets + [Static('dal_alight/autocomplete-light.css')]
+Html.scripts = Html.scripts + [Static('dal_alight/autocomplete-light.js')]
 
 
 class AutocompleteSelectInput(Component):

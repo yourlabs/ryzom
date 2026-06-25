@@ -49,8 +49,10 @@ INSTALLED_APPS = [
     'py2js',
 
     # Transform select HTML tags into autocompletes webcomponents.
-    # The autocomplete-light web component (css/js) is vendored into this app's
-    # static dir, so no separate 'autocomplete_light' package/app is needed.
+    # The autocomplete-light web component (css/js) ships in django-autocomplete-
+    # light's `dal_alight` app; listing it here lets the staticfiles app-dirs
+    # finder serve `dal_alight/autocomplete-light.{css,js}`.
+    'dal_alight',
     'ryzom_django_autocomplete',
 
     # Enable form rendering with MDC components
@@ -133,10 +135,10 @@ DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
         'NAME': os.getenv('DB_NAME', 'ryzom'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
-        'USER': os.getenv('DB_USER', 'ryzom'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'ryzom'),
+        'PORT': os.getenv('DB_PORT', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
     }
 }
 

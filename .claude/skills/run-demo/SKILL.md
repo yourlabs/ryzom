@@ -16,8 +16,15 @@ quick probe: `PYTHONPATH=src python -c "import ryzom_django_example"`.
 
 ## Prerequisite for BOTH modes: Postgres (Redis too for Mode B)
 
-Postgres is required (ArrayField); Mode B also needs Redis. Settings defaults:
-db/user/password all `ryzom` on `127.0.0.1:5432`, Redis on `127.0.0.1:6379`.
+Postgres is required (ArrayField); Mode B also needs Redis. Settings now default
+to the local **unix socket** (user `$USER`, no password), so this skill — which
+provisions Postgres in **Docker** as `ryzom`/`ryzom` on `127.0.0.1:5432` (Redis on
+`127.0.0.1:6379`) — must point Django at it explicitly. Prepend this DB env to
+**every** `manage.py`/`celery` command below (shown inline alongside `PYTHONPATH`):
+
+```
+DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom
+```
 
 ### 1. Probe what's already up
 
@@ -62,10 +69,10 @@ connections" (retry a couple of times; the container takes a second or two).
 
 ### 3. Schema + data
 
-1. Apply migrations: `PYTHONPATH=src python manage.py migrate`
+1. Apply migrations: `DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom PYTHONPATH=src python manage.py migrate`
    (`migrate --plan` errors out if Postgres still isn't reachable.)
 2. Seed identities + products (idempotent):
-   `PYTHONPATH=src python manage.py seed_demo`
+   `DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom PYTHONPATH=src python manage.py seed_demo`
    → users alice/bob/carol/boss, password `demo`. (See the **seed-demo** skill.)
 
 ## Mode A — polling (simplest; no Redis, no Celery worker)
@@ -73,7 +80,7 @@ connections" (retry a couple of times; the container takes a second or two).
 Best default when you just need to see it working.
 
 ```
-RYZOM_TRANSPORT=poll PYTHONPATH=src python manage.py runserver
+DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom RYZOM_TRANSPORT=poll PYTHONPATH=src python manage.py runserver
 ```
 
 Run it with `run_in_background: true` so it keeps serving across turns; redirect
@@ -88,10 +95,10 @@ Redis, force it with `CHANNELS_ENABLE=1`.)
 Needs Redis running (see step 2) and a Celery worker, or pushes silently never
 arrive.
 
-1. Celery worker (background): `PYTHONPATH=src celery -A ryzom_django_channels worker -l info`
+1. Celery worker (background): `DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom PYTHONPATH=src celery -A ryzom_django_channels worker -l info`
    → run with `run_in_background: true`, logs to `/tmp/ryzom-celery.log`. Confirm it
    logged `celery@<host> ready.` with no traceback.
-2. Server (background): `PYTHONPATH=src python manage.py runserver`
+2. Server (background): `DB_HOST=127.0.0.1 DB_USER=ryzom DB_PASSWORD=ryzom PYTHONPATH=src python manage.py runserver`
    (Redis being up flips `CHANNELS_ENABLE` on, so this serves over ASGI/daphne.)
    To force push even if detection is odd: prepend `RYZOM_TRANSPORT=ws`.
 

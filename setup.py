@@ -21,6 +21,7 @@ setup(
     ],
     extras_require=dict(
         project=[
+            'django-autocomplete-light',
             'django',
             'channels',
             'channels-redis',
