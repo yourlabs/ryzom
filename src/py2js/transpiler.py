@@ -688,16 +688,17 @@ class JS(object):
             return self.visit_Num(node)
 
     def visit_Num(self, node):
-        return getattr(node, 'n', None) or node.value
+        return getattr(node, 'n', node.value)
 
     def visit_Str(self, node):
         # Uses the Python builtin repr() of a string and the strip string type
         # from it. This is to ensure Javascriptness, even when they use things
         # like b"\\x00" or u"\\u0000".
-        s = getattr(node, 's', None) or node.value
-        if not self.in_str:
+        s = getattr(node, 's', node.value)
+        if self.in_str:
+            return s
+        else:
             return "%s" % repr(s).lstrip("urb")
-        return s
 
     def visit_Call(self, node):
         func = self.visit(node.func)
