@@ -14,6 +14,7 @@ Welcome to ryzom's documentation!
    ryzom
    ryzom_mdc
    ryzom_django_mdc
+   ryzom_django_channels
 
 
 Indices and tables
