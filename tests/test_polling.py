@@ -223,7 +223,7 @@ def test_sweep_reclaims_idle_pollers_only():
         last_seen=timezone.now() - timedelta(seconds=120))
     push = Client.objects.create(last_seen=None)  # websocket client
 
-    sweep_stale_clients(60)
+    sweep_stale_clients(60, force=True)  # force past the per-process throttle
 
     ids = set(Client.objects.values_list('id', flat=True))
     assert fresh.id in ids

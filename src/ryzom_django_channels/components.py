@@ -1,3 +1,5 @@
+import json
+
 from ryzom.components import CList
 
 from ryzom_django_channels.models import (
@@ -74,9 +76,19 @@ class SubscribeComponentMixin(ReactiveBase):
 
 
     def create_subscription(self):
+        '''Render the first page read-only and emit a subscribe descriptor.
+
+        No Subscription/Client row is written here — a GET must stay safe (see
+        ``ReactiveMixin.get_token``). A *transient* (unsaved) Subscription
+        computes the initial window for the first paint, so a JS-less crawler
+        still gets fully-rendered rows. The ``data-ryzom-subscribe`` descriptor
+        lets the client re-create the Subscription over its transport (the
+        websocket ``recv_subscribe`` or the first poll POST), which is the only
+        place it is persisted. See PROBLEM.md.
+        '''
         subscriber_id = getattr(self, 'container', self).id
         publication = Publication.objects.get(name=self.publication)
-        self.subscription = Subscription.objects.create(
+        self.subscription = Subscription(
             client=self.view.client,
             publication=publication,
             subscriber_id=subscriber_id,
@@ -87,11 +99,22 @@ class SubscribeComponentMixin(ReactiveBase):
 
         self.get_content()
 
+        container = getattr(self, 'container', self)
+        container.attrs['data-ryzom-subscribe'] = '1'
+        container.attrs['data-publication'] = publication.name
+        container.attrs['data-subscriber-id'] = subscriber_id
+        container.attrs['data-subscriber-module'] = self.__module__
+        container.attrs['data-subscriber-class'] = self.__class__.__name__
+        container.attrs['data-subscribe-options'] = json.dumps(
+            self.subscribe_options or {})
+
     def get_content(self):
         template = model_templates[self.model_template]
 
         content = []
-        self.queryset = self.subscription.get_queryset()
+        # persist=False: the transient subscription computes the window without
+        # writing; the row is created later when the client subscribes.
+        self.queryset = self.subscription.get_queryset(persist=False)
         for obj in self.queryset:
             content.append(template(obj))
 
@@ -116,30 +139,22 @@ class ReactiveComponentMixin(ReactiveBase):
             self.create_registration()
 
     def create_registration(self):
+        '''Emit a register descriptor; do not write on the page GET.
+
+        Like ``create_subscription``, this stays read-only so the GET is safe
+        and crawlers create nothing. The Registration is (idempotently) created
+        when the client replays the ``data-ryzom-register`` descriptor over its
+        transport (see ``polling.establish``).
+        '''
         if isinstance(self, CList):
             raise Exception('Cannot register from CList')
 
-        existent = Registration.objects.filter(
-            name=self.get_register(),
-            client=self.view.client
-        ).first()
-
-        if existent:
-            existent.subscriber_id = self.id
-            existent.subscriber_parent = self.parent.id
-            existent.subscriber_class = self.__class__.__name__
-            existent.subscriber_module = self.__module__
-            existent.save()
-
-        else:
-            Registration.objects.create(
-                name=self.get_register(),
-                client=self.view.client,
-                subscriber_id=self.id,
-                subscriber_parent=self.parent.id,
-                subscriber_class=self.__class__.__name__,
-                subscriber_module=self.__module__,
-            )
+        self.attrs['data-ryzom-register'] = '1'
+        self.attrs['data-register-name'] = self.get_register()
+        self.attrs['data-subscriber-id'] = self.id
+        self.attrs['data-subscriber-parent'] = self.parent.id
+        self.attrs['data-subscriber-class'] = self.__class__.__name__
+        self.attrs['data-subscriber-module'] = self.__module__
 
     def get_register(self):
         if self.register is None:

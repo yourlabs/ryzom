@@ -258,6 +258,38 @@
 
   var ws;
 
+  // Collect the subscribe/register descriptors the server rendered as data-*
+  // attrs (see SubscribeComponentMixin / ReactiveComponentMixin). The page GET
+  // creates no rows; the client replays these over its transport to create the
+  // Subscription/Registration server-side (ws 'subscribe' message or first poll
+  // POST). See PROBLEM.md.
+  collectDescriptors = function() {
+    var subscriptions = [];
+    document.querySelectorAll('[data-ryzom-subscribe]').forEach(function(el) {
+      var opts = {};
+      try { opts = JSON.parse(el.getAttribute('data-subscribe-options') || '{}'); }
+      catch (e) { opts = {}; }
+      subscriptions.push({
+        name: el.getAttribute('data-publication'),
+        sub_id: el.getAttribute('data-subscriber-id'),
+        subscriber_module: el.getAttribute('data-subscriber-module'),
+        subscriber_class: el.getAttribute('data-subscriber-class'),
+        opts: opts
+      });
+    });
+    var registrations = [];
+    document.querySelectorAll('[data-ryzom-register]').forEach(function(el) {
+      registrations.push({
+        name: el.getAttribute('data-register-name'),
+        sub_id: el.getAttribute('data-subscriber-id'),
+        parent: el.getAttribute('data-subscriber-parent'),
+        subscriber_module: el.getAttribute('data-subscriber-module'),
+        subscriber_class: el.getAttribute('data-subscriber-class')
+      });
+    });
+    return {subscriptions: subscriptions, registrations: registrations};
+  };
+
   // Read websocket config from meta tag (CSP-compliant, no inline scripts)
   getRyzomConfig = function() {
     var meta = document.querySelector('meta[name="ryzom-config"]');
@@ -308,7 +340,16 @@
       var result, error;
       switch (data.type) {
         case 'Reload': document.location.reload(); break;
-        case 'Connected': init(); break;
+        case 'Connected':
+          init();
+          // Replay the rendered descriptors to create the subscriptions
+          // server-side now that the socket is up (the GET created nothing).
+          var d = collectDescriptors();
+          if (d.subscriptions.length || d.registrations.length)
+            ws_send({type: 'subscribe', params: d}, function(r, e) {
+              if (e) console.log(e);
+            });
+          break;
         case 'DDP': handleDDP(data.params); break;
         default:
           if (data.type == 'Error')
@@ -332,9 +373,18 @@
 
   // Client-pull transport: no websocket, only requests the client initiates.
   // Used where server-initiated communication is not allowed (see POLLING.md).
-  poll_once = function(config) {
-    var url = config.poll_url + '?token=' + encodeURIComponent(config.token);
-    fetch(url, {headers: {'Accept': 'application/json'}})
+  poll_once = function(config, subscribe) {
+    var sep = config.poll_url.indexOf('?') >= 0 ? '&' : '?';
+    var url = config.poll_url + sep + 'token=' + encodeURIComponent(config.token);
+    var opts = {headers: {'Accept': 'application/json'}};
+    if (subscribe) {
+      // First poll: POST the descriptors so the server creates the Client and
+      // its subscriptions (a POST, so the write is RFC-safe).
+      opts.method = 'POST';
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(collectDescriptors());
+    }
+    fetch(url, opts)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.reload) { document.location.reload(); return; }
@@ -346,19 +396,27 @@
 
   poll_start = function(config) {
     init();                       // mark ready; run any onwsready callbacks
-    poll_once(config);            // first pull right away, then on interval
-    setInterval(function() { poll_once(config); }, config.poll_interval);
+    poll_once(config, true);      // first pull POSTs descriptors, then GET-poll
+    setInterval(function() { poll_once(config, false); }, config.poll_interval);
   };
 
   // Auto-connect if config is available. In poll mode we never construct a
-  // WebSocket; otherwise open the push socket as before.
+  // WebSocket; otherwise open the push socket as before. Defer to DOM-ready so
+  // the subscribe descriptors (in <body>) exist when we collect them — this
+  // script is loaded from <head>.
   (function() {
-    var config = getRyzomConfig();
-    if (!config) return;
-    if (config.transport === 'poll')
-      poll_start(config);
+    function start() {
+      var config = getRyzomConfig();
+      if (!config) return;
+      if (config.transport === 'poll')
+        poll_start(config);
+      else
+        ws_connect();
+    }
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', start);
     else
-      ws_connect();
+      start();
   })();
 
   ws_send = function(data, cb) {

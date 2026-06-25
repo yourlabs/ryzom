@@ -52,18 +52,24 @@ class Consumer(JsonWebsocketConsumer):
         token = self.scope['query_string'].decode()
         if token:
             client = Client.objects.filter(token=token).last()
-            if client and client.user:
+            if client is None:
+                # The page GET no longer creates the Client (a GET must be a
+                # safe method — see ReactiveMixin.get_token). Create it now, on
+                # this client-initiated connection; subscriptions follow via
+                # recv_subscribe.
+                client = Client(token=token)
+            if client.user:
                 async_to_sync(login)(self.scope, client.user, backend=AUTH_BACKEND)
                 self.scope['session'].save()
 
         self.accept()
-        if client and client.channel != self.channel_name:
+        if client:
             client.channel = self.channel_name
             if not client.user and isinstance(user, User):
                 client.user = user
             client.save()
             self.send(json.dumps({'type': 'Connected'}))
-        elif not client:
+        else:
             self.send(json.dumps({'type': 'Reload'}))
 
     def disconnect(self, close_code):
@@ -302,23 +308,26 @@ class Consumer(JsonWebsocketConsumer):
         '''
         subscribe message handler.
 
-        Not implemented over the websocket: subscriptions are created
-        server-side while the page renders (see
-        ``ryzom_django_channels.components.SubscribeComponentMixin
-        .create_subscription``), not in response to a client message. The
-        previous body here referenced a ``parent`` field and an ``exec_query``
-        method that do not exist on ``Subscription`` and would have raised if
-        ever reached; it is removed to avoid the latent crash and the
-        misleading impression that subscribe-over-socket is wired up.
+        The page GET renders rows read-only and emits ``data-ryzom-subscribe`` /
+        ``data-ryzom-register`` descriptors instead of writing rows (a GET must
+        be safe — see ``ReactiveMixin.get_token``). The client replays those
+        descriptors here, once the websocket is up, and this is where the
+        Subscription/Registration rows are actually created. Idempotent via
+        ``establish`` so a reconnect can't duplicate them.
         '''
+        from ryzom_django_channels.models import Client
+        from ryzom_django_channels.polling import establish
+
+        client = Client.objects.filter(channel=self.channel_name).last()
+        if client is None:
+            self.send(json.dumps({'type': 'Reload'}))
+            return
+
+        establish(client, data['params'])
         self.send(json.dumps({
             'id': data['id'],
-            'type': 'Error',
-            'params': {
-                'name': 'Not implemented',
-                'message': 'subscriptions are created server-side at render, '
-                           'not over the websocket',
-            }
+            'type': 'Success',
+            'params': [],
         }))
 
     def recv_unsubscribe(self, data):

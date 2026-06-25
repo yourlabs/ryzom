@@ -132,7 +132,7 @@ class Subscription(models.Model):
             qs = qs.order_by(*order)
         return qs
 
-    def get_queryset(self, opts=None):  # noqa: C901
+    def get_queryset(self, opts=None, persist=True):  # noqa: C901
         '''
         Compute the subscription's queryset and persist its id list.
 
@@ -142,6 +142,11 @@ class Subscription(models.Model):
         clamped ``offset``/``per_page``, the ``total`` count, and the
         ``first_key``/``last_key`` sort tuples. Subscribers without
         ``paginate_by`` keep the previous behaviour (the whole filtered set).
+
+        ``persist=False`` computes the window without touching the DB, so the
+        initial page render can build its rows from a *transient* (unsaved)
+        Subscription without a write — the row is only created later, when the
+        client actually subscribes over its transport (see PROBLEM.md).
         '''
         opts = dict(opts if opts is not None else (self.options or {}))
         queryset = self.row_queryset(opts)
@@ -150,7 +155,8 @@ class Subscription(models.Model):
         if not paginate_by:
             self.options = opts
             self.queryset = queryset.values_list('id', flat=True)
-            self.save()
+            if persist:
+                self.save()
             return queryset
 
         order = opts.get('order') or getattr(self.subscriber, 'order', ('id',))
@@ -171,7 +177,8 @@ class Subscription(models.Model):
         )
         self.options = opts
         self.queryset = [obj.id for obj in window]
-        self.save()
+        if persist:
+            self.save()
         return window
 
     @staticmethod

@@ -19,6 +19,7 @@ Two differences from the push path (``signals.iter_window_ops``):
   subscription, not by knowing which row was saved.
 '''
 import hashlib
+import time
 from datetime import timedelta
 
 from django.db import transaction
@@ -26,7 +27,8 @@ from django.utils import timezone
 
 from ryzom_django_channels.components import model_templates
 from ryzom_django_channels.ddp import client_message
-from ryzom_django_channels.models import Client, Subscription
+from ryzom_django_channels.models import (Client, Publication, Registration,
+                                          Subscription)
 
 
 def _fingerprint(instance):
@@ -142,14 +144,71 @@ def poll_client(client):
     return messages
 
 
-def sweep_stale_clients(ttl_seconds):
+def establish(client, descriptors):
+    '''Create the client's Subscriptions/Registrations from replayed descriptors.
+
+    This is the *client-initiated* write the page GET deliberately skips so a GET
+    stays safe and crawlers create nothing (see ``ReactiveMixin.get_token`` /
+    PROBLEM.md). Called by the websocket ``recv_subscribe`` and by the first poll
+    POST. Idempotent (``get_or_create``), so a reconnect / re-poll / ws+poll
+    overlap never duplicates rows. Each descriptor mirrors the ``data-*`` attrs
+    emitted at render by ``SubscribeComponentMixin`` / ``ReactiveComponentMixin``.
+    '''
+    for d in descriptors.get('subscriptions', []):
+        publication = Publication.objects.filter(name=d['name']).first()
+        if publication is None:
+            continue
+        sub, created = Subscription.objects.get_or_create(
+            client=client,
+            publication=publication,
+            subscriber_id=d['sub_id'],
+            defaults={
+                'subscriber_module': d['subscriber_module'],
+                'subscriber_class': d['subscriber_class'],
+                'options': d.get('opts') or {},
+            },
+        )
+        if created:
+            # Persist the window now; it matches the server-rendered DOM, so no
+            # rows are re-sent — only later changes are diffed against it.
+            sub.get_queryset()
+
+    for d in descriptors.get('registrations', []):
+        Registration.objects.update_or_create(
+            name=d['name'],
+            client=client,
+            defaults={
+                'subscriber_id': d['sub_id'],
+                'subscriber_parent': d.get('parent', ''),
+                'subscriber_module': d['subscriber_module'],
+                'subscriber_class': d['subscriber_class'],
+            },
+        )
+
+
+_last_sweep = 0.0
+
+
+def sweep_stale_clients(ttl_seconds, force=False):
     '''Reclaim polling clients that stopped polling.
 
     A push client is deleted on websocket disconnect; a polling client has no
     disconnect, so one whose ``last_seen`` is older than the TTL is assumed gone
     and deleted (cascading its subscriptions). Push clients have a NULL
     ``last_seen`` and are never touched here.
+
+    Called from every poll, so it is throttled: it touches the DB at most once
+    per ``ttl_seconds`` window (per process) and returns immediately otherwise.
+    A stale client only needs reclaiming once its TTL elapses, so sweeping more
+    often than that buys nothing. ``force=True`` bypasses the throttle (used by
+    tests that assert the reclaim itself).
     '''
+    global _last_sweep
+    now = time.monotonic()
+    if not force and now - _last_sweep < ttl_seconds:
+        return
+    _last_sweep = now
+
     cutoff = timezone.now() - timedelta(seconds=ttl_seconds)
     Client.objects.filter(
         last_seen__isnull=False, last_seen__lt=cutoff,

@@ -153,38 +153,47 @@ async def ws(ws_token):
 
 @db_reactive
 def test_get_token(view):
+    # A GET must stay a safe method: get_token returns the config meta with a
+    # capability token but creates NO Client row (it is created later, on ws
+    # connect / first poll POST). See ReactiveMixin.get_token / PROBLEM.md.
     assert not Client.objects.all().count()
 
     meta = view.get_token()
-    # get_token now returns a meta Component instead of inline script
     assert meta.tag == 'meta'
     assert meta.attrs['name'] == 'ryzom-config'
     assert 'content' in meta.attrs  # token
     assert 'data-ws-host' in meta.attrs
     assert 'data-ws-port' in meta.attrs
-    assert Client.objects.all().count()
+    assert not Client.objects.all().count()  # no write on a GET
 
 
 @db_reactive
 def test_subscription(sub_comp, view, token):
+    # Render writes no Subscription (GET stays safe); it emits a subscribe
+    # descriptor the client replays over its transport (see polling.establish).
     assert not Subscription.objects.count()
 
     sub_comp.render(view=view)
-    sub = Subscription.objects.first()
-    assert sub
-    assert sub.client.token == find_token(token)
+
+    assert not Subscription.objects.count()
+    assert sub_comp.attrs['data-ryzom-subscribe'] == '1'
+    assert sub_comp.attrs['data-publication'] == 'test_pub'
+    assert sub_comp.attrs['data-subscriber-id'] == sub_comp.id
 
 
 @db_reactive
 def test_registration(reg_comp, view, token):
+    # Likewise the detail/registration path writes nothing on render; it emits a
+    # register descriptor instead.
     assert not Registration.objects.count()
 
     reg_comp.render(view=view)
-    reg = Registration.objects.first()
-    assert reg
-    assert reg.subscriber_id == reg_comp.id
-    assert reg.client.token == find_token(token)
-    assert reg.subscriber_parent == reg_comp.parent.id
+
+    assert not Registration.objects.count()
+    assert reg_comp.attrs['data-ryzom-register'] == '1'
+    assert reg_comp.attrs['data-register-name'] == 'test_register'
+    assert reg_comp.attrs['data-subscriber-id'] == reg_comp.id
+    assert reg_comp.attrs['data-subscriber-parent'] == reg_comp.parent.id
 
 
 @async_db_reactive
@@ -215,6 +224,22 @@ async def test_ws_connected(ws_token):
 @async_db_reactive
 async def test_register_changed(ws, async_reg_comp, view):
     await sync_to_async(async_reg_comp.render)(view=view)
+
+    # The GET created no Registration; the client establishes it over the
+    # websocket by replaying the rendered descriptor.
+    await ws.send_json_to({
+        'id': 'sub1',
+        'type': 'subscribe',
+        'params': {'registrations': [{
+            'name': async_reg_comp.attrs['data-register-name'],
+            'sub_id': async_reg_comp.attrs['data-subscriber-id'],
+            'parent': async_reg_comp.attrs['data-subscriber-parent'],
+            'subscriber_module': async_reg_comp.attrs['data-subscriber-module'],
+            'subscriber_class': async_reg_comp.attrs['data-subscriber-class'],
+        }]},
+    })
+    ack = await ws.receive_json_from()
+    assert ack['type'] == 'Success'
 
     reg = await sync_to_async(register)('test_register')
     await sync_to_async(reg.replace)(
