@@ -1,14 +1,23 @@
 # ryzom_example_crud
 
-Two CRUD demos built on Ryzom components:
+Two **live, server-pushed** CRUD demos, each a thin declarative subclass of the
+generic **`ReactiveRouter`** (`ryzom_django_mdc.reactive`):
 
-- **`crud.py`** — a classic server-rendered CRUD on the `User` model via the
-  generic `Router` (`ryzom_django_mdc.crudlfap`). Plain links + form POSTs, full
-  page reloads, modals via `MDCDialog`. No websockets.
-- **the reactive Product demo** (`models.py` / `components.py` / `views.py`) —
-  a live, server-pushed table + auto-updating detail view over a websocket.
+- **Products** (`/crud/products/`) — `ProductCrud` in `components.py` over the
+  `Product` model.
+- **Users** (`/crud/users/`) — `UserCrud` in `crud.py` over a `LiveUser`
+  Publishable proxy of `auth.User` (see "Making a non-Publishable model live"
+  below). `crud.py` also keeps a small classic `UserRouter` purely for the
+  auth shell (home / login / logout).
 
-This README documents the **reactive** demo, since that's the non-obvious part.
+You give `ReactiveRouter` a model + `columns` / `facets` / `actions` and get the
+whole suite — live table, search/filter, click-to-sort, pager, bulk + per-row
+actions, create form, auto-updating detail — over a websocket (or polling). The
+generic components live in `ryzom_django_mdc/reactive.py`; this app only supplies
+the model-specific bits (custom cell renderers, action handlers, a Sell button).
+
+This README documents the **reactive plumbing** underneath, since that's the
+non-obvious part — what `ReactiveRouter` automates for you.
 
 ---
 
@@ -85,23 +94,27 @@ mutate endpoints return `204` and the `fetch` widgets do nothing with the body.
 
 | File | Role |
 |------|------|
-| `models.py` | `Product(Publishable, Model)`. `@publish def products` registers the named publication. A `post_save` receiver refreshes any open detail view. |
-| `components.py` | The reactive layout. See breakdown below. |
-| `views.py` | `ProductListView` / `ProductDetailView` (reactive, `ReactiveMixin`), thin `ProductCreateView` / `ProductSellView` mutate endpoints, `ReactiveApp` (shell + `ryzom.js`), and `urlpatterns`. |
-| `migrations/` | The `Product` table. |
-| `crud.py` | The unrelated non-reactive `UserRouter` CRUD demo. |
+| `models.py` | `Product(Publishable, Model)` + `LiveUser` (Publishable proxy of `auth.User`). Each `@publish` method registers a named publication; `post_save` receivers refresh open detail views. |
+| `components.py` | `ProductCrud(ReactiveRouter)` + the Product-only bits: custom cell renderers (group badge, low-stock chip), action handlers, the `SellButton` custom element + its endpoint. |
+| `crud.py` | `UserCrud(ReactiveRouter)` over `LiveUser`, plus a small classic `UserRouter` kept only for `get_auth_urls()` (home/login/logout). |
+| `views.py` | One-liner: `urlpatterns, app_name = ProductCrud.get_urls()`, with `ProductListView`/`ProductBulkView` aliases for tests. |
+| `migrations/` | The `Product` table + the `LiveUser` proxy. |
 
-### components.py
+The reactive components and the `ReactiveRouter` itself live in
+**`src/ryzom_django_mdc/reactive.py`** — `ProductCrud` just configures them.
+`ReactiveRouter.__init_subclass__` generates the per-model `ProductRow` /
+`ProductRows` / `ProductDetail` classes (named after the model) into the router's
+module and registers the `product-row` template, so the push/poll layer
+reconstructs them exactly as a hand-written demo would. Each declarative knob maps
+to a generated piece:
 
-| Class | Base | What it is |
-|-------|------|------------|
-| `ProductRow` | `@model_template('product-row')`, `MDCDataTableTr` | One row. Deterministic `id=f'product-{obj.id}'` so the push can target it. The unit the server re-renders and ships. |
-| `ProductRows` | `SubscribeComponentMixin`, `MDCDataTableTbody` | The subscribed element. `publication='products'`, `model_template='product-row'`. Its rows are its direct children (required for position-based inserts). `get_queryset` orders by name. |
-| `ProductTable` | `MDCDataTableResponsive` | thead + `ProductRows` tbody. |
-| `ProductDetail` | `ReactiveComponentMixin`, `Div` | Single-object view. `register=f'product-detail-{pk}'` → re-rendered + pushed on change. |
-| `SellButton` | `Component` (custom element) | `fetch` POST to the sell endpoint, no reload. |
-| `ProductCreateForm` | `Component` (custom element) | `fetch` POST of the create form, `preventDefault` + reset. |
-| `ProductFilter` | `Component` (custom element) | Debounced search input + "in stock only" checkbox; `fetch` POSTs the filter to re-narrow the live table. |
+| Router config | Generates |
+|---------------|-----------|
+| `columns` | the `<tr>` cells + sortable thead; custom `cell(obj)` renderers for chips/buttons |
+| `facets` | the search/filter UI **and** the reverse routing of a write to affected subscriptions |
+| `order` / `paginate_by` | the subscription's total order + paged window |
+| `actions` | the bulk toolbar + per-row ⋮ menu + their confirm/input dialogs |
+| `create_fields` / `detail_fields` | the fetch-POST create form + the live detail card |
 
 ---
 
@@ -131,13 +144,36 @@ mutate endpoints return `204` and the `fetch` widgets do nothing with the body.
 - **Mutations must hit the server process.** See the runtime note below.
 
 - **Filtering is just a re-diff with new options.** `ProductRows.get_queryset`
-  reads `opts` (`q`, `in_stock`) that live on the `Subscription`. The
-  `ProductFilter` widget POSTs to `ProductFilterView`, which updates the
-  subscription's stored opts, recomputes the queryset, and pushes the
-  membership delta (`send_insert`/`send_remove`) — the exact same machinery the
-  save signals use. Because the opts are stored, every later publication push
-  re-applies the filter, so the live table stays filter-correct. The widget
-  finds *which* subscription to update via the page's `ryzom-config` token.
+  reads `opts` (`q`, `in_stock`) that live on the `Subscription`. The generic
+  `ReactiveFilter` widget POSTs to the router's filter view, which updates the
+  subscription's stored opts, recomputes the queryset, and pushes the membership
+  delta (`send_insert`/`send_remove`) — the exact same machinery the save signals
+  use. Because the opts are stored, every later publication push re-applies the
+  filter, so the live table stays filter-correct. The widget finds *which*
+  subscription to update via the page's `ryzom-config` token.
+
+---
+
+## Making a non-Publishable model live (the Users demo)
+
+The push routes a write to its publication by the **saved instance's class**:
+`signals.py` gates on `Publishable in type(instance).mro()` and matches
+`instance.__module__` + `type(instance).__name__` against the publication. So a
+model you don't own (here `auth.User`) is made live with a **Publishable proxy**:
+
+```python
+class LiveUser(Publishable, User):
+    class Meta:
+        proxy = True
+    @publish
+    def users(cls, user):
+        return cls.objects.all()
+```
+
+`UserCrud` points at `LiveUser`, so its create/update/delete go through the proxy
+and push. Plain `auth.User` saves (login, admin) keep their own class and **don't**
+push — the intended scope for the demo. The proxy needs a (state-only) migration
+and a `ContentType`, both produced by `makemigrations`.
 
 ---
 
@@ -238,20 +274,25 @@ event listeners → one toggle fires N requests.
 
 ### 4. The filter mutates server state, so serialize the requests
 
-`ProductFilterView` does a read-modify-write of the subscription's stored
+The router's filter view does a read-modify-write of the subscription's stored
 queryset. Overlapping requests interleave it and desync from the DOM. The
-`ProductFilter` element keeps **one request in flight** and re-sends the latest
+`ReactiveFilter` element keeps **one request in flight** and re-sends the latest
 state on completion.
 
 ---
 
 ## Request/URL map
 
-| URL | View | Method | Purpose |
-|-----|------|--------|---------|
-| `/crud/products/` | `ProductListView` | GET | live table + create form |
-| `/crud/products/<pk>/` | `ProductDetailView` | GET | auto-updating detail |
-| `/crud/products/create/` | `ProductCreateView` | POST | create → `insert` push (returns 204) |
-| `/crud/products/<pk>/sell/` | `ProductSellView` | POST | stock−1 → `change` push (returns 204) |
-| `/crud/products/filter/` | `ProductFilterView` | POST | update sub opts → `insert`/`remove` delta (returns 204) |
-| `/ws/ddp/?<token>` | channels `Consumer` | WS | the push channel |
+All but `sell/` are generated by `ReactiveRouter.get_urls()` (the same set exists
+under `/crud/users/`); `sell/` is Product-specific, added via `extra_urls()`.
+
+| URL | Method | Purpose |
+|-----|--------|---------|
+| `/crud/products/` | GET | live table + create form |
+| `/crud/products/<pk>/` | GET | auto-updating detail |
+| `/crud/products/create/` | POST | create → `insert` push (returns 204) |
+| `/crud/products/<pk>/sell/` | POST | stock−1 → `change` push (returns 204, Product-only) |
+| `/crud/products/filter/` | POST | update sub opts → delta (JSON: `[]` in push mode, the rows in poll mode) |
+| `/crud/products/sort/` · `page/` · `bulk/` | POST | re-sort / paginate / run a bulk action → delta (same JSON shape) |
+| `/crud/products/poll/` | GET | client-pull transport (POLLING.md) |
+| `/ws/ddp/?<token>` | WS | the push channel |

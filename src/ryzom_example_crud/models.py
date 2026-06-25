@@ -6,6 +6,7 @@ signals — every connected subscriber's queryset is diffed and insert / change 
 remove messages are pushed over the websocket. The @publish method registers a
 named publication ('products') that components subscribe to.
 """
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -37,6 +38,34 @@ class Product(Publishable, models.Model):
         # The visibility predicate lives in GroupFacet (forward), applied by
         # SubscribeComponentMixin.get_queryset; this stays the unscoped base.
         return cls.objects.all()
+
+
+class LiveUser(Publishable, User):
+    """A Publishable proxy of ``auth.User`` so the generic reactive CRUD can
+    drive the User list live.
+
+    The reactive push routes a save to its publication by the *saved instance's*
+    class (see ryzom_django_channels.signals): only instances whose class has
+    ``Publishable`` in its MRO push. The CRUD's create/update/delete go through
+    this proxy, so they push; plain ``auth.User`` saves (login, admin) don't —
+    which is the intended scope for the demo.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'user'
+        verbose_name_plural = 'users'
+
+    @publish
+    def users(cls, user):
+        return cls.objects.all()
+
+
+@receiver(post_save, sender=LiveUser)
+def _refresh_user_detail(sender, instance, **kwargs):
+    """Push a fresh render to any open detail view for this user (the list
+    subscriptions update themselves; a single-object detail is a Registration)."""
+    from ryzom_django_channels.views import register
+    register(f'liveuser-detail-{instance.pk}').refresh(instance)
 
 
 @receiver(post_save, sender=Product)

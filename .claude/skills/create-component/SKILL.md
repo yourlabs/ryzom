@@ -13,9 +13,18 @@ namespace; positional args are children, keyword args are HTML attributes.
 from ryzom_django_mdc.html import *   # Div, Span, A, H1, Input, Select, MDC* …
 ```
 
-Canonical, real examples to read before writing: `src/ryzom_example_crud/components.py`
-(reactive list + row + form + detail) and `src/ryzom_mdc/html.py` (the widget
-library). Background: `docs/design/SYNTHESIS.md`.
+Canonical, real examples to read before writing: `src/ryzom_django_mdc/reactive.py`
+(the generic reactive components + `ReactiveRouter`), `src/ryzom_example_crud/components.py`
+(a `ReactiveRouter` configured for one model) and `src/ryzom_mdc/html.py` (the
+widget library). Background: `docs/design/SYNTHESIS.md`.
+
+**Before hand-rolling a reactive list/detail/form, check `ReactiveRouter`**
+(`src/ryzom_django_mdc/reactive.py`): for a standard live CRUD you declare a
+model + columns/facets/actions and get the whole suite (list, filter, sort,
+pager, bulk + per-row actions, create, live detail) with no custom components —
+see `ProductCrud` / `UserCrud` in `ryzom_example_crud`. The patterns below are
+the building blocks it is made of; reach for them when you need something the
+router doesn't cover.
 
 ## 1. Plain component
 

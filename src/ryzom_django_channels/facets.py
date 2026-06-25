@@ -70,7 +70,13 @@ class BooleanFacet(Facet):
         in_range = value is not None and value > self.gt
         if in_range:
             return {}, Q()
-        return {}, ~Q(**{f'options__{self.key}': True})
+        # A subscription that did not switch the flag on (stored False *or*
+        # absent) has no opinion and admits the row. The ``isnull`` arm is
+        # essential: a never-filtered subscription has no key, and ``NOT (key =
+        # True)`` alone would drop it (a missing JSON key compares as SQL NULL,
+        # and NOT NULL is NULL → excluded).
+        key = f'options__{self.key}'
+        return {}, (~Q(**{key: True}) | Q(**{f'{key}__isnull': True}))
 
 
 class SearchFacet(Facet):

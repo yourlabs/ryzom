@@ -1,4 +1,4 @@
-from ryzom_django_mdc.crudlfap import (
+from ryzom_django_mdc.crud import (
     ActionButton, ActionMenu, ActionDropdown, ModalLayer,
     SortableHeader, SearchBar, FilterChips, FilterDrawer,
     Pagination, BulkActionBar, TableRow,

@@ -110,7 +110,8 @@ def test_list_page_renders_selection_ui():
     from django.core.management import call_command
     from django.test import RequestFactory
 
-    from ryzom_example_crud.actions import actions_for
+    from ryzom_django_mdc.reactive import actions_for
+    from ryzom_example_crud.components import ProductCrud
     from ryzom_example_crud.views import ProductListView
 
     from django.contrib.auth.models import AnonymousUser
@@ -128,14 +129,14 @@ def test_list_page_renders_selection_ui():
 
     assert 'row-select' in html                   # per-row checkbox (MDC native-control class)
     assert 'select-all-page' in html              # header select-all
-    assert '<product-bulk' in html                # toolbar element
-    for a in actions_for('bulk'):                 # one MDC select option per bulk action
+    assert '<reactive-bulk' in html               # toolbar element
+    for a in actions_for(ProductCrud.actions, 'bulk'):  # one option per bulk action
         assert f'data-value="{a.slug}"' in html   # the option element
         assert f'>{a.label}<' in html             # carrying its label
 
     # Per-row ⋮ kebab menu + its host element.
     assert 'row-actions__toggle' in html
-    assert '<product-row-actions' in html
+    assert '<reactive-row-actions' in html
     assert 'data-action="rename"' in html         # rename is a row menu item
 
     # Interactive dialogs are pre-rendered (hidden) for confirm/input actions.
