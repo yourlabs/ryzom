@@ -32,7 +32,7 @@ class JSBundle(html.Script):
 def get_component_modules():
     names = []
     for app in settings.INSTALLED_APPS:
-        for subname in ('views', 'urls', 'components', 'html'):
+        for subname in ('views', 'urls', 'components', 'html', 'reactive'):
             name = '.'.join([app, subname])
             try:
                 importlib.import_module(name)
