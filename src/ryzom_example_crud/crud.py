@@ -69,6 +69,8 @@ class UserCrud(ReactiveRouter):
     ]
 
     create_fields = ['username', 'email', 'first_name', 'last_name']
+    editable = True
+    deletable = True
     detail_fields = ['username', 'email', 'first_name', 'last_name',
                      'date_joined', 'is_staff', 'is_active']
 

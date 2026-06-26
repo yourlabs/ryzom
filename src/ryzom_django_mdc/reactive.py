@@ -40,7 +40,7 @@ import sys
 from django.db import transaction
 from django.forms import modelform_factory
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import path, reverse
 from django.views import View
 
@@ -185,6 +185,31 @@ def ActionDialog(act, dialog_cls):
 # One row — the unit the server pushes
 # ---------------------------------------------------------------------------
 
+def row_links(obj, router):
+    """Per-row edit (orange pen) / delete (red trash) icon links.
+
+    Real ``<a href>``s pointing at the standalone update/delete pages, so a
+    middle/ctrl-click opens them in a new tab (shareable direct link) for free.
+    A plain left-click is intercepted by ``ReactiveRowForms`` to open the same
+    URL's form in a modal instead. Static markup, no per-row JS (rows are
+    swapped on every DDP patch); the wiring is delegated at page level.
+    """
+    links = []
+    if router.editable:
+        links.append(MDCIconButton(
+            'edit', tag='a', href=router.reverse_url('update', obj.pk),
+            addcls='row-edit', aria_label='Edit', title='Edit',
+            style='color:#fb8c00',
+        ))
+    if router.deletable:
+        links.append(MDCIconButton(
+            'delete', tag='a', href=router.reverse_url('delete', obj.pk),
+            addcls='row-delete', aria_label='Delete', title='Delete',
+            style='color:#c62828',
+        ))
+    return links
+
+
 def row_actions_toggle(obj, model_name):
     """The trailing ⋮ kebab trigger for one row.
 
@@ -214,6 +239,7 @@ class ReactiveRow(MDCDataTableTr):
     router = None
     show_select = False
     show_kebab = False
+    show_links = False
 
     def __init__(self, obj):
         self.obj = obj
@@ -235,6 +261,11 @@ class ReactiveRow(MDCDataTableTr):
                 self.render_cell(col, obj),
                 data_label=col.header_label,
                 **td_attrs,
+            ))
+        if self.show_links:
+            cells.append(MDCDataTableTd(
+                *row_links(obj, self.router),
+                data_label='', style='width:96px;text-align:right;white-space:nowrap',
             ))
         if self.show_kebab:
             cells.append(MDCDataTableTd(
@@ -300,6 +331,8 @@ class ReactiveTable(MDCDataTableResponsive):
                 header_cells.append(sortable_th(col.header_label, field))
             else:
                 header_cells.append(MDCDataTableTh(col.header_label))
+        if router.has_links:
+            header_cells.append(MDCDataTableTh(''))    # edit/delete column
         if router.has_row:
             header_cells.append(MDCDataTableTh(''))   # trailing ⋮ column
 
@@ -1197,6 +1230,116 @@ class ReactiveRowActions(Component):
 
 
 # ---------------------------------------------------------------------------
+# Per-row edit / delete — standalone pages opened in a modal on left-click
+# ---------------------------------------------------------------------------
+
+class ReactiveRowForms(Component):
+    """Page-level driver for the per-row edit/delete icon links.
+
+    Each link is a real ``<a href>`` to a standalone update/delete page, so
+    middle/ctrl-click opens it in a new tab natively. A plain left-click is
+    intercepted here: it fetches that page, lifts its ``.ryzom-modal`` (heading +
+    form) into a shared ``mdc-dialog`` and shows it. Submitting POSTs the form;
+    on success the server redirects (the row updates itself via the usual DDP
+    push/poll), so the dialog just closes; a validation error re-renders the form
+    in place. One shared dialog, wired by delegation on the tbody, so it survives
+    the row swaps each DDP patch performs.
+    """
+    tag = 'reactive-row-forms'
+
+    def __init__(self, endpoint='', **attrs):
+        dialog = Div(
+            MDCDialogContainer(
+                MDCDialogSurface('', Div(cls='rrf-body'), actions=Span()),
+            ),
+            MDCDialogScrim(),
+            cls='mdc-dialog rrf-dialog',
+        )
+        super().__init__(dialog, data_endpoint=endpoint, **attrs)
+
+    class HTMLElement:
+        def connectedCallback(self):
+            if document.readyState == 'complete':
+                this.init()
+            else:
+                window.addEventListener('load', this.init.bind(this))
+
+        def init(self):
+            if this.wired:
+                return
+            this.wired = True
+            this.dialog = this.querySelector('.rrf-dialog')
+            this.body = this.dialog.querySelector('.rrf-body')
+            # Reparent to <body> so the modal isn't clipped by the table overflow.
+            document.body.appendChild(this.dialog)
+            this.tbody = document.querySelector('.mdc-data-table__content')
+            if this.tbody:
+                this.tbody.addEventListener('click', this.onClick.bind(this))
+            this.dialog.querySelector('.mdc-dialog__scrim').addEventListener(
+                'click', this.close.bind(this))
+            document.addEventListener('keydown', this.onKey.bind(this))
+
+        def onClick(self, event):
+            # Let the browser handle modified clicks (new tab) — only a plain
+            # left-click opens the modal.
+            if event.button or event.ctrlKey or event.metaKey or event.shiftKey:
+                return
+            link = event.target.closest('.row-edit, .row-delete')
+            if not link:
+                return
+            event.preventDefault()
+            this.open(link.getAttribute('href'))
+
+        async def open(self, url):
+            resp = await fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            html = await resp.text()
+            this.inject(html)
+            this.dialog.classList.add('mdc-dialog--open')
+
+        def inject(self, html):
+            doc = new.DOMParser().parseFromString(html, 'text/html')
+            modal = doc.querySelector('.ryzom-modal')
+            if not modal:
+                return
+            this.body.innerHTML = modal.innerHTML
+            form = this.body.querySelector('form')
+            if form:
+                form.addEventListener('submit', this.submit.bind(this))
+            cancel = this.body.querySelector('.modal-cancel')
+            if cancel:
+                cancel.addEventListener('click', this.onCancel.bind(this))
+
+        def onCancel(self, event):
+            event.preventDefault()
+            this.close()
+
+        async def submit(self, event):
+            event.preventDefault()
+            form = event.currentTarget
+            resp = await fetch(form.action, {
+                method: 'POST',
+                body: new.FormData(form),
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+            })
+            text = await resp.text()
+            if resp.redirected:
+                # Saved/deleted: the live row updates itself over the transport.
+                this.close()
+                if window.ryzomToast:
+                    window.ryzomToast('Done')
+            else:
+                # Validation error: re-render the form (with errors) in place.
+                this.inject(text)
+
+        def onKey(self, event):
+            if event.key == 'Escape':
+                this.close()
+
+        def close(self):
+            this.dialog.classList.remove('mdc-dialog--open')
+
+
+# ---------------------------------------------------------------------------
 # Create form (fetch-POSTs a ModelForm, no reload)
 # ---------------------------------------------------------------------------
 
@@ -1347,6 +1490,10 @@ class ReactiveRouter:
     detail_fields = None          # None -> column fields
     actions = []                  # bulk + row Action entries
 
+    editable = False              # per-row edit button (modal ModelForm)
+    deletable = False             # per-row delete button (modal confirm)
+    edit_fields = None            # update form fields; None -> create_fields
+
     site_title = None             # nav/app-bar title; default verbose_name_plural
     list_heading = None           # H1 on the list page; default verbose_name_plural
     nav_items = []
@@ -1354,6 +1501,7 @@ class ReactiveRouter:
     # Derived in __init_subclass__:
     has_bulk = False
     has_row = False
+    has_links = False
     sort_fields = frozenset()
     rows_class = None
     row_class = None
@@ -1365,6 +1513,7 @@ class ReactiveRouter:
 
         cls.has_bulk = bool(actions_for(cls.actions, 'bulk'))
         cls.has_row = bool(actions_for(cls.actions, 'row'))
+        cls.has_links = bool(cls.editable or cls.deletable)
         cls.sort_fields = frozenset(
             c.sort_field for c in cls.columns if c.sort_field
         )
@@ -1381,6 +1530,7 @@ class ReactiveRouter:
             router=cls,
             show_select=cls.has_bulk,
             show_kebab=cls.has_row,
+            show_links=cls.has_links,
         ))
         model_template(tmpl_name)(row_cls)
 
@@ -1446,6 +1596,45 @@ class ReactiveRouter:
         return modelform_factory(cls.model, fields=cls.create_fields)
 
     @classmethod
+    def get_update_form_class(cls):
+        return modelform_factory(cls.model, fields=cls.edit_fields or cls.create_fields)
+
+    @classmethod
+    def _form_page(cls, request, *, title, inner, action, submit_label,
+                   danger=False):
+        """A standalone page wrapping ``inner`` in a POST form (heading + Cancel/
+        submit). The ``.ryzom-modal`` wrapper is what ReactiveRowForms lifts into
+        the dialog on left-click; on its own it's a normal shareable page.
+        """
+        submit = (MDCButtonRaised(submit_label, tag='button', type='submit')
+                  if not danger else
+                  MDCButtonRaised(submit_label, tag='button', type='submit',
+                                  style='--mdc-theme-primary:#c62828'))
+        modal = Div(
+            H1(title, cls='mdc-typography--headline6', style='margin:0 0 .75em'),
+            Form(
+                inner,
+                CSRFInput(request),
+                Div(
+                    MDCTextButton('Cancel', tag='a', addcls='modal-cancel',
+                                  href=cls.reverse_url('list')),
+                    submit,
+                    style='display:flex;justify-content:flex-end;gap:1em;'
+                          'margin-top:1.25em',
+                ),
+                method='post', action=action, addcls='ryzom-modal-form',
+            ),
+            cls='ryzom-modal', style='min-width:320px',
+        )
+        doc = App(
+            Div(modal, style='max-width:560px;margin:2em auto;padding:0 1em'),
+            request=request,
+            title=title,
+            nav_items=cls.get_nav_items(request),
+        )
+        return HttpResponse(doc.to_html())
+
+    @classmethod
     def get_nav_items(cls, request):
         return cls.nav_items
 
@@ -1492,6 +1681,8 @@ class ReactiveRouter:
         if cls.has_row:
             body.append(ReactiveRowActions(actions_for(cls.actions, 'row'),
                                            endpoint=base))
+        if cls.has_links:
+            body.append(ReactiveRowForms(endpoint=base))
         if cls.paginate_by:
             body.append(ReactivePager(
                 offset=0, per_page=cls.paginate_by,
@@ -1544,6 +1735,39 @@ class ReactiveRouter:
                 if form.is_valid():
                     form.save()       # post_save -> insert push
                 return HttpResponse(status=204)
+
+        class UpdateView(View):
+            def get(self, request, pk):
+                obj = get_object_or_404(model, pk=pk)
+                form = router.get_update_form_class()(instance=obj)
+                return router._form_page(
+                    request, title=f'Edit {obj}', inner=form,
+                    action=router.reverse_url('update', pk), submit_label='Save')
+
+            def post(self, request, pk):
+                obj = get_object_or_404(model, pk=pk)
+                form = router.get_update_form_class()(request.POST, instance=obj)
+                if form.is_valid():
+                    form.save()       # post_save -> live row update everywhere
+                    return redirect(router.reverse_url('list'))
+                # Invalid: re-render the form (with errors); the modal re-shows it.
+                return router._form_page(
+                    request, title=f'Edit {obj}', inner=form,
+                    action=router.reverse_url('update', pk), submit_label='Save')
+
+        class DeleteView(View):
+            def get(self, request, pk):
+                obj = get_object_or_404(model, pk=pk)
+                return router._form_page(
+                    request, title=f'Delete {obj}',
+                    inner=P(f'Permanently delete “{obj}”? This cannot be undone.'),
+                    action=router.reverse_url('delete', pk),
+                    submit_label='Delete', danger=True)
+
+            def post(self, request, pk):
+                obj = get_object_or_404(model, pk=pk)
+                obj.delete()          # post_delete -> live row removal everywhere
+                return redirect(router.reverse_url('list'))
 
         class FilterView(View):
             def post(self, request):
@@ -1661,13 +1885,14 @@ class ReactiveRouter:
                 act.fn(queryset, request)   # per-object save/delete -> push
                 return JsonResponse({'count': count})
 
-        for view_cls in [ListView, DetailView, CreateView, FilterView,
-                          SortView, PageView, BulkView]:
+        for view_cls in [ListView, DetailView, CreateView, UpdateView,
+                          DeleteView, FilterView, SortView, PageView, BulkView]:
             view_cls.model = model
 
         # Expose the generated view classes (e.g. for tests or custom wiring).
         cls.views = dict(
             list=ListView, detail=DetailView, create=CreateView,
+            update=UpdateView, delete=DeleteView,
             filter=FilterView, sort=SortView, page=PageView, bulk=BulkView,
         )
 
@@ -1679,6 +1904,8 @@ class ReactiveRouter:
             path('page/', PageView.as_view(), name='page'),
             path('bulk/', BulkView.as_view(), name='bulk'),
             path('poll/', ddp_poll, name='poll'),   # client-pull (POLLING.md)
+            path('<int:pk>/update/', UpdateView.as_view(), name='update'),
+            path('<int:pk>/delete/', DeleteView.as_view(), name='delete'),
             path('<int:pk>/', DetailView.as_view(), name='detail'),
             *cls.extra_urls(),
         ]

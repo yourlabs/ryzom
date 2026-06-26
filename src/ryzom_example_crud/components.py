@@ -191,6 +191,8 @@ class ProductCrud(ReactiveRouter):
 
     create_fields = ['name', 'price', 'stock_qty', 'group']
     detail_fields = ['price', 'stock_qty']
+    editable = True
+    deletable = True
 
     actions = [
         Action('delete', 'Delete', _delete, scopes=('bulk', 'row'),
