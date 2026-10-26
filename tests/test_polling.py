@@ -523,6 +523,27 @@ def test_poll_receive_drains(client_poll):
 
 
 @db_reactive
+def test_poll_receive_adopts_client_whose_switch_was_lost(client_ws):
+    '''A lost /ddp/switch/ left the client as a never-attached ws zombie:
+    reaped two minutes later, its every poll then answered 401.'''
+    from datetime import timedelta
+    from django.test import Client as DjangoClient
+    from django.utils import timezone
+    Client.objects.filter(pk=client_ws.pk).update(
+        created=timezone.now() - timedelta(minutes=5))
+
+    c = DjangoClient()
+    resp = c.get('/ddp/poll/', HTTP_X_RYZOM_TOKEN=client_ws.token)
+    assert resp.status_code == 200
+    client_ws.refresh_from_db()
+    assert client_ws.transport == 'poll'
+
+    Client.reap_stale()
+    resp = c.get('/ddp/poll/', HTTP_X_RYZOM_TOKEN=client_ws.token)
+    assert resp.status_code == 200
+
+
+@db_reactive
 def test_poll_receive_no_token():
     from django.test import Client as DjangoClient
     c = DjangoClient()

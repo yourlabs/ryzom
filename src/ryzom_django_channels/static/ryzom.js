@@ -343,6 +343,11 @@
   var pingInterval = null;
   // Polling state
   var pollTimer = null;
+  // A poll request is on the wire: poll_loop() must not start a second loop
+  // (poll_send's "poll now" used to, one extra loop per send).
+  var pollInFlight = false;
+  // Set once the server refused our token: no more polls from this page.
+  var pollStopped = false;
   var pollInterval = 500;
   var pollIntervalMin = 500;
   var pollIntervalMax = 5000;
@@ -515,9 +520,25 @@
   };
 
   poll_loop = function() {
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = null;
+    if (pollInFlight || pollStopped) return;
+    pollInFlight = true;
     poll_receive(function() {
-      pollTimer = setTimeout(poll_loop, pollInterval);
+      pollInFlight = false;
+      if (!pollStopped) pollTimer = setTimeout(poll_loop, pollInterval);
     });
+  };
+
+  poll_unauthorized = function() {
+    pollStopped = true;
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = null;
+    var key = 'ryzom-poll-reload', last = 0;
+    try { last = parseInt(sessionStorage.getItem(key) || '0', 10); } catch (e) {}
+    if (Date.now() - last < 60000) return;
+    try { sessionStorage.setItem(key, String(Date.now())); } catch (e) {}
+    document.location.reload();
   };
 
   // Fetch pending messages from the server
@@ -532,8 +553,18 @@
         'X-Ryzom-Token': config.token
       }
     }).then(function(resp) {
+      if (resp.status === 401) {
+        // The server reaped this client (tab asleep longer than
+        // RYZOM_CLIENT_GRACE_SECONDS): the token will never be valid again,
+        // so polling on would only produce an endless stream of 401s.
+        // Reload once for a fresh client — same as the ws 'Reload' — and
+        // stop if the fresh page is refused too.
+        poll_unauthorized();
+        return null;
+      }
       return resp.json();
     }).then(function(data) {
+      if (data === null) { if (done) done(); return; }
       if (data.messages && data.messages.length > 0) {
         // Got messages: process them and speed up polling
         pollInterval = pollIntervalMin;
@@ -574,6 +605,7 @@
       },
       body: JSON.stringify(data)
     }).then(function(resp) {
+      if (resp.status === 401) poll_unauthorized();
       return resp.json();
     }).then(function(result) {
       var r = null, e = null;
@@ -583,10 +615,8 @@
         r = result;
       }
       if (cb) cb(r, e);
-      // Trigger an immediate poll to pick up any server-side changes
-      if (pollTimer) {
-        clearTimeout(pollTimer);
-      }
+      // Poll now to pick up any server-side changes (no-op while a poll is
+      // already on the wire: its reply reschedules at the minimum interval).
       pollInterval = pollIntervalMin;
       poll_loop();
     }).catch(function(err) {

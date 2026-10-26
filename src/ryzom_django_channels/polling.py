@@ -124,7 +124,13 @@ class PollReceiveView(View):
         now = timezone.now()
         if (client.last_seen is None
                 or (now - client.last_seen).total_seconds() > 60):
-            Client.objects.filter(pk=client.pk).update(last_seen=now)
+            # Polling proves the fallback even when the fire-and-forget
+            # /ddp/switch/ was lost (server restarting as the page gave up on
+            # ws): left as transport='ws' with no channel, the client would be
+            # reaped as a never-attached zombie two minutes later and every
+            # following poll would 401.
+            Client.objects.filter(pk=client.pk).update(
+                last_seen=now, transport='poll')
             Client.reap_stale()
 
         messages = drain_messages(client.token)
