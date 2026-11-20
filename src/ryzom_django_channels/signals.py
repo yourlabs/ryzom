@@ -73,13 +73,23 @@ def _ddp_insert_change(sender, **kwargs):
         return
 
     instance = kwargs.get('instance')
+    created = kwargs.get('created')
+    # Après le commit seulement : rien pendant la transaction de l'appelant
+    # (requête sur les abonnements, Redis, envoi Celery), et jamais de
+    # notification pour une transaction annulée ni de relecture par un worker
+    # de données pas encore validées. Hors transaction, on_commit exécute
+    # immédiatement.
+    transaction.on_commit(
+        lambda: _ddp_insert_change_after_commit(instance, created))
+
+
+def _ddp_insert_change_after_commit(instance, created):
     sender_mod = instance.__module__
     sender_name = instance.__class__.__name__
 
     if not _has_subscriptions(sender_mod, sender_name):
         return
 
-    created = kwargs.get('created')
     instance_id = str(instance.id)
 
     locked = locks.locked_subs_for_model(sender_mod, sender_name)
